@@ -20,7 +20,7 @@ if(WIN32)
   # Windows doesn't really do "installation", so we'll assume that
   # extempore.exe's always going to be run from the Extempore
   # directory
-  set(EXT_SHARE_DIR "." CACHE PATH
+  set(EXT_SHARE_DIR ${CMAKE_SOURCE_DIR} CACHE PATH
     "path to Extempore's shared runtime files")
 else()
   if(IN_TREE)
@@ -52,9 +52,6 @@ if(DEFINED ENV{EXT_LLVM_DIR})
   # if there's an EXT_LLVM_DIR environment variable, use that
   set(EXT_LLVM_DIR $ENV{EXT_LLVM_DIR})
   set(BUILD_LLVM OFF)
-elseif(WIN32)
-  set(EXT_LLVM_DIR ${CMAKE_SOURCE_DIR}/llvm)
-  set(BUILD_LLVM ON)
 else()
   set(EXT_LLVM_DIR ${EXT_SHARE_DIR}/llvm)
   set(BUILD_LLVM ON)
@@ -64,11 +61,7 @@ endif()
 
 if(BUILD_DEPS)
   set(EXT_DEPS_INSTALL_DIR ${CMAKE_BINARY_DIR}/deps-install)
-  if(WIN32)
-    set(EXT_PLATFORM_SHLIBS_DIR ${CMAKE_SOURCE_DIR}/libs/platform-shlibs)
-  else()
-    set(EXT_PLATFORM_SHLIBS_DIR ${EXT_SHARE_DIR}/libs/platform-shlibs)
-  endif()
+  set(EXT_PLATFORM_SHLIBS_DIR ${EXT_SHARE_DIR}/libs/platform-shlibs)
   if(PACKAGE)
     set(EXT_DEPS_C_FLAGS "${CMAKE_C_FLAGS_RELEASE} -mtune=generic")
     set(EXT_DEPS_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -mtune=generic")
