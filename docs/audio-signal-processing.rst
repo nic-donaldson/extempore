@@ -565,20 +565,33 @@ As long as your kernel (``saw_synth_note_c``) and fx (``saw_synth_fx``)
 closures have the right signature, then evaluating the above line should
 print for you
 
-.. code:: bash
+.. code:: text
 
-      Compiled saw_synth >>> [float,float,i64,i64,float*]*
+      New instrument bound as saw_synth in both scheme and xtlang
 
 and now the instrument is ready to play.
 
 What---is that the end? Well, that's a bit frustrating: we haven't even
 got to *play* our instrument yet! Don't worry, we'll use our
-``saw_synth`` instrument in :doc:`note-level-music`.
+``saw_synth`` instrument in :doc:`note-level-music`. Here's a sneak peek
+so you can hear it now though:
+
+.. code-block:: extempore
+
+      (bind-func dsp:DSP
+        (lambda (in time chan dat)
+          (if (< chan 2)
+              (saw_synth in time chan dat)
+              0.0)))
+      
+      (dsp:set! dsp)
+      
+      (play-note (now) saw_synth (random 60 90) 80 44100)
 
 There are a couple of things to note which might be helpful for when you
 want to build your *own* instruments
 
--  The note kernel closure (in this example ``saw_synth_note_c``)
+-  The note kernel closure (in this example ``saw_synth_note``)
    returns a closure for each note: multiple notes may be playing
    simultaneously (polyphony), so you want to make sure that each
    closure keeps track of the state it needs and doesn't leak that state
