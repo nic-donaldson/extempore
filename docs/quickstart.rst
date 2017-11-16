@@ -4,6 +4,9 @@ quickstart
 I get it, you're impatient---here's the bare minimum required to get
 from zero to running Extempore code.
 
+.. note:: Some of the tutorial documentation is out of date. If you
+   get stuck, the best place to ask for help is the mailing list.
+
 Installation
 ------------
 
