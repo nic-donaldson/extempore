@@ -6,7 +6,7 @@ Audio signal processing
 
 In Extempore you can write dynamic, hot-swappable DSP code. There is a
 special function in the environment called (funnily enough) ``dsp``.
-This is as simple as declaring an xltang closure (with a specific type
+This is as simple as declaring an xtlang closure (with a specific type
 signature) to be the audio output 'sink'. The values returned by this
 function are sent directly to the audio driver and output as sound
 through the computer speakers. Every audio sample (that is, at a rate
@@ -56,7 +56,7 @@ if I change the ``dsp`` function to
 
       (bind-func dsp
         (lambda (in:SAMPLE time:i64 chan:i64 data:SAMPLE*)
-          (* 0.1 (convert (random) SAMPLE))))
+          (* (convert 0.1 SAMPLE) (random))))
 
 then the output changes to white noise. This is the real power of xtlang
 (and Extempore)---everything's dynamic and modifiable at runtime, but it's
@@ -87,7 +87,7 @@ closure which returns another closure a ``_c`` suffix.
 
 The type message printed by the compiler when we evaluate ``osc_c`` is::
 
-  Compiled osc_c >>> [[float,float,float]*,float]*``
+  Compiled osc_c >>> [[float,float,float]*,float]*
 
 See that the return type of the ``osc_c`` function is
 ``[float,float,float]*``: a pointer to a closure which takes two
@@ -101,11 +101,12 @@ we need:
         (let ((osc1 (osc_c 0.0))
               (osc2 (osc_c 0.0)))
           (lambda (in:float time:i64 channel:i64 data:float*)
-            (cond ; play a 200Hz tone in the left ear
-                  ((= channel 0) (osc1 0.25 200.0)) 
-                  ; play a 300Hz tone in the right ear
-                  ((= channel 1) (osc2 0.25 300.0))
-                  (else 0.0)))))
+            (cond
+             ;; play a 200Hz tone in the left ear
+             ((= channel 0) (osc1 0.25 200.0))
+             ;; play a 300Hz tone in the right ear
+             ((= channel 1) (osc2 0.25 300.0))
+             (else 0.0)))))
 
 The ``phase`` variable in each of our oscillator closures is how we
 maintain state between calls to ``osc1`` or ``osc2``. Each time the
@@ -145,12 +146,10 @@ sine tones of different frequencies:
               (* amp (sin phase))))))
 
       ;; remember that the dsp closure is called for every sample
-      ;; also, for convenience, let's make a type signature for the
-      ;; DSP closure
-
-      (bind-alias DSP [SAMPLE,SAMPLE,i64,i64,SAMPLE*]*)
-
-      (bind-func dsp:DSP ; note the use of the type signature 'DSP'
+      ;; also, let's add a type signature to the closure just because
+      ;; we can. DSP is short for [SAMPLE,SAMPLE,i64,i64,SAMPLE*]*
+      
+      (bind-func dsp:DSP
         (let ((osc1 (osc_c 0.0))
               (osc2 (osc_c 0.0))
               (osc3 (osc_c 0.0)))
@@ -300,12 +299,12 @@ amplitude and frequency values.
               (amp_array:|30,SAMPLE|* (alloc))
               (freq_array:|30,SAMPLE|* (alloc))
               (i 0))
-          ; initialise the arrays
+          ;; initialise the arrays
           (dotimes (i 30)
             (aset! osc_array i (osc_c 0.0))
             (aset! amp_array i (+ 0.2 (* 0.2 (random))))
             (aset! freq_array i (+ 110.0 (* 1000.0 (random)))))
-          ; this is the dsp closure
+          ;; this is the dsp closure
           (lambda (in time chan data)
             (cond ((= chan 0) ; left channel
                    (let ((suml 0.0))
@@ -314,7 +313,7 @@ amplitude and frequency values.
                                            (aref amp_array i)
                                            (aref freq_array i)))))
                      (/ suml 15.0))) ; normalise over all oscs
-                  ((= chan 1) ; left channel
+                  ((= chan 1) ; right channel
                    (let ((sumr 0.0))
                      (dotimes (i 15 15) ; sum over the first 15 oscs
                        (set! sumr (+ sumr ((aref osc_array i)
@@ -353,7 +352,7 @@ one channel for clarity).
               (freq_array:|30,SAMPLE|* (alloc))
               (base_freq 110.0)
               (i 0))
-          ; initialise the arrays
+          ;; initialise the arrays
           (dotimes (i 30)
             (aset! osc_array i (osc_c 0.0))
             (aset! amp_array
@@ -411,49 +410,68 @@ Note kernel
 ^^^^^^^^^^^
 
 First, let's examine the note kernel closure. This closure takes *zero*
-arguments, and returns another closure which takes four arguments:
+arguments, and returns another closure which takes two arguments:
 
 -  ``time``: the current (sample) time in Extempore
 -  ``chan``: the channel number
--  ``freq``: the frequency (pitch) of the note as type ``SAMPLE``
--  ``amp``: the volume/loudness of the note as type ``SAMPLE``
-
-In Extempore, ``SAMPLE`` is aliased to ``float`` by default, but could
-also be ``double``.
 
 The *returned* closure will be called to provide the basic audio signal
-for the note, so that's where we put our code to generate the saw wave
+for the note, so that's where we put our code to generate the saw wave.
 
 .. code-block:: extempore
 
       (sys:load "libs/core/instruments.xtm")
 
-      (bind-func saw_synth_note_c
-        (lambda (data:NoteInitData* nargs:i64 dargs:SAMPLE*)
-          (let ((saw (saw_c 0.)))
-            (lambda (time:i64 chan:i64 freq:SAMPLE amp:SAMPLE)
-              (if (= chan 0)
-                  (saw amp freq)
-                  0.0)))))
+      (bind-func saw_synth_note
+        (lambda ()
+          (lambda (data:NoteData* nargs:i64 dargs:SAMPLE*)
+            (let (
+                  ;; the note is told when it was started; it needs this to figure out when to stop
+                  ;; notice that this is passed through the data argument with type NoteData*
+                  (starttime (note_starttime data))
 
-      ;; when we evaluate saw_synth_note_c, the compiler prints:
-      ;; Compiled:  saw_synth_note_c >>> [[float,i64,i64,float,float]*,NoteInitData*,i64,float*]*
+                  ;; frequency is the pitch of the note as type SAMPLE
+                  (frequency 440.0)
+
+                  ;; amplitude is the volume/loudness of the note as type SAMPLE
+                  (amplitude 0.5)
+
+                  ;; SR = sample rate, so we want to play for 1 second, typically 44100 samples
+                  (duration SR)
+                  (saw (saw_c 0.)))
+              (lambda (time:i64 chan:i64)
+                ;; when the notes has played for its duration, we disable it
+                (if (> (- time starttime) duration) (note_active data #f))
+                (if (= chan 0)
+                    (saw amplitude frequency)
+                    0.0))))))
+
+      ;; when we evaluate saw_synth_note, the compiler prints:
+      ;; Compiled:  saw_synth_note >>> [[[float,i64,i64]*,NoteData*,i64,float*]*]*
 
 Notice that the saw `unit-generator`_ (ugen) ``saw`` is bound (by
 calling ``saw_c``) *outside* the inner ``lambda`` form. This inner
 ``lambda`` defines the closure which will be *returned* by
-``saw_synth_note_c``. In this returned closure, the ugen ``saw`` (which
+``saw_synth_note``. In this returned closure, the ugen ``saw`` (which
 is itself an xtlang closure) is called with the amplitude and frequency
-values which are passed in as arguments to the ``lambda`` form. The
+values which are hard coded in the outer ``lambda`` form. The
 value returned by the ``saw`` closure (as it is called repeatedly, once
 per audio sample) will trace out a `sawtooth wave`_.
 
 .. _unit-generator: http://en.wikipedia.org/wiki/Unit_generator
 .. _sawtooth wave: http://en.wikipedia.org/wiki/Sawtooth_wave
 
+You might be wondering about the ``data:NoteData*`` argument that is
+passed as the first argument to the note kernel closure. When a note
+is played, this structure will contain information about the note:
+when the note was started, what frequency the note should be played at,
+how loud, and how long to play the note for. In this example we are
+only using it to determine the start time because we need that to
+disable the note when it is finished.
+
 This is just a mono note kernel at this stage, because ``saw`` is only
 called when ``chan`` is equal to ``0``. The note kernel closure will
-actually be called one for *each* output channel, and the ``chan``
+actually be called once for *each* output channel, and the ``chan``
 argument will range from ``0`` for the first output channel to ``n - 1``
 for the nth output channel (the number of output channels you have will
 depend on your audio device). It's therefore easy to generalise our note
@@ -461,20 +479,29 @@ kernel to multiple channels, so let's make it a stereo note kernel
 
 .. code-block:: extempore
 
-      (bind-func saw_synth_note_c
-        (lambda (data:NoteInitData* nargs:i64 dargs:SAMPLE*)
-          (let ((sawl (saw_c 0.))
-                (sawr (saw_c 0.)))
-            (lambda (time:i64 chan:i64 freq:SAMPLE amp:SAMPLE)
-              (cond ((= chan 0)
-                     (sawl amp freq))
-                    ((= chan 1)
-                     (sawr amp freq))
-                    (else 0.0))))))
+      (bind-func saw_synth_note
+        (lambda ()
+          (lambda (data:NoteData* nargs:i64 dargs:SAMPLE*)
+            (let ((starttime (note_starttime data))
+
+                  ;; we're now pulling this information from data
+                  (frequency (note_frequency data))
+                  (amplitude (note_amplitude data))
+                  (duration (note_duration data))
+
+                  (sawl (saw_c 0.))
+                  (sawr (saw_c 0.)))
+              (lambda (time:i64 chan:i64)
+                (if (> (- time starttime) duration) (note_active data #f))
+                (cond ((= chan 0) (sawl amplitude frequency))
+                      ((= chan 1) (sawr amplitude frequency))
+                      (else 0.0)))))))
 
 Now we make two saw ugens (``sawl`` and ``sawr``), and call the
-appropriate one depending on the ``chan`` argument. Our stereo saw note
-kernel is now ready to play!
+appropriate one depending on the ``chan`` argument. Notice that
+we're getting our note information from the ``data`` argument
+instead of hard-coding it.
+Our stereo saw note kernel is now ready to play!
 
 Adding fx to the instrument
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -495,8 +522,9 @@ although it may just pass its input through untouched:
 .. code-block:: extempore
 
       (bind-func saw_synth_fx
-        (lambda (in:SAMPLE time:i64 chan:i64 dat:SAMPLE*)
-          in))
+        (lambda ()
+          (lambda (in:SAMPLE time:i64 chan:i64 data:SAMPLE*)
+            in)))
 
       ;; when we evaluate saw_synth_fx, the compiler prints:  
       ;; Compiled saw_synth_fx >>> [i64,i64,i64,float,float*]*
