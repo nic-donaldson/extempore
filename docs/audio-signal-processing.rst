@@ -523,8 +523,9 @@ although it may just pass its input through untouched:
 
       (bind-func saw_synth_fx
         (lambda ()
-          (lambda (in:SAMPLE time:i64 chan:i64 data:SAMPLE*)
-            in)))
+          (let ((notekernel:NOTE_KERNEL null))
+            (lambda (in:SAMPLE time:i64 chan:i64 dat:SAMPLE*)
+              in))))
 
       ;; when we evaluate saw_synth_fx, the compiler prints:  
       ;; Compiled saw_synth_fx >>> [i64,i64,i64,float,float*]*
@@ -533,15 +534,17 @@ Let's add a stereo delay to make things a bit more interesting
 
 .. code-block:: extempore
 
-      (bind-func saw_synth_fx 200000 ;; extra memory for the delay lines
-        (let ((delayl (delay_c 22050))
-              (delayr (delay_c 22050)))
-          (lambda (in:SAMPLE time:i64 chan:i64 dat:SAMPLE*)
-            (cond ((= chan 0)
-                   (delayl in 0.3 0.2))
-                  ((= chan 1)
-                   (delayr in 0.3 0.2))
-                  (else 0.0)))))
+      (bind-func saw_synth_fx 200000 ; extra memory for the delay lines
+        (lambda ()
+          (let ((notekernel:NOTE_KERNEL null)
+                (delayl (delay_c 22050))
+                (delayr (delay_c 22050)))
+            (lambda (in:SAMPLE time:i64 chan:i64 dat:SAMPLE*)
+              (cond ((= chan 0)
+                     (delayl in 0.3 0.2))
+                    ((= chan 1)
+                     (delayr in 0.3 0.2))
+                    (else 0.0))))))
 
 Nice one. Also, remember that you change the fx closure at any time
 (just edit the code and re-evaluate it).
@@ -550,11 +553,11 @@ Putting it all together
 -----------------------
 
 Finally, to complete the instrument, we use a special
-``bind-instrument`` macro
+``make-instrument`` macro
 
 .. code-block:: extempore
 
-      (bind-instrument saw_synth saw_synth_note_c saw_synth_fx)
+      (make-instrument saw_synth saw_synth)
 
 .. image:: /images/simple-instrument/whole-instrument.png
 
