@@ -56,7 +56,7 @@ in this tutorial, but again, if you want to hack around add things to
 the instrument then feel free.
 
 So why do they call them tonewheel organs, anyway? A `tonewheel`_ is a
-metal disks (wheel) with a corrugated edge. The disk is mechanically
+metal disk (wheel) with a corrugated edge. The disk is mechanically
 rotated on it’s axis near an electrical pickup, which ‘picks up’ the
 changes in the electrical and magnetic fields due to the rotation of the
 wheel (and particularly the bumps on the edge of the wheel). As the
@@ -89,7 +89,7 @@ digitally then there aren’t any real tonewheels either :)
 
 To change the tone of the organ, the organist can adjust the positions
 of the drawbars. Fully ‘out’ (*down* in this diagram) means that the
-frequency associated with that tonewheel is at it’s maximum, whereas
+frequency associated with that tonewheel is at its maximum, whereas
 fully ‘in’ (*up* in this diagram) means that that frequency is silent.
 The colours of the drawbar ends also give information about that
 harmonic: red drawbars for sub-harmonics, grey for even harmonics and
@@ -142,7 +142,7 @@ closures created by Extempore’s ``osc_c`` function.
           (pfill! freq_ratio 0.5 1.5 1.0 2.0 3.0 4.0 5.0 6.0 8.0)
           ;; drawbar positions: 0 = min, 8 = max amplitude
           (pfill! drawbar_pos 8 8 8 0 0 0 0 0 0)
-          ;; put an oscilattor into each tonewheel position
+          ;; put an oscillator into each tonewheel position
           (dotimes (i num_drawbars)
                 (pset! tonewheel i (osc_c 0.0)))
           (lambda (freq)
@@ -306,20 +306,20 @@ otherwise it can’t play its audio out through the speakers. But it
 also needs some way of triggering notes and maintaining the state of
 all the notes being played at any given time.
 
-``bind-instrument`` takes three arguments:
+``make-instrument`` takes two arguments:
 
 #. a name for the instrument
-#. a **note kernel** closure, which must have the signature
-   ``[[float,i64,i64,float,float]*]*``
-#. an **effect kernel** closure, which must have the signature
-   ``[float,i64,i64,float,float*]*``
+#. a prefix for the **note kernel** and **effect kernel** closures,
+   which must have the signatures
+   ``[[[float,i64,i64]*,NoteData*,i64,float*]*]*``, and
+   ``[[float,float,i64,i64,float*]*]*``
 
 So, when we finally define our hammond organ instrument, the definition
 will look like this
 
 .. code-block:: extempore
 
-      (bind-instrument organ organ_note_c organ_fx)
+      (make-instrument organ organ)
 
 and in an xtlang type diagram
 
