@@ -64,7 +64,6 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Bitcode/BitcodeReader.h"
-
 #include "KaleidoscopeJIT.h"
 
 #include "SchemeFFI.h"
@@ -469,7 +468,6 @@ static llvm::Module* jitCompile(const std::string& String)
             if (strcmp(sym, "llvm_zone_malloc")  == 0) {
                 std::cerr << "hello" << std::endl;
             }
-
             // The symbol happens to be a function
             // We're constructing a function prototype string in LLVM IR here
             // Is there not a function that does this already?
@@ -506,7 +504,6 @@ static llvm::Module* jitCompile(const std::string& String)
 
             //asmcode = sInlineString + dstream.str() + asmcode;
             asmcode = sInlineString + d + asmcode;
-
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
                 newModule.reset();
             }

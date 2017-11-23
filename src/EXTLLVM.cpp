@@ -650,7 +650,6 @@ namespace extemp {
 
 namespace EXTLLVM {
 
-
 llvm::orc::KaleidoscopeJIT* TheJIT;
 llvm::LLVMContext TheContext;
 
