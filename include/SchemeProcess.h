@@ -83,16 +83,14 @@ private:
     void*       m_ptr;
     std::string m_label;
     Type        m_type; // 0 = repl task,  1 = callback task,  2 = destroy env task
-    void*       m_ptr2;
 public:
-    SchemeTask(uint64_t Time, uint64_t MaxDuration, void* Ptr, const std::string& Label, Type Type, void* Ptr2 = 0):
-            m_time(Time), m_maxDuration(MaxDuration), m_ptr(Ptr), m_label(Label), m_type(Type), m_ptr2(Ptr2) {
+    SchemeTask(uint64_t Time, uint64_t MaxDuration, void* Ptr, const std::string& Label, Type Type):
+            m_time(Time), m_maxDuration(MaxDuration), m_ptr(Ptr), m_label(Label), m_type(Type) {
     }
 
     uint64_t getTime() const { return m_time; }
     uint64_t getMaxDuration() const { return m_maxDuration; }
     void* getPtr() const { return m_ptr; }
-    void* getPtr2() const { return m_ptr2; }
     const std::string& getLabel() const { return m_label; }
     Type getType() const { return m_type; }
 };

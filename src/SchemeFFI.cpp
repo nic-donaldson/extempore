@@ -41,8 +41,8 @@
 // must be included before anything which pulls in <Windows.h>
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/AsmParser/Parser.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm-c/Core.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/Interpreter.h"
@@ -62,6 +62,7 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Bitcode/BitcodeReader.h"
 
 #include "SchemeFFI.h"
 #include "AudioDevice.h"
@@ -181,6 +182,7 @@ void initSchemeFFI(scheme* sc)
 
 static long long llvm_emitcounter = 0;
 
+// Returns type as string, with the first '=' removed if there is one
 static std::string SanitizeType(llvm::Type* Type)
 {
     std::string type;
@@ -199,7 +201,7 @@ static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)"
 
 static llvm::Module* jitCompile(const std::string& String)
 {
-    // Create some module to put our function into it.
+    // Create some module to put our function in
     using namespace llvm;
     legacy::PassManager* PM = extemp::EXTLLVM::PM;
     legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
@@ -210,9 +212,12 @@ static llvm::Module* jitCompile(const std::string& String)
     std::string asmcode(String);
     SMDiagnostic pa;
 
+    // Build up a string of symbols to insert into every module ?
     static std::string sInlineString; // This is a hack for now, but it *WORKS*
     static std::string sInlineBitcode;
     static std::unordered_set<std::string> sInlineSyms;
+
+    // Pull out the symbol name from any @symbol in bitcode.ll or inline.ll and add it to sInlineSyms
     if (sInlineString.empty()) {
         {
             std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
@@ -231,52 +236,85 @@ static llvm::Module* jitCompile(const std::string& String)
                     std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
         }
     }
+
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
         static bool first(true);
         if (!first) {
-            auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
+            // Get LLVM bitcode from sInlineString -> sInlineBitcode
+            // sInlineString contains bitcode.ll at this point
+            // so after this, sInlineBitcode contains bitcode generated from bitcode.ll
+            // and sInlineString then has inline.ll
+            auto newModule (parseAssemblyString(sInlineString, pa, EXTLLVM::TheContext));
             if (newModule) {
-                std::string bitcode;
                 llvm::raw_string_ostream bitstream(sInlineBitcode);
                 llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+
+                // sInlineString will from now on be added to the start of any module we compile in the future
                 std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
                 std::stringstream inString;
                 inString << inStream.rdbuf();
                 sInlineString = inString.str();
             } else {
-std::cout << pa.getMessage().str() << std::endl;
+                // Something went wrong, print out an error message
+                std::cout << pa.getMessage().str() << std::endl;
                 abort();
             }
         } else {
             first = false;
         }
     }
+
     std::unique_ptr<llvm::Module> newModule;
+
+    // Pull @symbol into symbols
     std::vector<std::string> symbols;
     std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sGlobalSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(symbols, symbols.begin()));
+              std::sregex_token_iterator(), std::inserter(symbols, symbols.begin()));
+
+    // Remove duplicate symbols
     std::sort(symbols.begin(), symbols.end());
     auto end(std::unique(symbols.begin(), symbols.end()));
+
+    // Add 'define @symbol's to ignoreSyms
     std::unordered_set<std::string> ignoreSyms;
     std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sDefineSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(ignoreSyms, ignoreSyms.begin()));
+              std::sregex_token_iterator(), std::inserter(ignoreSyms, ignoreSyms.begin()));
+
+    // We need to declare external functions and values so that they're accessible
+    // in our module
     std::string declarations;
     llvm::raw_string_ostream dstream(declarations);
     for (auto iter = symbols.begin(); iter != end; ++iter) {
         const char* sym(iter->c_str());
         if (sInlineSyms.find(sym) != sInlineSyms.end() || ignoreSyms.find(sym) != ignoreSyms.end()) {
+            // If the symbol is already in sInlineSyms, or we're ignoring it, skip
+            // If it's in sInlineSyms ,we'll be including it anyway from inline.ll
             continue;
         }
+
+        // Pull llvm::GlobalValue* from our globals map if it's in there, if not just skip
+        // The first time around, nothing will be in the globals map, the symbols will be inserted
+        // when we call EXTLLVM::addModule
         auto gv = extemp::EXTLLVM::getGlobalValue(sym);
         if (!gv) {
             continue;
         }
         auto func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-            dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
+            // TODO remove this
+            if (strcmp(sym, "llvm_zone_malloc")  == 0) {
+                std::cerr << "hello" << std::endl;
+            }
+            
+            // The symbol happens to be a function
+            // We're constructing a function prototype string in LLVM IR here
+            // Is there not a function that does this already?
+            const std::string rtype = SanitizeType(func->getReturnType());
+            dstream << "declare " << rtype << " @" << sym << " (";
+
             bool first(true);
-            for (const auto& arg : func->getArgumentList()) {
+            for (const auto& arg : func->args()) {
                 if (!first) {
                     dstream << ", ";
                 } else {
@@ -289,23 +327,30 @@ std::cout << pa.getMessage().str() << std::endl;
             }
             dstream << ")\n";
         } else {
+            // gv is not a function, it is a global value so we just declare that it exists
             auto str(SanitizeType(gv->getType()));
             dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
-// std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+
     if (!sInlineBitcode.empty()) {
-        auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
+        auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), EXTLLVM::TheContext));
         if (likely(modOrErr)) {
             newModule = std::move(modOrErr.get());
-            asmcode = sInlineString + dstream.str() + asmcode;
-            if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
-std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+
+            // TODO delete this
+            std::string d = dstream.str();
+
+            //asmcode = sInlineString + dstream.str() + asmcode;
+            asmcode = sInlineString + d + asmcode;
+            
+            if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {                
                 newModule.reset();
             }
         }
     } else {
-       newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
+        // Only happens once
+        newModule = parseAssemblyString(asmcode, pa, EXTLLVM::TheContext);
     }
     if (newModule) {
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
@@ -317,11 +362,11 @@ std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std
             PM_NO->run(*newModule);
         }
     }
-    //std::stringstream ss;
+    
     if (unlikely(!newModule))
     {
-// std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" << std::endl;
-// std::cout << pa.getMessage().str() << std::endl << pa.getLineNo() << std::endl;
+        std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" << std::endl;
+        // std::cout << pa.getMessage().str() << std::endl << pa.getLineNo() << std::endl;
         std::string errstr;
         llvm::raw_string_ostream ss(errstr);
         pa.print("LLVM IR",ss);

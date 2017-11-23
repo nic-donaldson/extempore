@@ -124,6 +124,7 @@ class StructType;
 class ModuleProvider;
 class SectionMemoryManager;
 class ExecutionEngine;
+class LLVMContext;
 
 namespace legacy
 {
@@ -241,6 +242,7 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
 
+extern llvm::LLVMContext TheContext;
 extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;
 extern int64_t LLVM_COUNT;

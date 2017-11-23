@@ -1,5 +1,8 @@
 EXPORT const char* llvm_disassemble(const unsigned char* Code, int syntax)
 {
+  std::cerr << "llvm_disassemble is disabled" << std::endl;
+  return "";
+  /*
     size_t code_size = 1024 * 100;
     std::string Error;
     llvm::TargetMachine *TM = extemp::EXTLLVM::EE->getTargetMachine();
@@ -42,6 +45,7 @@ EXPORT const char* llvm_disassemble(const unsigned char* Code, int syntax)
         }
     }
     return strdup(OS.str().c_str());
+  */
 }
 
 static extemp::CMG DestroyMallocZoneWithDelayCM(

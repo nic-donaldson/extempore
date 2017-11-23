@@ -59,7 +59,7 @@ static pointer get_struct_size(scheme* Scheme, pointer Args)
     sprintf(assm,"%%%s = type %s",name,struct_type_str);
 
     llvm::SMDiagnostic pa;
-    auto newM(llvm::parseAssemblyString(assm, pa, llvm::getGlobalContext()));
+    auto newM(llvm::parseAssemblyString(assm, pa, extemp::EXTLLVM::TheContext));
     if (!newM) {
         return Scheme->F;
     }
@@ -110,7 +110,7 @@ static pointer get_function_args(scheme* Scheme, pointer Args)
     }
     pointer str = mk_string(Scheme, tmp_name);
     pointer p = cons(Scheme, str, Scheme->NIL);
-    for (const auto& arg : func->getArgumentList()) {
+    for (const auto& arg : func->args()) {
         {
             EnvInjector injector(Scheme, p);
             std::string typestr2;
@@ -187,7 +187,7 @@ static pointer remove_function(scheme* Scheme, pointer Args)
     if (!func) {
         return Scheme->F;
     }
-    if (func->mayBeOverridden()) {
+    if (func->isInterposable()) {
         func->dropAllReferences();
         func->removeFromParent();
         return Scheme->T;
@@ -246,17 +246,17 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
         printf("No such function\n");
         return Scheme->F;
     }
-    func->getArgumentList();
+    func->args(); // does this do anything?
     Args = pair_cdr(Args);
     unsigned lgth = list_length(Scheme, Args);
-    if (unlikely(lgth != func->getArgumentList().size())) {
+    if (unlikely(lgth != func->arg_size())) {
         printf("Wrong number of arguments for function!\n");
         return Scheme->F;
     }
     int i = 0;
     std::vector<llvm::GenericValue> fargs;
     fargs.reserve(lgth);
-    for (const auto& arg : func->getArgumentList()) {
+    for (const auto& arg : func->args()) {
         pointer p = car(Args);
         Args = cdr(Args);
         if (is_integer(p)) {
@@ -318,7 +318,8 @@ static pointer llvm_convert_float_constant(scheme* Scheme, pointer Args)
     if (floatin[1] == 'x') {
         return pair_car(Args);
     }
-    llvm::APFloat apf(llvm::APFloat::IEEEsingle, llvm::StringRef(floatin));
+    llvm::APFloat apf(llvm::APFloatBase::IEEEsingle(), llvm::StringRef(floatin));
+    //llvm::APFloat apf(llvm::StringRef(floatin));
     // TODO: if necessary, checks for inf/nan can be done here
     auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
     return mk_string(Scheme, (std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true)).c_str());
@@ -331,7 +332,7 @@ static pointer llvm_convert_double_constant(scheme* Scheme, pointer Args)
     if (floatin[1] == 'x') {
         return pair_car(Args);
     }
-    llvm::APFloat apf(llvm::APFloat::IEEEdouble, llvm::StringRef(floatin));
+    llvm::APFloat apf(llvm::APFloat::IEEEdouble(), llvm::StringRef(floatin));
     // TODO: if necessary, checks for inf/nan can be done here
     auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
     return mk_string(Scheme, (std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true)).c_str());
@@ -576,6 +577,8 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     fout << irStr; //ss.str();
     fout.close();
 #else
+    std::cerr << "export_llvmmodule_bitcode is disabled" << std::endl;
+    /*
     std::error_code errcode;
     llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
     if (errcode) {
@@ -583,6 +586,7 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
       return Scheme->F;
     }
     llvm::WriteBitcodeToFile(m,ss);
+    */
 #endif
     return Scheme->T;
 }

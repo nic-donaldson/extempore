@@ -1035,7 +1035,7 @@ If both strings are null an empty String will be returned
 
 Tuple contains <symbol_length,characters>
 
-Should be created, modified and desymoyed with the Symbol_* library functions.
+Should be created, modified and destroyed with the Symbol_* library functions.
 
 Second item in tuple is a char* c-style symbol ")
 

@@ -58,9 +58,7 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Support/MemoryObject.h"
 #include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCDisassembler.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstPrinter.h"
 #include "llvm/MC/MCContext.h"
@@ -650,6 +648,7 @@ namespace extemp {
 
 namespace EXTLLVM {
 
+llvm::LLVMContext TheContext;
 llvm::ExecutionEngine* EE = nullptr;
 llvm::legacy::PassManager* PM;
 llvm::legacy::PassManager* PM_NO;
@@ -679,7 +678,7 @@ void initLLVM()
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     LLVMInitializeX86Disassembler();
-    auto& context(llvm::getGlobalContext());
+    auto& context(TheContext);
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     M = module.get();
     addModule(M);
@@ -768,10 +767,10 @@ void initLLVM()
     std::cout << " MCJIT" << std::endl;
     ascii_normal();
     PM_NO = new llvm::legacy::PassManager();
-    PM_NO->add(llvm::createAlwaysInlinerPass());
+    PM_NO->add(llvm::createAlwaysInlinerLegacyPass());
     PM = new llvm::legacy::PassManager();
     PM->add(llvm::createAggressiveDCEPass());
-    PM->add(llvm::createAlwaysInlinerPass());
+    PM->add(llvm::createAlwaysInlinerLegacyPass());
     PM->add(llvm::createArgumentPromotionPass());
     PM->add(llvm::createCFGSimplificationPass());
     PM->add(llvm::createDeadStoreEliminationPass());
@@ -787,7 +786,7 @@ void initLLVM()
     PM->add(llvm::createMemCpyOptPass());
     PM->add(llvm::createPromoteMemoryToRegisterPass());
     PM->add(llvm::createReassociatePass());
-    PM->add(llvm::createScalarReplAggregatesPass());
+    //PM->add(llvm::createScalarReplAggregatesPass());
     PM->add(llvm::createSCCPPass());
     PM->add(llvm::createTailCallEliminationPass());
 
