@@ -193,7 +193,14 @@ static std::string SanitizeType(llvm::Type* Type)
     if (pos != std::string::npos) {
         str.erase(pos - 1);
     }
-    return str;
+    
+    // TODO big hack delete me
+    std::regex e("(^%.*?)(\\.\\d+)(\\*$)");
+    
+    //return str;
+    
+    std::string clean_str = std::regex_replace(str, e, "$1$3");
+    return clean_str;
 }
 
 static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
