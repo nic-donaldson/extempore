@@ -229,7 +229,8 @@
                         "generic closure"
                         "generic type"
                         "type alias"
-                        "builtin")))
+                        "builtin"
+                        "scheme closure")))
       (let ((lpos (cl:position (cdr (assoc-strcmp 'category left)) categories))
             (rpos (cl:position (cdr (assoc-strcmp 'category right)) categories)))
         (if (<> lpos rpos)
@@ -250,36 +251,41 @@
 
 (define xtmdoc-all-doc-alists
   (lambda (include-nativefuncs?)
-    (let* ((closure-alists
-            (map (lambda (data) (xtmdoc-closure-handler (string->symbol (car data))))
-                 *impc:ti:closure-cache*))
-           (all-doc-alists
-            (append
-             (map (lambda (data) (xtmdoc-builtin-handler (string->symbol (car data)))) *impc:ti:builtin-cache*)
-             (map (lambda (data) (xtmdoc-typealias-handler (string->symbol (car data)))) *impc:ti:typealias-cache*)
-             (map (lambda (data) (xtmdoc-generictype-handler (car data))) *impc:ti:generictype-cache*)
-             (map (lambda (data) (xtmdoc-genericfunc-handler (car data))) *impc:ti:genericfunc-cache*)
-
-             (map (lambda (data) (xtmdoc-namedtype-handler (string->symbol (car data)))) *impc:ti:namedtype-cache*)
-             closure-alists
-             (map (lambda (data) (xtmdoc-polytype-handler (string->symbol (car data)))) *impc:ti:polytype-cache*)
-             (map (lambda (data) (xtmdoc-polyfunc-handler (string->symbol (car data)))) *impc:ti:polyfunc-cache*)
-             (map (lambda (data) (xtmdoc-globalvar-handler (string->symbol (car data)))) *impc:ti:globalvar-cache*)
-             ;; make sure the "_native" versions of each closure don't get in
-             ;; there (since the closure is already there)
-             (if include-nativefuncs?
-                 (xtmdoc-clean-nativefunc-alist
-                  closure-alists
-                  (map (lambda (x)
-                         (xtmdoc-nativefunc-handler (string->symbol (car x))))
-                       *impc:ti:nativefunc-cache*))
-                 '()))))
-      ;; filter out the things which shouldn't make it to the exported docs
-      (cl:remove-if
-       (lambda (doc-alist)
-         (regex:match? (cdr (assoc-strcmp 'name doc-alist))
-                       "(_setter$|_scheme$|_native$|_maker$|_getter$|_callback$|_poly_)"))
-       all-doc-alists))))
+    (let ((closures (filter (lambda (s)
+                              (and (defined? s)
+                                   (closure? (eval s))))
+                            (map car (oblist)))))
+      (map xtmdoc-scheme-function-handler closures))))
+;    (let* ((closure-alists
+;            (map (lambda (data) (xtmdoc-closure-handler (string->symbol (car data))))
+;                 *impc:ti:closure-cache*))
+;           (all-doc-alists
+;            (append
+;             (map (lambda (data) (xtmdoc-builtin-handler (string->symbol (car data)))) *impc:ti:builtin-cache*)
+;             (map (lambda (data) (xtmdoc-typealias-handler (string->symbol (car data)))) *impc:ti:typealias-cache*)
+;             (map (lambda (data) (xtmdoc-generictype-handler (car data))) *impc:ti:generictype-cache*)
+;             (map (lambda (data) (xtmdoc-genericfunc-handler (car data))) *impc:ti:genericfunc-cache*)
+;
+;             (map (lambda (data) (xtmdoc-namedtype-handler (string->symbol (car data)))) *impc:ti:namedtype-cache*)
+;             closure-alists
+;             (map (lambda (data) (xtmdoc-polytype-handler (string->symbol (car data)))) *impc:ti:polytype-cache*)
+;             (map (lambda (data) (xtmdoc-polyfunc-handler (string->symbol (car data)))) *impc:ti:polyfunc-cache*)
+;             (map (lambda (data) (xtmdoc-globalvar-handler (string->symbol (car data)))) *impc:ti:globalvar-cache*)
+;             ;; make sure the "_native" versions of each closure don't get in
+;             ;; there (since the closure is already there)
+;             (if include-nativefuncs?
+;                 (xtmdoc-clean-nativefunc-alist
+;                  closure-alists
+;                  (map (lambda (x)
+;                         (xtmdoc-nativefunc-handler (string->symbol (car x))))
+;                       *impc:ti:nativefunc-cache*))
+;                 '()))))
+;      ;; filter out the things which shouldn't make it to the exported docs
+;      (cl:remove-if
+;       (lambda (doc-alist)
+;         (regex:match? (cdr (assoc-strcmp 'name doc-alist))
+;                       "(_setter$|_scheme$|_native$|_maker$|_getter$|_callback$|_poly_)"))
+;       all-doc-alists))))
 
 ;; we handle the args field separately, since there are a few special
 ;; cases to handle
@@ -292,6 +298,13 @@
           (type (cdr (assoc-strcmp 'type xtmdoc-alist))))
       ;; arg names and types
       (cond
+       ((member category '("scheme closure"))
+        (display
+         (string-append
+          "["
+          (string-join (map symbol->string (if (list? args) args (list args))) ", ")
+          "]")
+         file-port))
        ((member category '("closure" "generic closure"))
         (display
          (string-append
