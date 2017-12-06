@@ -230,6 +230,7 @@ void* SchemeProcess::taskImpl()
     }
     loadFile("runtime/scheme.xtm", UNIV::SHARE_DIR);
     loadFile("runtime/llvmti.xtm", UNIV::SHARE_DIR);
+    loadFile("runtime/xtmdoc.xtm", UNIV::SHARE_DIR);
     loadFile("runtime/llvmir.xtm", UNIV::SHARE_DIR);
     m_libsLoaded = true;
 #ifdef _WIN32
