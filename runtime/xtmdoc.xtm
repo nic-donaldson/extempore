@@ -287,6 +287,14 @@
 ;                       "(_setter$|_scheme$|_native$|_maker$|_getter$|_callback$|_poly_)"))
 ;       all-doc-alists))))
 
+;; for dealing with improper lists
+(define relist
+  (lambda (il)
+    (cond
+     ((eq? '() il) '())
+     ((not (pair? il)) (list il))
+     (else (cons (car il) (relist (cdr il)))))))
+
 ;; we handle the args field separately, since there are a few special
 ;; cases to handle
 (define xtmdoc-write-alist-args-as-json
@@ -302,7 +310,12 @@
         (display
          (string-append
           "["
-          (string-join (map symbol->string (if (list? args) args (list args))) ", ")
+          (string-join (map (lambda (sym)
+                              (string-append "\""
+                                             (symbol->string sym)
+                                             "\""))
+                            (relist args))
+                       ", ")
           "]")
          file-port))
        ((member category '("closure" "generic closure"))
