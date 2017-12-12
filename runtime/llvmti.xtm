@@ -54,7 +54,7 @@
 (define *impc:compiler:print-work-names #f) ;; this prints test__498 for example (i.e. closure bodies)
 (define *impc:compiler:verbose* #f)
 
-(define *impc:compiler:print-raw-llvm* #f)
+(define *impc:compiler:print-raw-llvm* #t)
 
 (define *impc:compiler:allow-structural-calls #f)
 
