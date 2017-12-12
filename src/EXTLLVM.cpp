@@ -692,12 +692,14 @@ void initLLVM()
     
     // ORC
     TheJIT = std::unique_ptr<llvm::orc::KaleidoscopeJIT>(new llvm::orc::KaleidoscopeJIT);
+    
+    // TODO: delete this
     llvm::SMDiagnostic diag;
     std::unique_ptr<llvm::Module> test_module = llvm::parseIRFile(UNIV::SHARE_DIR + "/runtime/nice.ll", diag, TheContext);
     if (!test_module) {
         std::cout << "Error!!!!" << std::endl;
         //diag.print(":(", std::cout);
-        diag.print("dank", llvm::outs());        
+        diag.print("nice.ll", llvm::outs());        
     } else {
         std::cout << "Module loaded!" << std::endl;
         test_module->print(llvm::outs(), nullptr);
@@ -719,11 +721,7 @@ void initLLVM()
             }
         }        
         
-    }
-    
-    llvm::TargetOptions Opts;
-    Opts.GuaranteedTailCallOpt = true;
-    Opts.UnsafeFPMath = false;
+    }    
     
     // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
@@ -736,7 +734,12 @@ void initLLVM()
     // Build engine with JIT
     llvm::EngineBuilder factory(std::move(module));
     factory.setEngineKind(llvm::EngineKind::JIT);
+    
+    llvm::TargetOptions Opts;
+    Opts.GuaranteedTailCallOpt = true;
+    Opts.UnsafeFPMath = false;
     factory.setTargetOptions(Opts);
+    
     auto mm(llvm::make_unique<llvm::SectionMemoryManager>());
     MM = mm.get();
     factory.setMCJITMemoryManager(std::move(mm));
@@ -750,6 +753,7 @@ void initLLVM()
     llvm::TargetMachine* tm = factory.selectTarget();
 #else
     factory.setOptLevel(llvm::CodeGenOpt::Aggressive);
+    
     llvm::Triple triple(llvm::sys::getProcessTriple());
     std::string cpu;
     if (!extemp::UNIV::CPU.empty()) {
@@ -814,71 +818,41 @@ void initLLVM()
     std::cout << LLVM_VERSION_STRING;
     std::cout << " MCJIT" << std::endl;
     ascii_normal();
-    PM_NO = new llvm::legacy::PassManager();
-    PM_NO->add(llvm::createAlwaysInlinerLegacyPass());
+    PM_NO = new llvm::legacy::PassManager();    
     PM = new llvm::legacy::PassManager();
-    PM->add(llvm::createAggressiveDCEPass());
-    PM->add(llvm::createAlwaysInlinerLegacyPass());
-    PM->add(llvm::createArgumentPromotionPass());
-    PM->add(llvm::createCFGSimplificationPass());
-    PM->add(llvm::createDeadStoreEliminationPass());
-    PM->add(llvm::createFunctionInliningPass());
-    PM->add(llvm::createGVNPass(true));
-    PM->add(llvm::createIndVarSimplifyPass());
-    PM->add(llvm::createInstructionCombiningPass());
-    PM->add(llvm::createJumpThreadingPass());
-    PM->add(llvm::createLICMPass());
-    PM->add(llvm::createLoopDeletionPass());
-    PM->add(llvm::createLoopRotatePass());
-    PM->add(llvm::createLoopUnrollPass());
-    PM->add(llvm::createMemCpyOptPass());
-    PM->add(llvm::createPromoteMemoryToRegisterPass());
-    PM->add(llvm::createReassociatePass());
-    //PM->add(llvm::createScalarReplAggregatesPass());
-    PM->add(llvm::createSCCPPass());
-    PM->add(llvm::createTailCallEliminationPass());
 
-    static struct {
-        const char* name;
-        uintptr_t   address;
-    } mappingTable[] = {
-        { "llvm_zone_destroy", uintptr_t(&llvm_zone_destroy) },
-    };
-    for (auto& elem : mappingTable) {
-        EE->updateGlobalMapping(elem.name, elem.address);
-    }
-
-      // tell LLVM about some built-in functions
-            EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
-            EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
-            EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
-            EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
-            EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
-            EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
-            EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
-            EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
-            EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
-            EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
-            EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
-            EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
-            EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
-            EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
-            EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
-            EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
-            EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
-            EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
-            EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
-            EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
-            EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
-            EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
-            EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
-            EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
-            EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
-            EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
-      EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-      EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-      extemp::EXTLLVM::EE->finalizeObject();
-      return;
+    // tell LLVM about some built-in functions
+    EE->updateGlobalMapping("llvm_zone_destroy", (uint64_t)&llvm_zone_destroy);
+    EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
+    EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
+    EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
+    EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
+    EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
+    EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
+    EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
+    EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
+    EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
+    EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
+    EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
+    EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
+    EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
+    EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
+    EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
+    EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
+    EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
+    EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
+    EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
+    EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
+    EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
+    EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
+    EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
+    EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
+    EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
+    EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
+    EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
+    EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
+    extemp::EXTLLVM::EE->finalizeObject();
+    return;
     }
   }
 }
