@@ -126,6 +126,10 @@ class SectionMemoryManager;
 class ExecutionEngine;
 class LLVMContext;
 
+namespace orc {
+class KaleidoscopeJIT;
+}
+
 namespace legacy
 {
 
@@ -239,10 +243,13 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
     return tls_llvm_zone_stacksize;
 }
 
+extern std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
+extern llvm::LLVMContext TheContext;
+
+// TODO: cook this stuff
+
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
-
-extern llvm::LLVMContext TheContext;
 extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;
 extern int64_t LLVM_COUNT;
@@ -259,8 +266,8 @@ const llvm::GlobalValue* getGlobalValue(const char* name);
 inline std::vector<llvm::Module*>& getModules() { return Ms; } // not going to protect these!!!
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 
-}
+} // end namespace EXTLLVM
 
-}
+} // end namespace extemp
 
 #endif

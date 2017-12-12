@@ -52,6 +52,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IRReader/IRReader.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
@@ -65,6 +66,7 @@
 
 #include <random>
 #include <fstream>
+#include "KaleidoscopeJIT.h"
 #include "stdarg.h"
 #include "EXTLLVM.h"
 #include "EXTThread.h"
@@ -648,7 +650,12 @@ namespace extemp {
 
 namespace EXTLLVM {
 
+    
+std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
 llvm::LLVMContext TheContext;
+    
+// TODO : cook this stuff
+    
 llvm::ExecutionEngine* EE = nullptr;
 llvm::legacy::PassManager* PM;
 llvm::legacy::PassManager* PM_NO;
@@ -668,23 +675,64 @@ uint64_t getSymbolAddress(const std::string& name) {
 
 void initLLVM()
 {
+    // If ExecutionEngine already exists?
     if (unlikely(EE)) {
         return;
     }
+    
+    // What does this protect?
     alloc_mutex.init();
+    
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
+    LLVMInitializeX86Disassembler();
+    
+    auto& context(TheContext);
+    
+    // ORC
+    TheJIT = std::unique_ptr<llvm::orc::KaleidoscopeJIT>(new llvm::orc::KaleidoscopeJIT);
+    llvm::SMDiagnostic diag;
+    std::unique_ptr<llvm::Module> test_module = llvm::parseIRFile(UNIV::SHARE_DIR + "/runtime/nice.ll", diag, TheContext);
+    if (!test_module) {
+        std::cout << "Error!!!!" << std::endl;
+        //diag.print(":(", std::cout);
+        diag.print("dank", llvm::outs());        
+    } else {
+        std::cout << "Module loaded!" << std::endl;
+        test_module->print(llvm::outs(), nullptr);
+        std::cout << "Trying to compile module..." << std::endl;
+        auto handle = TheJIT->addModule(std::move(test_module));
+        auto sym = TheJIT->findSymbol("nice");
+        if (!sym) {
+            std::cout << "Couldn't find symbol \"nice\" :(" << std::endl;
+        }
+        else {
+            auto addr = sym.getAddress();
+            if (!addr) {
+                std::cout << "Couldn't get address :(" << std::endl;
+            }
+            else {
+                uint64_t nice_addr = addr.get();
+                uint32_t (*nice)() = (uint32_t(*)())nice_addr;
+                std::cout << "nice(): " << nice() << std::endl;
+            }
+        }        
+        
+    }
+    
     llvm::TargetOptions Opts;
     Opts.GuaranteedTailCallOpt = true;
     Opts.UnsafeFPMath = false;
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    LLVMInitializeX86Disassembler();
-    auto& context(TheContext);
+    
+    // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     M = module.get();
     addModule(M);
     if (!extemp::UNIV::ARCH.empty()) {
         M->setTargetTriple(extemp::UNIV::ARCH);
     }
+    
     // Build engine with JIT
     llvm::EngineBuilder factory(std::move(module));
     factory.setEngineKind(llvm::EngineKind::JIT);
