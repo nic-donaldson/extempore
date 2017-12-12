@@ -325,7 +325,7 @@
 ;; now with pretty print support
 (define impc:ir:get-type-from-pretty-str-rec
   (lambda (string-type . args)
-    ;; (println 'ir:get-type-from-pretty-str-rec 'stype: string-type 'args: args)
+    (println 'ir:get-type-from-pretty-str-rec 'stype: string-type 'args: args)
     (if (or (not (string? string-type))
             (string=? "" string-type))
         (impc:compiler:print-compiler-error (string-append "impc:ir:get-type-from-pretty-str must take a string, not " (sexpr->string string-type))))
@@ -669,7 +669,7 @@
 
 (define impc:ir:convert-from-pretty-types
   (lambda (t)
-    ;;(print 't: t)
+    (println 'ir:convert-from-pretty-types 't: t)
     (if (null? t) '()
         (if (atom? t)
             (impc:ir:get-type-from-pretty-str (sexpr->string t))
@@ -1161,6 +1161,7 @@
 
 (define impc:ir:make-function-str
   (lambda (t . with-env-added?)
+    (println "impc:ir:make-function-str" "t" t)
     (let* ((os (make-string 0))
            (args (cdr t)))
       (if (car with-env-added?)

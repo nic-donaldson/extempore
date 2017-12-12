@@ -8,7 +8,7 @@ static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
     //auto modulePtr(jitCompile(string_value(pair_car(Args))));
     auto modulePtr(jitCompileORC(string_value(pair_car(Args))));
-    exit(1);
+    
     if (!modulePtr) {
         return Scheme->F;
     }

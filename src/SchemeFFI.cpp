@@ -215,6 +215,17 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
     
     std::cout << "New module: " << module_name << std::endl;
     
+    llvm::SMDiagnostic llvm_error;
+    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(llvmir_str, llvm_error, extemp::EXTLLVM::TheContext);
+    if (!new_module) {
+        std::cout << "Error compiling module " << module_name << std::endl;
+        llvm_error.print(module_name.c_str(), llvm::outs());
+        return nullptr;
+    } else {
+        std::cout << "Compiled module " << module_name << " successfully!" << std::endl;
+        return new_module.get();
+    }
+    
     return nullptr;
 }
 
