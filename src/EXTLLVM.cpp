@@ -735,37 +735,7 @@ void initLLVM()
     auto& context(TheContext);
     
     // ORC
-    TheJIT = std::unique_ptr<llvm::orc::KaleidoscopeJIT>(new llvm::orc::KaleidoscopeJIT);
-    
-    // TODO: delete this
-    llvm::SMDiagnostic diag;
-    std::unique_ptr<llvm::Module> test_module = llvm::parseIRFile(UNIV::SHARE_DIR + "/runtime/nice.ll", diag, TheContext);
-    if (!test_module) {
-        std::cout << "Error!!!!" << std::endl;
-        //diag.print(":(", std::cout);
-        diag.print("nice.ll", llvm::outs());        
-    } else {
-        std::cout << "Module loaded!" << std::endl;
-        test_module->print(llvm::outs(), nullptr);
-        std::cout << "Trying to compile module..." << std::endl;
-        auto handle = TheJIT->addModule(std::move(test_module));
-        auto sym = TheJIT->findSymbol("nice");
-        if (!sym) {
-            std::cout << "Couldn't find symbol \"nice\" :(" << std::endl;
-        }
-        else {
-            auto addr = sym.getAddress();
-            if (!addr) {
-                std::cout << "Couldn't get address :(" << std::endl;
-            }
-            else {
-                uint64_t nice_addr = addr.get();
-                uint32_t (*nice)() = (uint32_t(*)())nice_addr;
-                std::cout << "nice(): " << nice() << std::endl;
-            }
-        }        
-        
-    }    
+    TheJIT = std::unique_ptr<llvm::orc::KaleidoscopeJIT>(new llvm::orc::KaleidoscopeJIT);    
     
     // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
@@ -819,6 +789,7 @@ void initLLVM()
         }
     }
     llvm::TargetMachine* tm = factory.selectTarget(triple, "", cpu, lattrs);
+    
 #endif // _WIN32
     EE = factory.create(tm);
     EE->DisableLazyCompilation(true);

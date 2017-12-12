@@ -127,6 +127,7 @@
 #include <EXTLLVM.h>
 namespace extemp { namespace SchemeFFI {
 static llvm::Module* jitCompile(const std::string& String);
+static llvm::Module* jitCompileORC(const std::string& llvmir_str);
 }}
 
 namespace extemp {
@@ -205,6 +206,17 @@ static std::string SanitizeType(llvm::Type* Type)
 
 static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
 static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
+
+static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
+    // Create a module name
+    std::stringstream module_name_ss;
+    module_name_ss << "xtmmodule_" << ++llvm_emitcounter;
+    std::string module_name = module_name_ss.str();
+    
+    std::cout << "New module: " << module_name << std::endl;
+    
+    return nullptr;
+}
 
 static llvm::Module* jitCompile(const std::string& String)
 {
