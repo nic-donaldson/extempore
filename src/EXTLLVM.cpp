@@ -673,6 +673,50 @@ uint64_t getSymbolAddress(const std::string& name) {
 
 #include "extllvm.inc"
 
+void printLLVMInfo(const llvm::TargetMachine* tm)
+{
+    ascii_normal();
+    std::cout << "ARCH           : " << std::flush;
+    ascii_info();
+    std::cout << std::string(tm->getTargetTriple().normalize()) << std::endl;
+#ifdef _WIN32
+    if (!std::string(tm->getTargetFeatureString()).empty()) {
+#else
+    if (!std::string(tm->getTargetCPU()).empty()) {
+#endif
+        ascii_normal();
+        std::cout << "CPU            : " << std::flush;
+        ascii_info();
+        std::cout << std::string(tm->getTargetCPU()) << std::endl;
+    }
+    if (!std::string(tm->getTargetFeatureString()).empty()) {
+        ascii_normal();
+        std::cout << "ATTRS          : " << std::flush;
+        auto data(tm->getTargetFeatureString().data());
+        for (; *data; ++data) {
+            switch (*data) {
+            case '+':
+                ascii_info();
+                break;
+            case '-':
+                ascii_error();
+                break;
+            case ',':
+                ascii_normal();
+                break;
+            }
+            putchar(*data);
+        }
+        putchar('\n');
+    }
+    ascii_normal();
+    std::cout << "LLVM           : " << std::flush;
+    ascii_info();
+    std::cout << LLVM_VERSION_STRING;
+    std::cout << " MCJIT" << std::endl;
+    ascii_normal();
+}
+
 void initLLVM()
 {
     // If ExecutionEngine already exists?
@@ -778,46 +822,9 @@ void initLLVM()
 #endif // _WIN32
     EE = factory.create(tm);
     EE->DisableLazyCompilation(true);
-    ascii_normal();
-    std::cout << "ARCH           : " << std::flush;
-    ascii_info();
-    std::cout << std::string(tm->getTargetTriple().normalize()) << std::endl;
-#ifdef _WIN32
-    if (!std::string(tm->getTargetFeatureString()).empty()) {
-#else
-    if (!std::string(tm->getTargetCPU()).empty()) {
-#endif
-        ascii_normal();
-        std::cout << "CPU            : " << std::flush;
-        ascii_info();
-        std::cout << std::string(tm->getTargetCPU()) << std::endl;
-    }
-    if (!std::string(tm->getTargetFeatureString()).empty()) {
-        ascii_normal();
-        std::cout << "ATTRS          : " << std::flush;
-        auto data(tm->getTargetFeatureString().data());
-        for (; *data; ++data) {
-            switch (*data) {
-            case '+':
-                ascii_info();
-                break;
-            case '-':
-                ascii_error();
-                break;
-            case ',':
-                ascii_normal();
-                break;
-            }
-            putchar(*data);
-        }
-        putchar('\n');
-    }
-    ascii_normal();
-    std::cout << "LLVM           : " << std::flush;
-    ascii_info();
-    std::cout << LLVM_VERSION_STRING;
-    std::cout << " MCJIT" << std::endl;
-    ascii_normal();
+    
+    printLLVMInfo(tm);
+ 
     PM_NO = new llvm::legacy::PassManager();    
     PM = new llvm::legacy::PassManager();
 
