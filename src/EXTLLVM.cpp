@@ -731,7 +731,6 @@ void initLLVM()
 
     // ORC
     TheJIT = new llvm::orc::KaleidoscopeJIT;
-
     // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     M = module.get();
@@ -855,7 +854,7 @@ void EXTLLVM::addModule(llvm::Module* Module)
         if (!result.second) {
             result.first->second = &global;
         }
-    }
+    }    
     Ms.push_back(Module);
 }
 

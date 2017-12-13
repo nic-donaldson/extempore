@@ -66,6 +66,8 @@
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "KaleidoscopeJIT.h"
 
+#include "KaleidoscopeJIT.h"
+
 #include "SchemeFFI.h"
 #include "AudioDevice.h"
 #include "UNIV.h"
