@@ -208,6 +208,12 @@ static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::r
 static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 
 static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
+    // TODO delete this bit
+    std::string mzone_declaration = "%mzone = type {i8*, i64, i64, i64, i8*, %mzone*}\n"
+                                    "%clsvar = type {i8*, i32, i8*, %clsvar*}\n";
+
+    std::string module_ir = mzone_declaration + llvmir_str;
+    
     // Create a module name
     std::stringstream module_name_ss;
     module_name_ss << "xtmmodule_" << ++llvm_emitcounter;
@@ -216,7 +222,7 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
     std::cout << "New module: " << module_name << std::endl;
     
     llvm::SMDiagnostic llvm_error;
-    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(llvmir_str, llvm_error, extemp::EXTLLVM::TheContext);
+    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);
     if (!new_module) {
         std::cout << "Error compiling module " << module_name << std::endl;
         llvm_error.print(module_name.c_str(), llvm::outs());
