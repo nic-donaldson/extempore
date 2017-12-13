@@ -243,7 +243,7 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
     return tls_llvm_zone_stacksize;
 }
 
-extern std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
+extern llvm::orc::KaleidoscopeJIT* TheJIT;
 extern llvm::LLVMContext TheContext;
 
 // TODO: cook this stuff

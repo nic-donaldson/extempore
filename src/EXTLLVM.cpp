@@ -651,7 +651,7 @@ namespace extemp {
 namespace EXTLLVM {
 
     
-std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
+llvm::orc::KaleidoscopeJIT* TheJIT;
 llvm::LLVMContext TheContext;
     
 // TODO : cook this stuff
@@ -735,7 +735,7 @@ void initLLVM()
     auto& context(TheContext);
     
     // ORC
-    TheJIT = std::unique_ptr<llvm::orc::KaleidoscopeJIT>(new llvm::orc::KaleidoscopeJIT);    
+    TheJIT = new llvm::orc::KaleidoscopeJIT;
     
     // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
@@ -860,7 +860,7 @@ void EXTLLVM::addModule(llvm::Module* Module)
         if (!result.second) {
             result.first->second = &global;
         }
-    }
+    }    
     Ms.push_back(Module);
 }
 

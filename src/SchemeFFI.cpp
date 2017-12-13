@@ -64,6 +64,8 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 
+#include "KaleidoscopeJIT.h"
+
 #include "SchemeFFI.h"
 #include "AudioDevice.h"
 #include "UNIV.h"
@@ -207,12 +209,70 @@ static std::string SanitizeType(llvm::Type* Type)
 static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
 static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 
+static std::vector<std::string> getDeclarableSymbols(const std::string &ir) {
+    // Pull @symbol into symbols
+    std::unordered_set<std::string> symbols;
+    std::copy(std::sregex_token_iterator(ir.begin(), ir.end(), sGlobalSymRegex, 1),
+              std::sregex_token_iterator(), std::inserter(symbols, symbols.begin()));    
+    
+    // Pull define @symbol into ignore_symbols
+    std::unordered_set<std::string> ignore_symbols;
+    std::copy(std::sregex_token_iterator(ir.begin(), ir.end(), sDefineSymRegex, 1),
+              std::sregex_token_iterator(), std::inserter(ignore_symbols, ignore_symbols.begin()));
+    
+    std::vector<std::string> declarable_symbols;
+    std::copy_if(symbols.begin(), symbols.end(), std::back_inserter(declarable_symbols),
+                 [&] (std::string sym) { return ignore_symbols.find(sym) == ignore_symbols.end(); });
+    
+    return declarable_symbols;
+}
+
 static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
+    llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;  
+    
+    // Get @symbols except for define @symbols
+    std::vector<std::string> declarable_symbols = getDeclarableSymbols(llvmir_str);
+    std::stringstream declarations;
+    for (auto sym : declarable_symbols) {
+        // Pull llvm::GlobalValue* from our globals map if it's in there.
+        auto gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
+        if (!gv) continue;
+        
+        // Try to cast it as a function
+        auto func(llvm::dyn_cast<llvm::Function>(gv));
+        if (func) {
+            // The symbol happens to be a function, so we need to declare it to tell LLVM to look for it
+            const std::string rtype = SanitizeType(func->getReturnType());
+            declarations << "declare " << rtype << " @" << sym << "(";
+            
+            bool first(true);
+            for (const auto& arg : func->args()) {
+                if (first) {
+                    first = false;
+                } else {
+                    declarations << ", ";
+                }
+
+                declarations << SanitizeType(arg.getType());
+            }
+            if (func->isVarArg()) {
+                declarations << ", ..";
+            }                
+            declarations << ")\n";
+        } else {
+            // gv is not a function, it is a global value so we just declare that it exists
+            auto str(SanitizeType(gv->getType()));
+            declarations << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
+        }
+    }
+    // TODO delete this
+    std::cout << "Declarations: " << declarations.str() << std::endl;
+    
     // TODO delete this bit
     std::string mzone_declaration = "%mzone = type {i8*, i64, i64, i64, i8*, %mzone*}\n"
-                                    "%clsvar = type {i8*, i32, i8*, %clsvar*}\n";
-
-    std::string module_ir = mzone_declaration + llvmir_str;
+                                    "%clsvar = type {i8*, i32, i8*, %clsvar*}\n";    
+    
+    std::string module_ir = mzone_declaration + declarations.str() + llvmir_str;    
     
     // Create a module name
     std::stringstream module_name_ss;
@@ -222,14 +282,29 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
     std::cout << "New module: " << module_name << std::endl;
     
     llvm::SMDiagnostic llvm_error;
-    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);
+    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);    
     if (!new_module) {
-        std::cout << "Error compiling module " << module_name << std::endl;
+        std::cout << "Error parsing module " << module_name << std::endl;
         llvm_error.print(module_name.c_str(), llvm::outs());
         return nullptr;
     } else {
-        std::cout << "Compiled module " << module_name << " successfully!" << std::endl;
-        return new_module.get();
+        std::cout << "Parsed module " << module_name << " successfully!" << std::endl;
+        new_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+        
+        // TODO: not this
+        llvm::Module* M = new_module.get();
+        
+        // TODO: definitely not this
+        EXTLLVM::addModule(M);
+        
+        if (verifyModule(*M)) {
+            std::cout << "Invalid LLVM IR" << std::endl;
+        }
+        
+        // TODO: something with handle
+        auto handle = TheJIT->addModule(std::move(new_module));
+        
+        return M;        
     }
     
     return nullptr;
