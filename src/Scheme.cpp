@@ -3047,6 +3047,12 @@ inline pointer slot_value_in_env(pointer slot)
 
 
 /* ========== Evaluation Cycle ========== */
+
+static void _nics_dumb_function(scheme *sc) {
+    std::cout << "Nothing happens" << std::endl;
+    _Error_1(sc, "Attempting to call nic's dumb function", sc->last_symbol_apply, sc->code->_debugger->_size);
+}
+
 static pointer _Error_1(scheme *sc, const char *s, pointer a, int location, int errnum) {
     // closure stack trace
     int cnt = 0;
@@ -4940,6 +4946,10 @@ static pointer opexe_4(scheme *sc, enum scheme_opcodes op) {
 
     case OP_OBLIST: /* oblist */
         s_return(sc, oblist_all_symbols(sc));
+        
+    case OP_BLANK: /* TODO delete this */
+        _nics_dumb_function(sc);
+        s_return(sc,sc->T);
 
     case OP_CURR_INPORT: /* current-input-port */
         s_return(sc,sc->inport);
