@@ -314,7 +314,7 @@ static std::unique_ptr<llvm::Module> makeModuleORC(const std::string& type_str,
 
     llvm::SMDiagnostic llvm_error;
     std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);
-    
+
     if (!new_module) {
         std::cout << "Error parsing module " << module_name << std::endl;
         llvm_error.print(module_name.c_str(), llvm::outs());
