@@ -667,10 +667,6 @@ bool VERIFY_COMPILES = true;
 
 static llvm::SectionMemoryManager* MM = nullptr;
 
-uint64_t getSymbolAddress(const std::string& name) {
-    return MM->getSymbolAddress(name);
-}
-
 #include "extllvm.inc"
 
 void printLLVMInfo(const llvm::TargetMachine* tm)

@@ -248,7 +248,6 @@ extern llvm::LLVMContext TheContext;
 
 // TODO: cook this stuff
 
-uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
 extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;
