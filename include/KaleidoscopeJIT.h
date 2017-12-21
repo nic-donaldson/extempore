@@ -89,6 +89,36 @@ public:
   void removeModule(ModuleHandle H) {
     cantFail(CompileLayer.removeModule(H));
   }
+
+  void *getPointerToFunction(Function *F) {
+      auto sym = findSymbol(F->getName().str());
+      if (sym) {
+          auto expected_addr = sym.getAddress();
+          if (expected_addr) {
+              return (void*)expected_addr.get();
+          }
+      }
+     return nullptr;
+  }
+
+  llvm::GenericValue runFunction(llvm::Function *F,
+                                 llvm::ArrayRef<llvm::GenericValue> ArgValues) {
+      auto func_type = F->getFunctionType();
+      auto return_type = F->getReturnType();
+
+      assert (func_type->getNumParams() == 0);
+      assert (ArgValues.size() == 0);
+      assert (return_type->getTypeID() == Type::VoidTyID);
+
+      // No arguments, void function
+      void (*f)() =  (void (*)())getPointerToFunction(F);
+
+      f();
+
+      llvm::GenericValue rv;
+      rv.DoubleVal = 1.0;
+      return rv;
+  }
 };
 
 } // end namespace orc

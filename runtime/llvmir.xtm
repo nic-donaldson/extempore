@@ -65,9 +65,14 @@
   (lambda (ir-string)
     (if (impc:aot:currently-compiling?)
         (impc:compiler:queue-ir-for-compilation ir-string)
-        (begin
-          (if *impc:compiler:print-raw-llvm* (print-full-nq ir-string))
-          (llvm:jit-compile-ir-string ir-string)))))
+        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n"))
+               (types-and-ir-string (string-append type-declarations "\n\n" ir-string)))
+          (if *impc:compiler:print-raw-llvm* (print-full-nq types-and-ir-string))
+
+          (println "AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
+          (println type-declarations)
+          (println "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+          (llvm:jit-compile-ir-string types-and-ir-string)))))
 
 (define llvm:compile-ir-and-print
   (lambda (ir-string)
@@ -824,6 +829,13 @@
                                             (string-append "%" (car args)))
                                            (else (impc:compiler:print-bad-type-error (if (null? args) type (car args)))))
                                      (make-string ptr-depth #\*))))))))
+
+
+(define impc:ir:get-type-definition
+  (lambda (t)
+    (let ((type-name (car t))
+          (type-str (impc:ir:get-type-str (vector-ref (cdr t) 0))))
+      (string-append "%" type-name " = type " type-str))))
 
 
 (define impc:ir:convert-types

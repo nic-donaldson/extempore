@@ -145,12 +145,12 @@ declare i8 @i8value(i8*)
 declare i1 @i1value(i8*)
 declare double @r64value(i8*)
 declare float @r32value(i8*)
-declare i32 @is_real(i8*)
+;; declare i32 @is_real(i8*)
 declare i8* @string_value(i8*)
 declare i32 @is_string(i8*)
 declare i8* @cptr_value(i8*)
-declare i32 @is_cptr(i8*)
-declare i32 @is_cptr_or_str(i8*)
+;; declare i32 @is_cptr(i8*)
+;; declare i32 @is_cptr_or_str(i8*)
 
 declare i8* @list_ref(i8*,i32,i8*)
 
@@ -573,3 +573,8 @@ declare i32 @get_address_offset(i64, %clsvar*) nounwind
 declare i1 @check_address_type(i64, %clsvar*, i8*) nounwind
 declare i1 @check_address_exists(i64, %clsvar*) nounwind
 
+declare i32 @printf(i8* noalias nocapture, ...)
+declare i32 @sprintf(i8*, i8* noalias nocapture, ...)
+declare i32 @sscanf(i8*, i8* noalias nocapture, ...)
+declare i32 @fprintf(i8*, i8* noalias nocapture, ...)
+declare i32 @fscanf(i8*, i8* noalias nocapture, ...)

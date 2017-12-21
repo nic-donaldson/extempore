@@ -495,12 +495,6 @@ define private double @fp80ptrtod(i8* %fp80ptr)
   ret double %5
 }
 
-declare i32 @printf(i8* noalias nocapture, ...)
-declare i32 @sprintf(i8*, i8* noalias nocapture, ...)
-declare i32 @sscanf(i8*, i8* noalias nocapture, ...)
-declare i32 @fprintf(i8*, i8* noalias nocapture, ...)
-declare i32 @fscanf(i8*, i8* noalias nocapture, ...)
-
 ;; scheme helpers
 
 define private i32 @is_type(i8* %ptr, i32 %val) alwaysinline

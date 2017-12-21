@@ -173,6 +173,8 @@ static pointer get_global_variable_type(scheme* Scheme, pointer Args)
 static pointer get_function_pointer(scheme* Scheme, pointer Args)
 {
     auto name(string_value(pair_car(Args)));
+
+    /*
     void* p = EXTLLVM::EE->getPointerToGlobalIfAvailable(name);
     if (!p) { // look for it as a JIT-compiled function
         p = reinterpret_cast<void*>(EXTLLVM::EE->getFunctionAddress(name));
@@ -180,7 +182,21 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
             return Scheme->F;
         }
     }
-    return mk_cptr(Scheme, p);
+    */
+
+    auto sym = EXTLLVM::TheJIT->findSymbol(name);
+    if (!sym) {
+        return Scheme->F;
+    }
+
+    auto expected_addr = sym.getAddress();
+    if (!expected_addr) {
+        return Scheme->F;
+    }
+
+    void * addr = (void*)expected_addr.get();
+
+    return mk_cptr(Scheme, addr);
 }
 
 static pointer remove_function(scheme* Scheme, pointer Args)
@@ -243,6 +259,7 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
 #ifdef LLVM_EE_LOCK
     llvm::MutexGuard locked(EE->lock);
 #endif
+
     auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
     if (unlikely(!func)) {
         printf("No such function\n");
@@ -297,7 +314,9 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
             return Scheme->F;
         }
     }
-    llvm::GenericValue gv = EE->runFunction(func, fargs);
+    //llvm::GenericValue gv = EE->runFunction(func, fargs);
+    llvm::GenericValue gv = extemp::EXTLLVM::TheJIT->runFunction(func, fargs);
+
     switch(func->getReturnType()->getTypeID()) {
     case llvm::Type::FloatTyID:
         return mk_real(Scheme, gv.FloatVal);

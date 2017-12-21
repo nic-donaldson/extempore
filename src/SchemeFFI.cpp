@@ -46,6 +46,7 @@
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/Interpreter.h"
+#include "llvm/ExecutionEngine/Orc/IndirectionUtils.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
@@ -227,13 +228,9 @@ static std::vector<std::string> getDeclarableSymbols(const std::string &ir) {
     return declarable_symbols;
 }
 
-static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
-    llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;  
-    
-    // Get @symbols except for define @symbols
-    std::vector<std::string> declarable_symbols = getDeclarableSymbols(llvmir_str);
+static std::string generateDeclarations(std::vector<std::string> symbols) {
     std::stringstream declarations;
-    for (auto sym : declarable_symbols) {
+    for (auto sym : symbols) {
         // Pull llvm::GlobalValue* from our globals map if it's in there.
         auto gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
         if (!gv) continue;
@@ -256,7 +253,7 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
                 declarations << SanitizeType(arg.getType());
             }
             if (func->isVarArg()) {
-                declarations << ", ..";
+                declarations << ", ...";
             }                
             declarations << ")\n";
         } else {
@@ -265,14 +262,52 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
             declarations << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
+    return declarations.str();
+}
+
+static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
+    llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;  
+    
+    static std::string inline_str;
+    static std::string bitcode_str;
+    
+    if (inline_str.empty()) {
+        {
+            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+            std::stringstream inString;
+            inString << inStream.rdbuf();
+            inline_str = inString.str();
+        }
+        {
+            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
+            std::stringstream inString;
+            inString << inStream.rdbuf();
+            bitcode_str = inString.str();
+        }
+    }    
+    
+    // Get @symbols except for define @symbols
+    std::vector<std::string> declarable_symbols = getDeclarableSymbols(llvmir_str);    
+    std::string declarations = generateDeclarations(declarable_symbols);
+    
+    
     // TODO delete this
-    std::cout << "Declarations: " << declarations.str() << std::endl;
+    std::cout << "Declarations: " << declarations << std::endl;
     
-    // TODO delete this bit
-    std::string mzone_declaration = "%mzone = type {i8*, i64, i64, i64, i8*, %mzone*}\n"
-                                    "%clsvar = type {i8*, i32, i8*, %clsvar*}\n";    
+    // TODO maybe delete this bit
+    //std::string type_declarations = "%mzone = type {i8*, i64, i64, i64, i8*, %mzone*}\n"
+    //                                "%clsvar = type {i8*, i32, i8*, %clsvar*}\n";
     
-    std::string module_ir = mzone_declaration + declarations.str() + llvmir_str;    
+    std::string module_ir;
+    
+    // TODO fix this, hardcoded for init.ll
+    if (llvm_emitcounter == 0) {
+        module_ir = llvmir_str;
+    } else {
+        module_ir = declarations + inline_str + bitcode_str + llvmir_str;
+    }
+    
+    std::cout << "IR: " << std::endl << module_ir << std::endl;
     
     // Create a module name
     std::stringstream module_name_ss;
@@ -282,7 +317,8 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
     std::cout << "New module: " << module_name << std::endl;
     
     llvm::SMDiagnostic llvm_error;
-    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);    
+    std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);
+    llvm::Module* clone_module = new llvm::Module("clone" + module_name, extemp::EXTLLVM::TheContext);
     if (!new_module) {
         std::cout << "Error parsing module " << module_name << std::endl;
         llvm_error.print(module_name.c_str(), llvm::outs());
@@ -290,21 +326,26 @@ static llvm::Module* jitCompileORC(const std::string& llvmir_str) {
     } else {
         std::cout << "Parsed module " << module_name << " successfully!" << std::endl;
         new_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+        clone_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
         
-        // TODO: not this
-        llvm::Module* M = new_module.get();
-        
-        // TODO: definitely not this
-        EXTLLVM::addModule(M);
-        
-        if (verifyModule(*M)) {
+        if (verifyModule(*new_module)) {
             std::cout << "Invalid LLVM IR" << std::endl;
+        }
+        
+        // Clone important parts of the module
+        for (const auto& f : new_module->getFunctionList()) {
+            if (f.hasExternalLinkage()) {
+                llvm::orc::cloneFunctionDecl(*clone_module, f);
+            }
+        }
+        for (const auto& global : new_module->getGlobalList()) {
+            llvm::orc::cloneGlobalVariableDecl(*clone_module, global);
         }
         
         // TODO: something with handle
         auto handle = TheJIT->addModule(std::move(new_module));
         
-        return M;        
+        return clone_module;
     }
     
     return nullptr;
