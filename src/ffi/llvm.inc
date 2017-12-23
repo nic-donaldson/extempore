@@ -7,7 +7,9 @@ static pointer optimizeCompiles(scheme* Scheme, pointer Args)
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
     //auto modulePtr(jitCompile(string_value(pair_car(Args))));
-    auto modulePtr(jitCompileORC(string_value(pair_car(Args))));
+    auto type_decls = string_value(pair_car(Args));
+    auto llvm_ir = string_value(pair_cadr(Args));
+    auto modulePtr(jitCompileORC(type_decls, llvm_ir));
     
     if (!modulePtr) {
         return Scheme->F;

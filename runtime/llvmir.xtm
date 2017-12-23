@@ -55,7 +55,8 @@
     (if *impc:compiler:print-raw-llvm*
         (print-full-nq *impc:compiler:queued-llvm-ir-string*))
     (if (not (string=? *impc:compiler:queued-llvm-ir-string* ""))
-        (let ((res (llvm:jit-compile-ir-string *impc:compiler:queued-llvm-ir-string*)))
+        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n"))
+               (res (llvm:jit-compile-ir-string type-declarations *impc:compiler:queued-llvm-ir-string*)))
           (impc:compiler:reset-jit-compilation-queue)
           ;; (print "Flushed IR compilation queue with result: " res "\n")
           res))))
@@ -65,14 +66,9 @@
   (lambda (ir-string)
     (if (impc:aot:currently-compiling?)
         (impc:compiler:queue-ir-for-compilation ir-string)
-        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n"))
-               (types-and-ir-string (string-append type-declarations "\n\n" ir-string)))
-          (if *impc:compiler:print-raw-llvm* (print-full-nq types-and-ir-string))
-
-          (println "AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
-          (println type-declarations)
-          (println "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-          (llvm:jit-compile-ir-string types-and-ir-string)))))
+        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n")))
+          (if *impc:compiler:print-raw-llvm* (print-full-nq (string-append type-declarations "\n" ir-string)))
+          (llvm:jit-compile-ir-string type-declarations ir-string)))))
 
 (define llvm:compile-ir-and-print
   (lambda (ir-string)
