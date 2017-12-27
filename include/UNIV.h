@@ -127,6 +127,7 @@ inline uint32_t HOUR() { return MINUTE() * 60; }
 EXPORT uint32_t NUM_FRAMES;
 extern uint32_t EXT_TERM;
 extern bool EXT_LOADBASE;
+extern bool LLVM_PRINT_IR;
 extern bool AUDIO_NONE;
 extern uint32_t AUDIO_DEVICE;
 extern uint32_t AUDIO_IN_DEVICE;

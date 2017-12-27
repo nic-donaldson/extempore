@@ -120,7 +120,7 @@ void sig_handler(int Signo)
 
 #endif
 
-enum { OPT_SHAREDIR, OPT_NOBASE, OPT_SAMPLERATE, OPT_FRAMES,
+enum { OPT_SHAREDIR, OPT_NOBASE, OPT_PRINT_IR, OPT_SAMPLERATE, OPT_FRAMES,
        OPT_CHANNELS, OPT_IN_CHANNELS, OPT_INITEXPR, OPT_INITFILE,
        OPT_PORT, OPT_TERM, OPT_NO_AUDIO, OPT_TIME_DIV, OPT_DEVICE, OPT_IN_DEVICE,
        OPT_DEVICE_NAME, OPT_IN_DEVICE_NAME,
@@ -134,6 +134,7 @@ CSimpleOptA::SOption g_rgOptions[] = {
     { OPT_SHAREDIR,       "--runtime",       SO_REQ_SEP    },
     { OPT_SHAREDIR,       "--sharedir",      SO_REQ_SEP    },
     { OPT_NOBASE,         "--nobase",        SO_NONE       },
+    { OPT_PRINT_IR,       "--print-ir",      SO_NONE       },
     { OPT_SAMPLERATE,     "--samplerate",    SO_REQ_SEP    },
     { OPT_FRAMES,         "--frames",        SO_REQ_SEP    },
     { OPT_CHANNELS,       "--channels",      SO_REQ_SEP    },
@@ -220,6 +221,9 @@ int main(int argc, char** argv)
                 break;
             case OPT_NOBASE:
                 extemp::UNIV::EXT_LOADBASE = false;
+                break;
+            case OPT_PRINT_IR:
+                extemp::UNIV::LLVM_PRINT_IR = true;
                 break;
             case OPT_PORT:
                 primary_port = atoi(args.OptionArg());

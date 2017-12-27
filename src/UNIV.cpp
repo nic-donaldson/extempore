@@ -588,6 +588,7 @@ uint32_t EXT_TERM = 1;
 uint32_t EXT_TERM = 0;
 #endif
 bool EXT_LOADBASE = true;
+bool LLVM_PRINT_IR = false;
 
 double midi2frq(double pitch)
 {

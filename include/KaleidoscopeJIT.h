@@ -32,6 +32,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <list>
 
 namespace llvm {
 namespace orc {
@@ -42,6 +43,7 @@ private:
   const DataLayout DL;
   RTDyldObjectLinkingLayer ObjectLayer;
   IRCompileLayer<decltype(ObjectLayer), SimpleCompiler> CompileLayer;
+  std::list<decltype(CompileLayer)::ModuleHandleT> Handles;
 
 public:
   using ModuleHandle = decltype(CompileLayer)::ModuleHandleT;
@@ -75,14 +77,24 @@ public:
 
     // Add the set to the JIT with the resolver we created above and a newly
     // created SectionMemoryManager.
-    return cantFail(CompileLayer.addModule(std::move(M),
-                                           std::move(Resolver)));
+    auto handle = cantFail(CompileLayer.addModule(std::move(M),
+                                                  std::move(Resolver)));
+    Handles.push_back(handle);
+    return handle;
   }
 
   JITSymbol findSymbol(const std::string Name) {
     std::string MangledName;
     raw_string_ostream MangledNameStream(MangledName);
     Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
+
+    for (auto it = Handles.rbegin(); it != Handles.rend(); ++it) {
+        auto sym = CompileLayer.findSymbolIn(*it, MangledNameStream.str(), true);
+        if (sym) {
+            return sym;
+        }
+    }
+
     return CompileLayer.findSymbol(MangledNameStream.str(), true);
   }
 

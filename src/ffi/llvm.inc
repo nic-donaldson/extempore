@@ -198,6 +198,8 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
 
     void * addr = (void*)expected_addr.get();
 
+    std::cout << "Address for " << name << ": 0x" << std::hex << (uint64_t)addr << std::endl;
+
     return mk_cptr(Scheme, addr);
 }
 
