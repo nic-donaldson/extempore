@@ -615,8 +615,8 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     fout << irStr; //ss.str();
     fout.close();
 #else
-    std::cerr << "export_llvmmodule_bitcode is disabled" << std::endl;
-    /*
+    
+    
     std::error_code errcode;
     llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
     if (errcode) {
@@ -624,7 +624,7 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
       return Scheme->F;
     }
     llvm::WriteBitcodeToFile(m,ss);
-    */
+    
 #endif
     return Scheme->T;
 }
