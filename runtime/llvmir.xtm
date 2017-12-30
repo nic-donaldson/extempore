@@ -55,8 +55,12 @@
     (if *impc:compiler:print-raw-llvm*
         (print-full-nq *impc:compiler:queued-llvm-ir-string*))
     (if (not (string=? *impc:compiler:queued-llvm-ir-string* ""))
-        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n"))
-               (res (llvm:jit-compile-ir-string type-declarations *impc:compiler:queued-llvm-ir-string*)))
+        (let* ((type-declarations (if (impc:aot:currently-compiling?)
+                                      "%mzone = type {i8*,i64,i64,i64,i8*,%mzone*}\n%clsvar = type {i8*,i32,i8*,i64,%clsvar*}\n"
+                                      (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n")))
+               (res (if (impc:aot:currently-compiling?)
+                        (llvm:make-module-from-ir type-declarations *impc:compiler:queued-llvm-ir-string*)
+                        (llvm:jit-compile-ir-string type-declarations *impc:compiler:queued-llvm-ir-string*))))
           (impc:compiler:reset-jit-compilation-queue)
           ;; (print "Flushed IR compilation queue with result: " res "\n")
           res))))
@@ -66,9 +70,13 @@
   (lambda (ir-string)
     (if (impc:aot:currently-compiling?)
         (impc:compiler:queue-ir-for-compilation ir-string)
-        (let* ((type-declarations (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n")))
+        (let* ((type-declarations (if (impc:aot:currently-compiling?)
+                                      "%mzone = type {i8*,i64,i64,i64,i8*,%mzone*}\n%clsvar = type {i8*,i32,i8*,i64,%clsvar*}\n"
+                                      (string-join (map impc:ir:get-type-definition *impc:ti:namedtype-cache*) "\n"))))
           (if *impc:compiler:print-raw-llvm* (print-full-nq (string-append type-declarations "\n" ir-string)))
-          (llvm:jit-compile-ir-string type-declarations ir-string)))))
+          (if (impc:aot:currently-compiling?)
+              (llvm:make-module-from-ir type-declarations ir-string)
+              (llvm:jit-compile-ir-string type-declarations ir-string))))))
 
 (define llvm:compile-ir-and-print
   (lambda (ir-string)

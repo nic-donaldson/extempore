@@ -4,13 +4,26 @@ static pointer optimizeCompiles(scheme* Scheme, pointer Args)
     return Scheme->T;
 }
 
+static pointer makeModule(scheme* Scheme, pointer Args)
+{
+    //auto modulePtr(jitCompile(string_value(pair_car(Args))));
+    auto type_decls = string_value(pair_car(Args));
+    auto llvm_ir = string_value(pair_cadr(Args));
+    auto modulePtr(makeModuleORC(type_decls, llvm_ir));
+
+    if (!modulePtr) {
+      return Scheme->F;
+    }
+    return mk_cptr(Scheme, modulePtr.get());
+}
+
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
     //auto modulePtr(jitCompile(string_value(pair_car(Args))));
     auto type_decls = string_value(pair_car(Args));
     auto llvm_ir = string_value(pair_cadr(Args));
     auto modulePtr(jitCompileORC(type_decls, llvm_ir));
-    
+
     if (!modulePtr) {
         return Scheme->F;
     }
@@ -602,8 +615,8 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     fout << irStr; //ss.str();
     fout.close();
 #else
-    std::cerr << "export_llvmmodule_bitcode is disabled" << std::endl;
-    /*
+    
+    
     std::error_code errcode;
     llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
     if (errcode) {
@@ -611,13 +624,14 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
       return Scheme->F;
     }
     llvm::WriteBitcodeToFile(m,ss);
-    */
+    
 #endif
     return Scheme->T;
 }
 
 #define LLVM_DEFS \
         { "llvm:optimize", &optimizeCompiles }, \
+        { "llvm:make-module-from-ir", &makeModule }, \
         { "llvm:jit-compile-ir-string", &jitCompileIRString}, \
         { "llvm:ffi-set-name", &ff_set_name }, \
         { "llvm:ffi-get-name", &ff_get_name }, \

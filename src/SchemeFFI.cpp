@@ -132,6 +132,8 @@ namespace extemp { namespace SchemeFFI {
 static llvm::Module* jitCompile(const std::string& String);
 static llvm::Module* jitCompileORC(const std::string& type_str,
                                    const std::string& llvmir_str);
+static std::unique_ptr<llvm::Module> makeModuleORC(const std::string& type_str,
+                                                   const std::string& llvmir_str);
 }}
 
 namespace extemp {
@@ -267,7 +269,7 @@ static std::string generateDeclarations(std::vector<std::string> symbols) {
     return declarations.str();
 }
 
-static llvm::Module* jitCompileORC(const std::string& type_str,
+static std::unique_ptr<llvm::Module> makeModuleORC(const std::string& type_str,
                                    const std::string& llvmir_str) {
     llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;
 
@@ -313,18 +315,32 @@ static llvm::Module* jitCompileORC(const std::string& type_str,
 
     llvm::SMDiagnostic llvm_error;
     std::unique_ptr<llvm::Module> new_module = parseAssemblyString(module_ir, llvm_error, extemp::EXTLLVM::TheContext);
-    llvm::Module* clone_module = new llvm::Module("clone" + module_name, extemp::EXTLLVM::TheContext);
+    
     if (!new_module) {
         std::cout << "Error parsing module " << module_name << std::endl;
         llvm_error.print(module_name.c_str(), llvm::outs());
         return nullptr;
-    } else {
-        new_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
-        clone_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+    }
+    
+    new_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+    return new_module;
+}
+
+static llvm::Module* jitCompileORC(const std::string& type_str,
+                                   const std::string& llvmir_str) {
+    llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;
+    
+    std::unique_ptr<llvm::Module> new_module = makeModuleORC(type_str, llvmir_str);    
+    
+    if (new_module) {
+        std::string new_module_name = std::string(new_module->getName().data());
+        llvm::Module* clone_module = new llvm::Module("clone" + new_module_name, extemp::EXTLLVM::TheContext);        
+        clone_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());                        
 
         // TODO: error
         if (verifyModule(*new_module)) {
             std::cout << "Invalid LLVM IR" << std::endl;
+            return nullptr;
         }
 
         // Clone important parts of the module
