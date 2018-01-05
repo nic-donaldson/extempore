@@ -14,7 +14,7 @@ static pointer makeModule(scheme* Scheme, pointer Args)
     if (!modulePtr) {
       return Scheme->F;
     }
-    return mk_cptr(Scheme, modulePtr.get());
+    return mk_cptr(Scheme, modulePtr.release());
 }
 
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)

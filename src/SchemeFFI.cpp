@@ -322,21 +322,22 @@ static std::unique_ptr<llvm::Module> makeModuleORC(const std::string& type_str,
         llvm_error.print(module_name.c_str(), llvm::outs());
         return nullptr;
     }
-    
+
     new_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+
     return new_module;
 }
 
 static llvm::Module* jitCompileORC(const std::string& type_str,
                                    const std::string& llvmir_str) {
     llvm::orc::KaleidoscopeJIT* TheJIT = extemp::EXTLLVM::TheJIT;
-    
-    std::unique_ptr<llvm::Module> new_module = makeModuleORC(type_str, llvmir_str);    
-    
+
+    std::unique_ptr<llvm::Module> new_module = makeModuleORC(type_str, llvmir_str);
+
     if (new_module) {
         std::string new_module_name = std::string(new_module->getName().data());
-        llvm::Module* clone_module = new llvm::Module("clone" + new_module_name, extemp::EXTLLVM::TheContext);        
-        clone_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());                        
+        llvm::Module* clone_module = new llvm::Module("clone" + new_module_name, extemp::EXTLLVM::TheContext);
+        clone_module->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
 
         // TODO: error
         if (verifyModule(*new_module)) {
