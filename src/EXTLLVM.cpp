@@ -854,7 +854,7 @@ void EXTLLVM::addModule(llvm::Module* Module)
         if (!result.second) {
             result.first->second = &global;
         }
-    }    
+    }
     Ms.push_back(Module);
 }
 
