@@ -650,12 +650,12 @@ namespace extemp {
 
 namespace EXTLLVM {
 
-    
+
 llvm::orc::KaleidoscopeJIT* TheJIT;
 llvm::LLVMContext TheContext;
-    
+
 // TODO : cook this stuff
-    
+
 llvm::ExecutionEngine* EE = nullptr;
 llvm::legacy::PassManager* PM;
 llvm::legacy::PassManager* PM_NO;
@@ -719,20 +719,20 @@ void initLLVM()
     if (unlikely(EE)) {
         return;
     }
-    
+
     // What does this protect?
     alloc_mutex.init();
-    
+
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     LLVMInitializeX86Disassembler();
-    
+
     auto& context(TheContext);
-    
+
     // ORC
     TheJIT = new llvm::orc::KaleidoscopeJIT;
-    
+
     // What is this initial module for?
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     M = module.get();
@@ -740,16 +740,16 @@ void initLLVM()
     if (!extemp::UNIV::ARCH.empty()) {
         M->setTargetTriple(extemp::UNIV::ARCH);
     }
-    
+
     // Build engine with JIT
     llvm::EngineBuilder factory(std::move(module));
     factory.setEngineKind(llvm::EngineKind::JIT);
-    
+
     llvm::TargetOptions Opts;
     Opts.GuaranteedTailCallOpt = true;
     Opts.UnsafeFPMath = false;
     factory.setTargetOptions(Opts);
-    
+
     auto mm(llvm::make_unique<llvm::SectionMemoryManager>());
     MM = mm.get();
     factory.setMCJITMemoryManager(std::move(mm));
@@ -763,7 +763,7 @@ void initLLVM()
     llvm::TargetMachine* tm = factory.selectTarget();
 #else
     factory.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    
+
     llvm::Triple triple(llvm::sys::getProcessTriple());
     std::string cpu;
     if (!extemp::UNIV::CPU.empty()) {
@@ -785,14 +785,14 @@ void initLLVM()
         }
     }
     llvm::TargetMachine* tm = factory.selectTarget(triple, "", cpu, lattrs);
-    
+
 #endif // _WIN32
     EE = factory.create(tm);
     EE->DisableLazyCompilation(true);
-    
+
     printLLVMInfo(tm);
- 
-    PM_NO = new llvm::legacy::PassManager();    
+
+    PM_NO = new llvm::legacy::PassManager();
     PM = new llvm::legacy::PassManager();
 
     // tell LLVM about some built-in functions
@@ -856,7 +856,7 @@ void EXTLLVM::addModule(llvm::Module* Module)
         if (!result.second) {
             result.first->second = &global;
         }
-    }    
+    }
     Ms.push_back(Module);
 }
 
