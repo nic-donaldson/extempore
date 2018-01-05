@@ -3049,7 +3049,7 @@ inline pointer slot_value_in_env(pointer slot)
 /* ========== Evaluation Cycle ========== */
 
 static void _nics_dumb_function(scheme *sc) {
-    std::cout << "Nothing happens" << std::endl;
+    std::cout << "Nothing happens" << std::endl;   
     _Error_1(sc, "Attempting to call nic's dumb function", sc->last_symbol_apply, sc->code->_debugger->_size);
 }
 

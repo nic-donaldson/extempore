@@ -34,6 +34,9 @@
 #include <vector>
 #include <list>
 
+// TODO delete
+#include <iostream>
+
 namespace llvm {
 namespace orc {
 
@@ -130,6 +133,22 @@ public:
       llvm::GenericValue rv;
       rv.DoubleVal = 1.0;
       return rv;
+  }
+  void delete_me() {
+      llvm::Expected<llvm::object::OwningBinary<llvm::object::ObjectFile> > obj_file = llvm::object::ObjectFile::createObjectFile("/home/nic/code/extempore/extempore/libs/aot-cache/xtmbase.so");        
+      
+      if (obj_file) {                                        
+          
+          auto Resolver = createLambdaResolver(
+              [&](const std::string &Name) {
+                  return JITSymbol(nullptr);                  
+            },
+            [](const std::string &Name) {
+                return JITSymbol(nullptr);
+            });
+          auto handle = ObjectLayer.addObject(obj_file.get(),
+                                              Resolver);
+      }
   }
 };
 
