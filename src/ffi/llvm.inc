@@ -503,6 +503,19 @@ static pointer llvm_disasm(scheme* Scheme, pointer Args)
 
 static pointer bind_symbol(scheme* Scheme, pointer Args)
 {
+    auto sym(string_value(pair_cadr(Args)));
+    auto jit_sym = extemp::EXTLLVM::TheJIT->findSymbol(sym);
+    
+    if (jit_sym) {
+        return Scheme->T;
+    } else {
+        return Scheme->F;
+    }
+}
+
+/*
+static pointer bind_symbol(scheme* Scheme, pointer Args)
+{
     auto library(cptr_value(pair_car(Args)));
     auto sym(string_value(pair_cadr(Args)));
 
@@ -519,6 +532,7 @@ static pointer bind_symbol(scheme* Scheme, pointer Args)
     }
     return Scheme->F;
 }
+*/
 
 static pointer update_mapping(scheme* Scheme, pointer Args)
 {

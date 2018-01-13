@@ -46,10 +46,12 @@ private:
   const DataLayout DL;
   RTDyldObjectLinkingLayer ObjectLayer;
   IRCompileLayer<decltype(ObjectLayer), SimpleCompiler> CompileLayer;
-  std::list<decltype(CompileLayer)::ModuleHandleT> Handles;
+  std::list<decltype(CompileLayer)::ModuleHandleT> ModuleHandles;
+  std::list<decltype(ObjectLayer)::ObjHandleT> ObjHandles;
 
 public:
   using ModuleHandle = decltype(CompileLayer)::ModuleHandleT;
+  using ObjHandle = decltype(ObjectLayer)::ObjHandleT;
 
   KaleidoscopeJIT()
       : TM(EngineBuilder().selectTarget()), DL(TM->createDataLayout()),
@@ -82,7 +84,7 @@ public:
     // created SectionMemoryManager.
     auto handle = cantFail(CompileLayer.addModule(std::move(M),
                                                   std::move(Resolver)));
-    Handles.push_back(handle);
+    ModuleHandles.push_back(handle);
     return handle;
   }
 
@@ -91,14 +93,21 @@ public:
     raw_string_ostream MangledNameStream(MangledName);
     Mangler::getNameWithPrefix(MangledNameStream, Name, DL);
 
-    for (auto it = Handles.rbegin(); it != Handles.rend(); ++it) {
+    for (auto it = ModuleHandles.rbegin(), e = ModuleHandles.rend(); it != e; ++it) {
         auto sym = CompileLayer.findSymbolIn(*it, MangledNameStream.str(), true);
         if (sym) {
             return sym;
         }
     }
+    
+    for (auto it = ObjHandles.rbegin(), e = ObjHandles.rend(); it != e; ++it) {
+        auto sym = ObjectLayer.findSymbolIn(*it, MangledNameStream.str(), true);
+        if (sym) {
+            return sym;
+        }
+    }
 
-    return CompileLayer.findSymbol(MangledNameStream.str(), true);
+    return JITSymbol(nullptr);
   }
 
   void removeModule(ModuleHandle H) {
@@ -134,20 +143,52 @@ public:
       rv.DoubleVal = 1.0;
       return rv;
   }
-  void delete_me() {
-      llvm::Expected<llvm::object::OwningBinary<llvm::object::ObjectFile> > obj_file = llvm::object::ObjectFile::createObjectFile("/home/nic/code/extempore/extempore/libs/aot-cache/xtmbase.so");        
+  
+  bool loadLibrary(const std::string& path) {
+      using namespace llvm::object;
+      llvm::Expected<OwningBinary<ObjectFile>> maybe_obj_file = ObjectFile::createObjectFile(path.c_str());
       
-      if (obj_file) {                                        
+      if (!maybe_obj_file) {
+          return false;
+      }
+      
+      std::shared_ptr<OwningBinary<ObjectFile>> obj_file(new OwningBinary<ObjectFile>(std::move(maybe_obj_file.get())));
+      llvm::Expected<ObjHandle> handle = ObjectLayer.addObject(obj_file, nullptr); // no resolver, doesn't seem to be used?
+      
+      if (!handle) {
+          return false;
+      }
+      
+      ObjHandles.push_back(*handle);
+      
+      return true;
+  }
+  
+  void delete_me() {
+      llvm::Expected<llvm::object::OwningBinary<llvm::object::ObjectFile> > maybe_obj_file = llvm::object::ObjectFile::createObjectFile("/home/nic/code/extempore/extempore/libs/aot-cache/xtmbase.so");        
+      
+      if (maybe_obj_file) {
+          std::shared_ptr<llvm::object::OwningBinary<llvm::object::ObjectFile>> obj_file(new llvm::object::OwningBinary<llvm::object::ObjectFile> (std::move(maybe_obj_file.get())));
+                    
+          llvm::Expected<ObjHandle> handle = ObjectLayer.addObject(obj_file,
+                                              nullptr);
           
-          auto Resolver = createLambdaResolver(
-              [&](const std::string &Name) {
-                  return JITSymbol(nullptr);                  
-            },
-            [](const std::string &Name) {
-                return JITSymbol(nullptr);
-            });
-          auto handle = ObjectLayer.addObject(obj_file.get(),
-                                              Resolver);
+          if (handle) {
+              auto sym = ObjectLayer.findSymbolIn(handle.get(), "audio_64bit_adhoc_W2kxXQ_setter", false);
+              if (sym) {
+                  std::cout << "yes" << std::endl;
+                  auto addr = sym.getAddress();
+                  if (addr) {
+                      std::cout << "double yes" << std::endl;
+                      std::cout << std::hex << addr.get() << std::endl;
+                  } else {
+                      std::cout << "yes no" << std::endl;
+                  }
+              } else {
+                  std::cout << "oh no" << std::endl;
+              }
+          }                    
+          
       }
   }
 };
