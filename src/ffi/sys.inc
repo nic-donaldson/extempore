@@ -35,22 +35,6 @@ static pointer cmdarg(scheme* Scheme, pointer Args)
 
 static pointer openDynamicLib(scheme* Scheme, pointer Args)
 {
-    bool success = extemp::EXTLLVM::TheJIT->loadLibrary(string_value(pair_car(Args)));
-    if (!success) {
-        // if an optional second argument is non-nil, print the error
-        if (pair_cdr(Args) != Scheme->NIL && pair_cadr(Args) != Scheme->F)
-        {
-            std::cout << "Failed to load dynamic library (TODO: figure out why)" << std::endl;
-        }
-        return Scheme->F;
-    }
-    // TODO: figure out if it's ok for this to be nullptr
-    return mk_cptr(Scheme, nullptr);
-}
-
-/*
-static pointer openDynamicLib(scheme* Scheme, pointer Args)
-{
 #ifdef _WIN32
     // set up the DLL load path
     SetDllDirectory(""); // Plug "binary planting" security hole.
@@ -75,7 +59,6 @@ static pointer openDynamicLib(scheme* Scheme, pointer Args)
     }
     return mk_cptr(Scheme, lib_handle);
 }
-*/
 
 static pointer closeDynamicLib(scheme* Scheme, pointer Args)
 {
