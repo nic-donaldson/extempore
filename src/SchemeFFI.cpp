@@ -74,6 +74,7 @@
 #include "TaskScheduler.h"
 #include "SchemeProcess.h"
 #include "SchemeREPL.h"
+#include "compiler_warning.h"
 #include <unordered_set>
 #include <unordered_map>
 

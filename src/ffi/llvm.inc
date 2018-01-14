@@ -218,6 +218,10 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
 
 static pointer remove_function(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+
+  /*
     auto func(EXTLLVM::EE->FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
@@ -229,10 +233,14 @@ static pointer remove_function(scheme* Scheme, pointer Args)
     }
     printf("Cannot remove function with dependencies\n");
     return Scheme->F;
+  */
 }
 
 static pointer remove_global_var(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+  /*
     auto var(EXTLLVM::EE->FindGlobalVariableNamed(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
@@ -240,10 +248,14 @@ static pointer remove_global_var(scheme* Scheme, pointer Args)
     var->dropAllReferences();
     var->removeFromParent();
     return Scheme->T;
+  */
 }
 
 static pointer erase_function(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+  /*
     auto func(EXTLLVM::EE->FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
@@ -251,10 +263,14 @@ static pointer erase_function(scheme* Scheme, pointer Args)
     func->deleteBody();
     func->eraseFromParent();
     return Scheme->T;
+  */
 }
 
 static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+  /*
     char name[1024];
     strcpy(name, string_value(pair_car(Args)));
     strcat(name, "_native");
@@ -268,10 +284,14 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
     }
     ((void(*)(void)) p)();
     return Scheme->T;
+  */
 }
 
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+  /*
     llvm::ExecutionEngine* EE = EXTLLVM::EE;
 #ifdef LLVM_EE_LOCK
     llvm::MutexGuard locked(EE->lock);
@@ -348,6 +368,7 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
     default:
         return Scheme->F;
     }
+  */
 }
 
 static pointer llvm_convert_float_constant(scheme* Scheme, pointer Args)
@@ -503,6 +524,9 @@ static pointer llvm_disasm(scheme* Scheme, pointer Args)
 
 static pointer bind_symbol(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return Scheme->F;
+  /*
     auto library(cptr_value(pair_car(Args)));
     auto sym(string_value(pair_cadr(Args)));
 
@@ -518,10 +542,14 @@ static pointer bind_symbol(scheme* Scheme, pointer Args)
         return Scheme->T;
     }
     return Scheme->F;
+  */
 }
 
 static pointer update_mapping(scheme* Scheme, pointer Args)
 {
+#pragma message WARN("EE removed")
+  return mk_cptr(Scheme, nullptr);
+  /*
     auto sym(string_value(pair_car(Args)));
     auto ptr(cptr_value(pair_cadr(Args)));
     llvm::ExecutionEngine* EE = EXTLLVM::EE;
@@ -529,6 +557,7 @@ static pointer update_mapping(scheme* Scheme, pointer Args)
     // returns previous value of the mapping, or NULL if not set
     auto oldval(EE->updateGlobalMapping(sym, reinterpret_cast<uint64_t>(ptr)));
     return mk_cptr(Scheme, reinterpret_cast<void*>(oldval));
+  */
 }
 
 static std::unordered_map<std::string, std::string> LLVM_ALIAS_TABLE;
@@ -615,8 +644,7 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     fout << irStr; //ss.str();
     fout.close();
 #else
-    
-    
+
     std::error_code errcode;
     llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
     if (errcode) {
@@ -624,7 +652,7 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
       return Scheme->F;
     }
     llvm::WriteBitcodeToFile(m,ss);
-    
+
 #endif
     return Scheme->T;
 }

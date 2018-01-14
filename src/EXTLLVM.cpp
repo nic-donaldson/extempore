@@ -233,7 +233,9 @@ EXPORT void llvm_schedule_callback(long long time, void* dat)
 
 EXPORT void* llvm_get_function_ptr(char* fname)
 {
-  return reinterpret_cast<void*>(extemp::EXTLLVM::EE->getFunctionAddress(fname));
+#pragma message WARN("EE removed")
+  //return reinterpret_cast<void*>(extemp::EXTLLVM::EE->getFunctionAddress(fname));
+  return nullptr;
 }
 
 EXPORT char* extitoa(int64_t val)
@@ -562,7 +564,10 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
   // Module* M = extemp::EXTLLVM::M;
   std::string funcname(xtlang_name);
   std::string getter("_getter");
-  void*(*p)() = (void*(*)()) extemp::EXTLLVM::EE->getFunctionAddress(funcname + getter);
+
+#pragma message WARN("EE removed")
+  //void*(*p)() = (void*(*)()) extemp::EXTLLVM::EE->getFunctionAddress(funcname + getter);
+  void* (*p)() = nullptr;
   if (!p) {
     printf("Error attempting to set environment variable in closure %s.%s\n",fname,vname);
     return _sc->F;
@@ -655,7 +660,6 @@ llvm::LLVMContext TheContext;
 
 // TODO : cook this stuff
 
-llvm::ExecutionEngine* EE = nullptr;
 llvm::legacy::PassManager* PM;
 llvm::legacy::PassManager* PM_NO;
 llvm::Module* M = nullptr; // TODO: obsolete?
@@ -714,9 +718,9 @@ void printLLVMInfo(const llvm::TargetMachine* tm)
 
 void initLLVM()
 {
-    // If ExecutionEngine already exists?
-    if (unlikely(EE)) {
-        return;
+    // If this has already happened?
+    if (unlikely(TheJIT)) {
+      return;
     }
 
     // What does this protect?
@@ -785,45 +789,11 @@ void initLLVM()
     llvm::TargetMachine* tm = factory.selectTarget(triple, "", cpu, lattrs);
 
 #endif // _WIN32
-    EE = factory.create(tm);
-    EE->DisableLazyCompilation(true);
-
     printLLVMInfo(tm);
 
     PM_NO = new llvm::legacy::PassManager();
     PM = new llvm::legacy::PassManager();
 
-    // tell LLVM about some built-in functions
-    EE->updateGlobalMapping("llvm_zone_destroy", (uint64_t)&llvm_zone_destroy);
-    EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
-    EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
-    EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
-    EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
-    EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
-    EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
-    EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
-    EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
-    EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
-    EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
-    EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
-    EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
-    EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
-    EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
-    EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
-    EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
-    EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
-    EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
-    EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
-    EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
-    EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
-    EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
-    EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
-    EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
-    EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
-    EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
-    EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-    EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-    extemp::EXTLLVM::EE->finalizeObject();
     return;
     }
   }
