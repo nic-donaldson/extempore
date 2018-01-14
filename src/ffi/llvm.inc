@@ -525,7 +525,14 @@ static pointer llvm_disasm(scheme* Scheme, pointer Args)
 static pointer bind_symbol(scheme* Scheme, pointer Args)
 {
 #pragma message WARN("EE removed")
-  return Scheme->F;
+#pragma message WARN("Windows support needed")
+    auto library(cptr_value(pair_car(Args)));
+    auto sym(string_value(pair_cadr(Args)));
+    if (extemp::EXTLLVM::TheJIT->bindSymbol(library, sym)) {
+        return Scheme->T;
+    }
+    return Scheme->F;
+
   /*
     auto library(cptr_value(pair_car(Args)));
     auto sym(string_value(pair_cadr(Args)));
