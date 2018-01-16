@@ -218,6 +218,7 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
 
 static pointer remove_function(scheme* Scheme, pointer Args)
 {
+    std::cout << "remove_function not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return Scheme->F;
 
@@ -238,6 +239,7 @@ static pointer remove_function(scheme* Scheme, pointer Args)
 
 static pointer remove_global_var(scheme* Scheme, pointer Args)
 {
+    std::cout << "remove_global_var not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return Scheme->F;
   /*
@@ -253,6 +255,7 @@ static pointer remove_global_var(scheme* Scheme, pointer Args)
 
 static pointer erase_function(scheme* Scheme, pointer Args)
 {
+    std::cout << "erase_function not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return Scheme->F;
   /*
@@ -268,6 +271,7 @@ static pointer erase_function(scheme* Scheme, pointer Args)
 
 static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 {
+    std::cout << "llvm_call_void_native not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return Scheme->F;
   /*
@@ -289,6 +293,7 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
+    std::cout << "call_compiled not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return Scheme->F;
   /*
@@ -524,6 +529,7 @@ static pointer llvm_disasm(scheme* Scheme, pointer Args)
 
 static pointer bind_symbol(scheme* Scheme, pointer Args)
 {
+    std::cout << "bind_symbol" << std::endl;
 #pragma message WARN("EE removed")
 #pragma message WARN("Windows support needed")
     auto library(cptr_value(pair_car(Args)));
@@ -554,6 +560,7 @@ static pointer bind_symbol(scheme* Scheme, pointer Args)
 
 static pointer update_mapping(scheme* Scheme, pointer Args)
 {
+    std::cout << "update_mapping not implemented" << std::endl;
 #pragma message WARN("EE removed")
   return mk_cptr(Scheme, nullptr);
   /*

@@ -1,6 +1,10 @@
 ;;; Directory Local Variables
 ;;; For more information see (info "(emacs) Directory Variables")
 
-((extempore-mode
+((c++-mode
+  (c-basic-offset . 4))
+ (extempore-mode
   (indent-tabs-mode)
   (tab-width . 2)))
+
+
