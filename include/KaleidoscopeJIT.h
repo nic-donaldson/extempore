@@ -120,6 +120,9 @@ class KaleidoscopeJIT {
             }
         }
 
+        if (auto SymAddr = RTDyldMemoryManager::getSymbolAddressInProcess(MangledNameStream.str()))
+            return JITSymbol(SymAddr, JITSymbolFlags::Exported);
+
         return CompileLayer.findSymbol(MangledNameStream.str(), true);
     }
 

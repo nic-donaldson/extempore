@@ -293,33 +293,33 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
-    std::cout << "call_compiled not implemented" << std::endl;
 #pragma message WARN("EE removed")
-  return Scheme->F;
-  /*
-    llvm::ExecutionEngine* EE = EXTLLVM::EE;
-#ifdef LLVM_EE_LOCK
-    llvm::MutexGuard locked(EE->lock);
-#endif
 
     auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
     if (unlikely(!func)) {
         printf("No such function\n");
         return Scheme->F;
     }
+
     func->args(); // does this do anything?
+
     Args = pair_cdr(Args);
+
     unsigned lgth = list_length(Scheme, Args);
     if (unlikely(lgth != func->arg_size())) {
         printf("Wrong number of arguments for function!\n");
         return Scheme->F;
     }
-    int i = 0;
+
+    int i = 0; // shouldn't we be incrementing this???
+
     std::vector<llvm::GenericValue> fargs;
     fargs.reserve(lgth);
+
     for (const auto& arg : func->args()) {
         pointer p = car(Args);
         Args = cdr(Args);
+
         if (is_integer(p)) {
             if (unlikely(arg.getType()->getTypeID() != llvm::Type::IntegerTyID)) {
                 printf("Bad argument type %i\n",i);
@@ -356,7 +356,6 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
             return Scheme->F;
         }
     }
-    //llvm::GenericValue gv = EE->runFunction(func, fargs);
     llvm::GenericValue gv = extemp::EXTLLVM::TheJIT->runFunction(func, fargs);
 
     switch(func->getReturnType()->getTypeID()) {
@@ -373,7 +372,6 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
     default:
         return Scheme->F;
     }
-  */
 }
 
 static pointer llvm_convert_float_constant(scheme* Scheme, pointer Args)
