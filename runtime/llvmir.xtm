@@ -1240,7 +1240,7 @@
       (emit (impc:ir:gname "tzone" "i8*") " = load i8*, i8** %_impzPtr\n"
       	    (impc:ir:gname "zone" "%mzone*") " = bitcast i8* " (car (impc:ir:gname "tzone")) " to %mzone*\n"
       	    os)
-                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack()\n" os)
+                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os)
       (emit (impc:ir:gname "string" "i8*") " = call i8* @llvm_zone_malloc(%mzone* "
             (car (impc:ir:gname "zone")) ", i64 " (number->string (+ 1 (string-length ast))) ")\n" os)
       (define strname (car (impc:ir:gname)))
@@ -1304,7 +1304,7 @@
       (emit (impc:ir:gname "tzone" "i8*") " = load i8*, i8** %_impzPtr\n"
             (impc:ir:gname "zone" "%mzone*") " = bitcast i8* " (car (impc:ir:gname "tzone")) " to %mzone*\n"
             os2)
-      ;; (emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack()\n" os2)
+      ;; (emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os2)
       (emit "call void @llvm_zone_mark(%mzone* " (car (impc:ir:gname "zone")) ")\n" os2)
       ;; malloc closure structure
       (emit "; malloc closure structure\n" os2)
@@ -1475,7 +1475,7 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (emit (impc:ir:gname "zone" "%mzone*") " = bitcast i8* %_impz to %mzone*\n" os)
-      ;; (emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack()\n" os)
+      ;; (emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os)
 
       ;; first we need to pull evironment values
       (if (not (null? env))
@@ -1583,7 +1583,7 @@
                           (impc:ir:pretty-print-type (cdr (assoc-strcmp (caar p) types)))
                           (caar p)))
                                         ;(println 'value: value 'typestr: typestr) ;'cadrp (cadr p))
-                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack()\n" os)
+                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os)
                                         ;(emit "call ccc void @llvm_print_i32(i32 111)\n" os)
                      (emit (impc:ir:gname "tzone" "i8*") " = load i8*, i8** %_impzPtr\n"
                            (impc:ir:gname "zone" "%mzone*") " = bitcast i8* " (car (impc:ir:gname "tzone")) " to %mzone*\n"
@@ -2178,7 +2178,7 @@
   (lambda (ast types)
     (let* ((os (make-string 0)))
       (emit (impc:ir:gname "oldzone" "%mzone*") " = call %mzone* @llvm_pop_zone_stack()\n" os)
-      (emit (impc:ir:gname "newzone" "%mzone") " = call %mzone* @llvm_peek_zone_stack()\n" os)
+      (emit (impc:ir:gname "newzone" "%mzone") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os)
       (emit (impc:ir:gname "zone_ptr" "i8*") " = bitcast %mzone* " (car (impc:ir:gname "newzone")) " to i8*\n" os)
       (emit "store i8* " (car (impc:ir:gname "zone_ptr")) ", i8** %_impzPtr\n" os)
       (let ((zone (impc:ir:gname "oldzone")))
@@ -2233,7 +2233,7 @@
       (emit (impc:ir:gname "tzone" "i8*") " = load i8*, i8** %_impzPtr\n"
             (impc:ir:gname "zone" "%mzone*") " = bitcast i8* " (car (impc:ir:gname "tzone")) " to %mzone*\n"
             os)
-                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack()\n" os)
+                                        ;(emit (impc:ir:gname "zone" "%mzone*") " = call %mzone* @llvm_peek_zone_stack_extern()\n" os)
       (emit  (impc:ir:gname "z" "i8*") " = bitcast %mzone* " (car (impc:ir:gname "zone")) " to i8*\n" os)
       (define zone (car (impc:ir:gname)))
       (emit (string-append (if (impc:ir:void? (car functiontype))

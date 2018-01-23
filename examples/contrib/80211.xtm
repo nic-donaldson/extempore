@@ -116,7 +116,7 @@
           (doloop (i iterations)
             (set! t (now))
             (program)
-            (llvm_zone_reset (llvm_peek_zone_stack)))
+            (llvm_zone_reset (llvm_peek_zone_stack_extern)))
           (println "runtime:" (/ (i64tod (- (now) t)) 44100.0) "seconds")
           (llvm_pop_zone_stack)
           void)))))

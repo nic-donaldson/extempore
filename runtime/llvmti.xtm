@@ -1551,7 +1551,7 @@
     ("fscanf" . #(varargs "" ())) ;; libc
     ("llvm_get_function_ptr" . #((213 108 108) "" ())) ;; xtlang
     ("llvm_now" . #((213 2) "" ())) ;; xtlang (as now)
-    ("llvm_peek_zone_stack" . #((213 "%mzone*") "" ())) ;; xtlang
+    ("llvm_peek_zone_stack_extern" . #((213 "%mzone*") "" ())) ;; xtlang
     ("llvm_pop_zone_stack" . #((213 "%mzone*") "" ()));; xtlang
     ("llvm_print_f32" . #((213 -1 1) "" ())) ;; debug
     ("llvm_print_f64" . #((213 -1 0) "" ())) ;; debug
@@ -3702,7 +3702,7 @@
           `(begin (push_new_zone ,(cadr ast))
                   (let ((,resname ,(if (= (length ast) 3) (caddr ast) (cadddr ast)))
                         (,zonename (pop_zone))
-                        (,newzname (llvm_peek_zone_stack)))
+                        (,newzname (llvm_peek_zone_stack_extern)))
                     ;; this extra let seems reduentant! BUT is needed
                     ;; because rescopyname should go in newzone not zonename
                     ;; i.e. needs to go into a *new* let after pop_zone is called
@@ -3740,7 +3740,7 @@
           `(begin (push_new_zone ,(cadr ast))
                   (let ((,resname ,(if (= (length ast) 3) (caddr ast) (cadddr ast)))
                         (,zonename (pop_zone))
-                        (,newzname (llvm_peek_zone_stack)))
+                        (,newzname (llvm_peek_zone_stack_extern)))
                     ;; this extra let seems reduentant! BUT is needed
                     ;; because rescopyname should go in newzone not zonename
                     ;; i.e. needs to go into a *new* let after pop_zone is called
@@ -3802,7 +3802,7 @@ e.g.
 
 (define impc:ti:zone_cleanup
   (lambda (ast)
-    `(let ((zone (llvm_peek_zone_stack))
+    `(let ((zone (llvm_peek_zone_stack_extern))
            (hooks:<i64,i8*,i8*>* (cast (tref zone 4)))
            (hook:<i64,i8*,i8*>* (alloc))
            (f (lambda () ,@(cdr ast) void)))
@@ -9710,7 +9710,7 @@ xtlang's `let' syntax is the same as Scheme"
                                            "") ;; if global var alread exists do nothing
                                        "define dllexport ccc void @" (string-append symname-string "_setter")
                                        "() alwaysinline nounwind {\nentry:\n"
-                                       "%_zone = call ccc %mzone* @llvm_peek_zone_stack()\n"
+                                       "%_zone = call ccc %mzone* @llvm_peek_zone_stack_extern()\n"
                                        "%_impz = bitcast %mzone* %_zone to i8*\n"
                                        "%oldzone1 = getelementptr [1 x i8*], [1 x i8*]* @" symname-string "_var_zone, i32 0, i32 0\n"
                                        "%oldzone2 = load i8*, i8** %oldzone1\n"
@@ -9795,7 +9795,7 @@ xtlang's `let' syntax is the same as Scheme"
              (scheme-stub-ir (string-append "define dllexport ccc i8* " ;(impc:ir:get-type-str (car stub-type))
                                             " @" (string-append symname-string "_scheme(i8* %_sc, i8* %args) nounwind\n"
                                                                 "{\nentry:\n"
-                                                                "%_zone = call ccc %mzone* @llvm_peek_zone_stack()\n"
+                                                                "%_zone = call ccc %mzone* @llvm_peek_zone_stack_extern()\n"
                                                                 "%_impz = bitcast %mzone* %_zone to i8*\n"
 
                                         ;(begin (println 'aaaaa) "")
@@ -9926,7 +9926,7 @@ xtlang's `let' syntax is the same as Scheme"
                                                                                    (cons "" (make-list (length (cdr stub-type)) ","))))
                                                          ") alwaysinline nounwind \n"
                                                          "{\nentry:\n"
-                                                         "%_zone = call ccc %mzone* @llvm_peek_zone_stack()\n"
+                                                         "%_zone = call ccc %mzone* @llvm_peek_zone_stack_extern()\n"
                                                          "%_impz = bitcast %mzone* %_zone to i8*\n"
                                                          "%ptr = getelementptr [1 x i8*], [1 x i8*]* @" symname-string "_var, i32 0, i32 0\n"
                                                          "%ptrvar = load i8*, i8** %ptr\n"
@@ -9962,7 +9962,7 @@ xtlang's `let' syntax is the same as Scheme"
                                                                                      (cons "" (make-list (length (cdr stub-type)) ","))))
                                                            ") alwaysinline nounwind \n"
                                                            "{\nentry:\n"
-                                                           "%_zone = call ccc %mzone* @llvm_peek_zone_stack()\n"
+                                                           "%_zone = call ccc %mzone* @llvm_peek_zone_stack_extern()\n"
                                                            "%_impz = bitcast %mzone* %_zone to i8*\n"
                                                            "%ptr = getelementptr [1 x i8*], [1 x i8*]* @" symname-string "_var, i32 0, i32 0\n"
                                                            "%ptrvar = load i8*, i8** %ptr\n"
@@ -10990,6 +10990,7 @@ e.g.
 
 (define impc:ti:initialize-closure-with-new-zone
   (lambda (func-name zone-size)
+    (println 'impc:ti:initialize-closure-with-new-zone func-name zone-size)
     (if (not (impc:aot:currently-compiling?))
         (let ((setter (llvm:get-function (string-append func-name "_setter"))))
           (if setter
@@ -11066,7 +11067,7 @@ e.g.
           (if scheme-func
               (begin
                 (llvm:ffi-set-name scheme-func func-name)
-                ;; (println 'mk-ff func-name)
+                (println 'mk-ff func-name)
                 (mk-ff func-name scheme-func))
               (impc:compiler:print-no-scheme-stub-notification (string->symbol func-name)))))))
 

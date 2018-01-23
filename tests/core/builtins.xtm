@@ -878,11 +878,11 @@
 
 ;;  (test-xtfunc test_llvm_pop_zone_stack)
 
-;; (xtmtest '(bind-func test_llvm_peek_zone_stack
+;; (xtmtest '(bind-func test_llvm_peek_zone_stack_extern
 ;;   (lambda ()
-;;     (llvm_peek_zone_stack))))
+;;     (llvm_peek_zone_stack_extern))))
 
-;;  (test-xtfunc test_llvm_peek_zone_stack)
+;;  (test-xtfunc test_llvm_peek_zone_stack_extern)
 
 ;; (xtmtest '(bind-func test_llvm_scheme_process_ucontext
 ;;   (lambda ()

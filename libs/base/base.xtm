@@ -471,7 +471,7 @@ into any further sexp arguments."
 
 (bind-func peek_zone
   (lambda ()
-    (llvm_peek_zone_stack)))
+    (llvm_peek_zone_stack_extern)))
 
 ;;;;;;;;;;;;;;;
 ;; zone copy ;;
