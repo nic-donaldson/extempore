@@ -1239,10 +1239,17 @@
       (impc:ir:gname "string" (car (impc:ir:gname "string")) (cadr (impc:ir:gname "string")))
       (impc:ir:strip-space os))))
 
+
+(define impc:ir:escape-string
+  (lambda (s)
+    (regex:replace-all s "\"" "\\22")))
+
 (define impc:ir:make-const-string
   (lambda (ast)
-    (let* ((os (make-string 0))
-           (lgthstr (regex:replace-all ast "\\\\[0-9][0-9]" "x"))
+    (let* (
+           (ast (impc:ir:escape-string ast))
+           (os (make-string 0))
+           (lgthstr (regex:replace-all ast "\\\\[0-9a-f][0-9a-f]" "x"))
            (lgth (number->string (+ (string-length lgthstr) 1)))
            (strtyp (string-append "[" lgth " x i8]*"))
            (strname (string-append "@gs" (if #f ;;(< (string-length ast) 1024)
