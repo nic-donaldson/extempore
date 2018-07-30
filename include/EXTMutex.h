@@ -149,6 +149,7 @@ inline void EXTMutex::destroy()
     if (m_initialised)
     {
         m_initialised = false;
+        unlock();
         auto __attribute__((unused)) result(pthread_mutex_destroy(&m_mutex));
 #ifdef _EXTMUTEX_DEBUG_
         if (result)

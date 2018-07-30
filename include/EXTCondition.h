@@ -112,6 +112,7 @@ inline void EXTCondition::destroy()
     if (m_initialised)
     {
         m_initialised = false;
+        signal();
         auto __attribute__((unused)) result(pthread_cond_destroy(&m_cond));
 #ifdef _EXTCONDITION_DEBUG_
         if (result)
