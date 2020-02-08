@@ -140,7 +140,7 @@ const unsigned LLVM_ZONE_ALIGNPAD = LLVM_ZONE_ALIGN - 1;
 
 inline llvm_zone_t* llvm_zone_create(uint64_t size)
 {
-    auto zone(reinterpret_cast<llvm_zone_t*>(malloc(sizeof(llvm_zone_t))));
+    auto zone(static_cast<llvm_zone_t*>(malloc(sizeof(llvm_zone_t))));
     if (unlikely(!zone)) {
         abort(); // in case a leak can be analyzed post-mortem
     }
