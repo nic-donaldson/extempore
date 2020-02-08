@@ -108,14 +108,9 @@ EXPORT int64_t imp_rand1_i64(int64_t a);
 
 }
 
-///////////////////////////////////////////////////
 // this added for dodgy continuations support
-/* ucontext_t* llvm_make_ucontext(); */
-/* ucontext_t* llvm_scheme_process_ucontext(); */
-///////////////////////////////////////////////////
 
 namespace llvm {
-
 class Module;
 class GlobalVariable;
 class GlobalValue;
