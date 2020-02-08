@@ -467,6 +467,9 @@ if(UNIX)
   target_compile_options(extempore
     PRIVATE -std=c++11
     PRIVATE -fvisibility-inlines-hidden
+    PRIVATE -Wall
+    PRIVATE -Wextra
+    PRIVATE -Wno-format-truncation # driving me nuts
     # PRIVATE -fno-exceptions
     PRIVATE -fno-rtti
     PRIVATE -fno-common
