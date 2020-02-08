@@ -71,7 +71,6 @@
 #include "EXTLLVM.h"
 #include "EXTThread.h"
 #include "UNIV.h"
-#include "SchemeFFI.h"
 #include "TaskScheduler.h"
 #include "Scheme.h"
 #include "pcre.h"

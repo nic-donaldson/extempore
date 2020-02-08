@@ -42,7 +42,6 @@
 #include <iosfwd>
 #include <iomanip>
 #include "pcre.h"
-#include "SchemeFFI.h"
 #include "SchemePrivate.h"
 
 #ifdef __APPLE__

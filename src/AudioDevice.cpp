@@ -44,7 +44,6 @@
 #include "TaskScheduler.h"
 #include "EXTMonitor.h"
 #include "EXTLLVM.h"
-#include "SchemeFFI.h"
 #include "BranchPrediction.h"
 
 #ifdef _WIN32

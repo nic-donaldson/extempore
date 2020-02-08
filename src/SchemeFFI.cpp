@@ -121,7 +121,6 @@
 #endif
 
 #include <queue>
-//#include <unistd.h>
 #include <EXTMutex.h>
 #include <EXTLLVM.h>
 namespace extemp { namespace SchemeFFI {
