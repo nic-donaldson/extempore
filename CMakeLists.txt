@@ -378,6 +378,7 @@ if (DYLIB)
     src/EXTLLVM.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
+    src/LLVMIRCompilation.cpp
     src/OSC.cpp
     src/Scheme.cpp
     src/SchemeFFI.cpp
@@ -392,6 +393,7 @@ else()
     src/EXTLLVM.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
+    src/LLVMIRCompilation.cpp
     src/OSC.cpp
     src/Scheme.cpp
     src/SchemeFFI.cpp
@@ -467,7 +469,7 @@ if(UNIX)
   target_compile_options(extempore
     PRIVATE -std=c++11
     PRIVATE -fvisibility-inlines-hidden
-    PRIVATE -Wall
+    PRIVATE -Wall # TODO put this wherever it belongs, I think just above here ^^^
     PRIVATE -Wextra
     PRIVATE -Wno-format-truncation # driving me nuts
     # PRIVATE -fno-exceptions

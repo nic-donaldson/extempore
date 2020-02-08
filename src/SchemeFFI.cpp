@@ -123,13 +123,14 @@
 #include <queue>
 #include <EXTMutex.h>
 #include <EXTLLVM.h>
-namespace extemp { namespace SchemeFFI {
-static llvm::Module* jitCompile(const std::string& String);
-}}
+#include <LLVMIRCompilation.h>
 
 namespace extemp {
 
 namespace SchemeFFI {
+
+static llvm::Module* jitCompile(const std::string& String);
+  static LLVMIRCompilation IRCompiler;
 
 #include "ffi/utility.inc"
 #include "ffi/ipc.inc"
@@ -182,16 +183,10 @@ static long long llvm_emitcounter = 0;
 
 static std::string SanitizeType(llvm::Type* Type)
 {
-    std::string type;
-    llvm::raw_string_ostream typeStream(type);
-    Type->print(typeStream);
-    auto str(typeStream.str());
-    std::string::size_type pos(str.find('='));
-    if (pos != std::string::npos) {
-        str.erase(pos - 1);
-    }
-    return str;
+  LLVMIRCompilation::SanitizeType(Type);
 }
+
+
 
 static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
 static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
