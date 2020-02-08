@@ -312,8 +312,8 @@ void* SchemeProcess::taskImpl()
                                 auto minutes(time / UNIV::MINUTE());
                                 time -= minutes * UNIV::MINUTE();
                                 auto seconds(time / UNIV::SECOND());
-                                char prompt[24];
-                                sprintf(prompt, "\n[extempore %.2u:%.2u:%.2u]: ", unsigned(hours), unsigned(minutes), unsigned(seconds));
+                                char prompt[23];
+                                snprintf(prompt, 23, "\n[extempore %.2u:%.2u:%.2u]: ", unsigned(hours), unsigned(minutes), unsigned(seconds));
                                 ss << prompt;
                             }
                             UNIV::printSchemeCell(m_scheme, ss, m_scheme->value);
@@ -439,8 +439,8 @@ void* SchemeProcess::serverImpl()
                 auto minutes(time / UNIV::MINUTE());
                 time -= minutes * UNIV::MINUTE();
                 auto seconds(time / UNIV::SECOND());
-                char prompt[23];
-                sprintf(prompt, "[extempore %.2u:%.2u:%.2u]: ", unsigned(hours), unsigned(minutes), unsigned(seconds));
+                char prompt[24];
+                snprintf(prompt, 24, "[extempore %.2u:%.2u:%.2u]: ", unsigned(hours), unsigned(minutes), unsigned(seconds));
                 outString += prompt;
             } else {
                 outString += "Welcome to extempore!";
