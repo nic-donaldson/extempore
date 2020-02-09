@@ -181,10 +181,6 @@ void initSchemeFFI(scheme* sc)
 
 static long long llvm_emitcounter = 0;
 
-static std::string SanitizeType(llvm::Type* Type)
-{
-  return LLVMIRCompilation::SanitizeType(Type);
-}
 
 
 
