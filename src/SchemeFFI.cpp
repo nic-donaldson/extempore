@@ -229,8 +229,8 @@ static llvm::Module* jitCompile(std::string asmcode)
     static std::string sInlineDotLLString;
     static std::string sBitcodeDotLLString;
 
-    static std::string sInlineString;
-    static std::string sInlineBitcode;
+    static std::string sInlineBitcode; // contains compiled bitcode from bitcode.ll
+
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
@@ -317,7 +317,7 @@ static llvm::Module* jitCompile(std::string asmcode)
         auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
         if (likely(modOrErr)) {
             newModule = std::move(modOrErr.get());
-            asmcode = sInlineString + dstream.str() + asmcode; // at this point in time I think sInlineString holds inline.ll
+            asmcode = sInlineDotLLString + dstream.str() + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
 std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
                 newModule.reset();
