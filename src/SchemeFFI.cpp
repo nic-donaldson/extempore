@@ -222,6 +222,23 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     SMDiagnostic pa;
 
+    // First time entry
+    // sLoadedInitialBitcodeAndSymbols == false
+    // sInlineString == ""
+    // sInlineBitcode == ""
+    // sInlineSyms is empty
+
+    // First time exit / second time entry
+    // sLoadedInitialBitcodeAndSymbols == true
+    // sInlineString == runtime/bitcode.ll contents
+    // sInlineBitcode == ""
+    // sInlineSyms has symbols from bitcode.ll and inline.ll
+
+    // Second time exit / third time entry
+    // inlinestring -> newmodule -> sinlinebitcode
+    // sInlineString == runtime/inline.ll contents (loaded for a second time?)
+    // sInlineBitcode == bitcode for runtime/bitcode.ll
+
     // The first time we call jitCompile we need to load SHARE/runtime/bitcode.ll
     // because it is prepended to every module before JITing
     static bool sLoadedInitialBitcodeAndSymbols(false);
