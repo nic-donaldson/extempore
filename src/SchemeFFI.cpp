@@ -263,11 +263,10 @@ static llvm::Module* jitCompile(std::string asmcode)
     // the first time we call jitCompile it's init.ll which requires
     // special behaviour
     static bool isThisInitDotLL(true);
+
     static bool sLoadedInitialBitcodeAndSymbols(false);
     static std::string sInlineDotLLString;
-
     static std::string sInlineBitcode; // contains compiled bitcode from bitcode.ll
-
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
