@@ -190,14 +190,20 @@ static std::string fileToString(const std::string& fileName)
     return inString.str();
 }
 
-static void loadInitialBitcodeAndParseSymbols(std::unordered_set<std::string>& sInlineSyms, std::string& sInlineString)
+static void
+loadBitcodeLLAndParseSymbols(std::unordered_set<std::string>& sInlineSyms,
+                             std::string &sInlineString) {
+  sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+
+  // pull out all regex matches into sInlineSyms
+  std::copy(std::sregex_token_iterator(sInlineString.begin(),
+                                       sInlineString.end(), sGlobalSymRegex, 1),
+            std::sregex_token_iterator(),
+            std::inserter(sInlineSyms, sInlineSyms.begin()));
+}
+
+static void parseInlineLLSymbols(std::unordered_set<std::string>& sInlineSyms)
 {
-    sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-
-    // pull out all regex matches into sInlineSyms
-    std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
-              std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
-
     // then do the same with inline.ll
     const auto& tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
     std::copy(std::sregex_token_iterator(tString.begin(), tString.end(),
@@ -224,7 +230,8 @@ static llvm::Module* jitCompile(std::string asmcode)
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
-        loadInitialBitcodeAndParseSymbols(sInlineSyms, sInlineString);
+        loadBitcodeLLAndParseSymbols(sInlineSyms, sInlineString);
+        parseInlineLLSymbols(sInlineSyms);
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
