@@ -228,6 +228,8 @@ static llvm::Module* jitCompile(std::string asmcode)
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
+    // sInlineBitcode serves a dual purpose here just like sInlineString did so
+    // we should introduce a new variable
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
         static bool first(true);
