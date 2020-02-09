@@ -189,10 +189,6 @@ static llvm::Module* jitCompile(const std::string& String)
     legacy::PassManager* PM = extemp::EXTLLVM::PM;
     legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
 
-    static long long llvm_emitcounter = 0;
-    char modname[256];
-    snprintf(modname, 256, "xtmmodule_%lld", ++llvm_emitcounter);
-
     std::string asmcode(String);
     SMDiagnostic pa;
 
