@@ -183,7 +183,7 @@ static long long llvm_emitcounter = 0;
 
 static std::string SanitizeType(llvm::Type* Type)
 {
-  LLVMIRCompilation::SanitizeType(Type);
+  return LLVMIRCompilation::SanitizeType(Type);
 }
 
 
