@@ -320,6 +320,9 @@ std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std
             newModule->setTargetTriple(extemp::UNIV::ARCH);
         }
         if (EXTLLVM::OPTIMIZE_COMPILES) {
+            // so we check a value in EXTLLVM and then call methods from
+            // objects in EXTLLVM, I think we can move all this behaviour
+            // to EXTLLVM
             PM->run(*newModule);
         } else {
             PM_NO->run(*newModule);
