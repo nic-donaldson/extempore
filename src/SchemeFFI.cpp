@@ -186,8 +186,8 @@ static llvm::Module* jitCompile(std::string asmcode)
 {
     using namespace llvm;
     // Create an LLVM module to put our function into
-    legacy::PassManager* PM = extemp::EXTLLVM::PM;
-    legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
+    legacy::PassManager *const PM = extemp::EXTLLVM::PM;
+    legacy::PassManager *const PM_NO = extemp::EXTLLVM::PM_NO;
 
     SMDiagnostic pa;
 
