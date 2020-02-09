@@ -265,7 +265,6 @@ static llvm::Module* jitCompile(std::string asmcode)
     static bool isThisInitDotLL(true);
     static bool sLoadedInitialBitcodeAndSymbols(false);
     static std::string sInlineDotLLString;
-    static std::string sBitcodeDotLLString;
 
     static std::string sInlineBitcode; // contains compiled bitcode from bitcode.ll
 
@@ -273,14 +272,14 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
         sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-        sBitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+        const std::string bitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
 
-        insertMatchingSymbols(sBitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
+        insertMatchingSymbols(bitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
         insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
 
         // put bitcode.ll -> sInlineBitcode
         auto newModule(
-            parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
+            parseAssemblyString(bitcodeDotLLString, pa, getGlobalContext()));
 
         if (!newModule) {
             std::cout << pa.getMessage().str() << std::endl;
