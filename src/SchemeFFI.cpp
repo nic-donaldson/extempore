@@ -261,6 +261,9 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     SMDiagnostic pa;
 
+    // the first time we call jitCompile it's init.ll which requires
+    // special behaviour
+    static bool isThisInitDotLL(true);
     static bool sLoadedInitialBitcodeAndSymbols(false);
     static std::string sInlineDotLLString;
     static std::string sBitcodeDotLLString;
@@ -297,11 +300,10 @@ from llvm 3.8.0 docs:
 so basically all the global syms, "@thing", appear in sInlineSyms
     */
 
-    static unsigned long jitCount(0);
     static bool haveBitcode(false);
     // on the first run this will be true
     // on the second run too I think
-    if (jitCount == 1) {
+    if (!isThisInitDotLL && !haveBitcode) {
         // trying to understand why this can't be run earlier!
         // if we run it on the first time through then it will be prepended to whatever is coming through,
         // which is init.ll
@@ -328,7 +330,6 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
         llvm::WriteBitcodeToFile(newModule.get(), bitstream);
         haveBitcode = true;
     }
-    jitCount += 1;
 
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
@@ -343,7 +344,7 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
     std::unique_ptr<llvm::Module> newModule = nullptr;
 
     // once we have the inlinebitcode
-    if (haveBitcode) {
+    if (!isThisInitDotLL) {
         // module from bitcode.ll
         auto module(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
 
@@ -358,7 +359,7 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
         }
     }
 
-    if (jitCount == 1) {
+    if (isThisInitDotLL) {
         // If we don't have the bitcode
         // when is this true?
         // on our very first run through!
@@ -392,6 +393,9 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
     EXTLLVM::runPassManager(modulePtr);
     extemp::EXTLLVM::EE->addModule(std::move(newModule));
     extemp::EXTLLVM::EE->finalizeObject();
+
+    isThisInitDotLL = false;
+
     return modulePtr;
 }
 } // SchemeFFI
