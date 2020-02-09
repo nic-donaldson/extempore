@@ -196,28 +196,6 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
               std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
 }
 
-static void
-loadBitcodeLLAndParseSymbols(std::unordered_set<std::string>& sInlineSyms,
-                             std::string &sInlineString) {
-  sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-
-  // pull out all regex matches into sInlineSyms
-  std::copy(std::sregex_token_iterator(sInlineString.begin(),
-                                       sInlineString.end(), sGlobalSymRegex, 1),
-            std::sregex_token_iterator(),
-            std::inserter(sInlineSyms, sInlineSyms.begin()));
-}
-
-static void parseInlineLLSymbols(std::unordered_set<std::string>& sInlineSyms)
-{
-    // then do the same with inline.ll
-    const auto& tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-    std::copy(std::sregex_token_iterator(tString.begin(), tString.end(),
-                                         sGlobalSymRegex, 1),
-              std::sregex_token_iterator(),
-              std::inserter(sInlineSyms, sInlineSyms.begin()));
-}
-
 static llvm::Module* jitCompile(std::string asmcode)
 {
     using namespace llvm;
@@ -253,8 +231,12 @@ static llvm::Module* jitCompile(std::string asmcode)
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
-        loadBitcodeLLAndParseSymbols(sInlineSyms, sInlineString);
-        parseInlineLLSymbols(sInlineSyms);
+        sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
+
+        const auto& tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+        insertMatchingSymbols(tString, sGlobalSymRegex, sInlineSyms);
+
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
