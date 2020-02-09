@@ -191,9 +191,17 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     SMDiagnostic pa;
 
-    static std::string sInlineString; // This is a hack for now, but it *WORKS*
+    // So I'm gonna split sInlineString here, it's currently serving two purposes
+    // - hold the contents of SHARE/runtime/bitcode.ll
+    // - indicate whether or not we've inserted syms from SHARE/runtime/bitcode.ll and inline.ll into sInlineSyms
+
+    // If I remember correctly from last time I looked at this code, we use this
+    // to cache something?
+    static std::string sInlineString;
     static std::string sInlineBitcode;
     static std::unordered_set<std::string> sInlineSyms;
+
+    // yeah if there's nothing in the string, load it
     if (sInlineString.empty()) {
         {
             std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
@@ -201,8 +209,12 @@ static llvm::Module* jitCompile(std::string asmcode)
             inString << inStream.rdbuf();
             sInlineString = inString.str();
         }
+
+	// then pull out all regex matches into sInlineSyms
         std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
                 std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
+
+	// then do the same with inline.ll
         {
             std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
             std::stringstream inString;
