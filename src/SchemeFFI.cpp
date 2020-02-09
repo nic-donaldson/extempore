@@ -278,6 +278,18 @@ static llvm::Module* jitCompile(std::string asmcode)
         insertMatchingSymbols(sBitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
         insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
 
+        // put bitcode.ll -> sInlineBitcode
+        auto newModule(
+            parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
+
+        if (!newModule) {
+            std::cout << pa.getMessage().str() << std::endl;
+            abort();
+        }
+
+        llvm::raw_string_ostream bitstream(sInlineBitcode);
+        llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
@@ -298,37 +310,6 @@ from llvm 3.8.0 docs:
 
 so basically all the global syms, "@thing", appear in sInlineSyms
     */
-
-    static bool haveBitcode(false);
-    // on the first run this will be true
-    // on the second run too I think
-    if (!haveBitcode) {
-        // trying to understand why this can't be run earlier!
-        // if we run it on the first time through then it will be prepended to whatever is coming through,
-        // which is init.ll
-        // i'm still not sure what the issue is, let me just change this number and read the error
-        /*
-LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
-  %offset_ptr = getelementptr inbounds %mzone, %mzone* %zone, i32 0, i32 1
-        */
-
-        // so that code causing the error appears to be in inline.ll
-        // when do we compile that? or are we linking?
-
-        // need to avoid parsing the types twice
-
-        auto newModule(
-            parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
-
-        if (!newModule) {
-            std::cout << pa.getMessage().str() << std::endl;
-            abort();
-        }
-
-        llvm::raw_string_ostream bitstream(sInlineBitcode);
-        llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-        haveBitcode = true;
-    }
 
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
