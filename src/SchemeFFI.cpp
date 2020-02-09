@@ -198,6 +198,12 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 
 static llvm::Module* jitCompile(std::string asmcode)
 {
+    // so the first file that comes through is runtime/init.ll
+    // it begins with
+    // %mzone = type { i8*, i64, i64, i64, i8*, %mzone* rbrace
+    // std::cout << asmcode << std::endl;
+    // std::cout << "----------------------------------------------------------" << std::endl;
+
     using namespace llvm;
 
     // Create an LLVM module to put our function into
@@ -223,26 +229,48 @@ static llvm::Module* jitCompile(std::string asmcode)
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
+    // contents of sInlineSyms:
+    /*
+is_integer, llvm_zone_mark_size, llvm_zone_mark, llvm_zone_create, llvm_zone_create_extern, llvm_peek_zone_stack, llvm_peek_zone_stack_extern, ascii_text_color, llvm_now, is_cptr_or_str, is_cptr, is_real, is_type, sscanf, fscanf, ftoui64, ftoi16, dtoi1, i32toui64, ftod, is_integer_extern, i16toi1, i64toi32, i16toi8, sprintf, ftoi8, i64toi16, i32toptr, dtoui8, i16toi32, i8toui64, fprintf, ftoi1, i1toi16, ftoui32, llvm_zone_ptr_set_size, is_string, ftoi64, printf, i8toi1, i64tod, i32toi1, impc_null, impc_false, i64toi8, ui64tof, impc_true, dtoi32, i8toi64, ptrtoi32, i1toi8, i64toi1, ftoi32, i16toui64, ui8tod, i32toi64, i1toi64, dtof, i8toi16, ftoui16, llvm_push_zone_stack, i32toi8, i32toi16, ftoui1, ui1tod, i64tof, ptrtoi64, new_address_table, i8toui32, i32tof, i8tof, i1tof, ui32tof, ui16tof, ui8tof, ui1tof, dtoui32, dtoi64, i16tod, dtoi16, i1toi32, dtoi8, ascii_text_color_extern, i16toui32, dtoui64, i1tod, fp80ptrtod, dtoui16, dtoui1, i32tod, ftoui8, i8toi32, i8tod, llvm_zone_reset, TIME, i16toi64, ui64tod, i16tof, ui32tod, ui16tod, i64toptr, llvm_push_zone_stack_extern, ptrtoi16, i16toptr
+
+
+    for (const auto &sym : sInlineSyms) {
+        std::cout << sym << ", ";
+    }
+    std::cout << "-------------------------------------------------------------------" << std::endl;
+
+e.g. new_address_table is the first definition in inline.ll it appears as @new_address_table
+which matches the globalsymregex we're using
+from llvm 3.8.0 docs:
+"LLVM identifiers come in two basic types: global and local. Global identifiers (functions, global variables) begin with the '@' character."
+
+so basically all the global syms, "@thing", appear in sInlineSyms
+    */
+
+    static unsigned long jitCount(0);
+    static bool haveBitcode(false);
     // on the first run this will be true
     // on the second run too I think
-    static bool first(true);
-    if (sInlineBitcode.empty() && !first) {
-      // need to avoid parsing the types twice
+    if (jitCount == 1) {
+        // trying to understand why this can't be run earlier!
+        // if we run it on the first time through then it will be prepended to whatever is coming through,
+        // which is init.ll
 
-      // first time around this is true
-      // second time around this is false
-      auto newModule(
-          parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
+        // need to avoid parsing the types twice
 
-      if (!newModule) {
-        std::cout << pa.getMessage().str() << std::endl;
-        abort();
-      }
+        auto newModule(
+            parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
 
-      llvm::raw_string_ostream bitstream(sInlineBitcode);
-      llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+        if (!newModule) {
+            std::cout << pa.getMessage().str() << std::endl;
+            abort();
+        }
+
+        llvm::raw_string_ostream bitstream(sInlineBitcode);
+        llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+        haveBitcode = true;
     }
-    first = false;
+    jitCount += 1;
 
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
@@ -251,19 +279,30 @@ static llvm::Module* jitCompile(std::string asmcode)
     insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
 
     std::string declarations;
-    llvm::raw_string_ostream dstream(declarations);
+    std::stringstream dstream(declarations);
     for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const char* sym(iter->c_str());
-        if (sInlineSyms.find(sym) != sInlineSyms.end() || ignoreSyms.find(sym) != ignoreSyms.end()) {
+
+        // if the symbol from asmcode is present in inline.ll/bitcode.ll
+        // no need to declare it again?
+        if (sInlineSyms.find(sym) != sInlineSyms.end()) {
             continue;
         }
+
+        // if the symbol is declared in asmcode no need to declare it again
+        if (ignoreSyms.find(sym) != ignoreSyms.end()) {
+            continue;
+        }
+
         auto gv = extemp::EXTLLVM::getGlobalValue(sym);
         if (!gv) {
             continue;
         }
+
         auto func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-	  dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
+            dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
+
             bool first(true);
             for (const auto& arg : func->getArgumentList()) {
                 if (!first) {
@@ -273,63 +312,70 @@ static llvm::Module* jitCompile(std::string asmcode)
                 }
                 dstream << LLVMIRCompilation::SanitizeType(arg.getType());
             }
+
             if (func->isVarArg()) {
                 dstream << ", ...";
             }
             dstream << ")\n";
         } else {
-	  auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
+            auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
             dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
-    std::unique_ptr<llvm::Module> newModule;
-    if (!sInlineBitcode.empty()) {
-        auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
-        if (likely(modOrErr)) {
-            newModule = std::move(modOrErr.get());
+    std::unique_ptr<llvm::Module> newModule = nullptr;
+
+    // once we have the inlinebitcode
+    if (haveBitcode) {
+        // module from bitcode.ll
+        auto module(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
+
+        if (likely(module)) {
+            newModule = std::move(module.get());
             asmcode = sInlineDotLLString + dstream.str() + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
-std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+                std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
                 newModule.reset();
             }
         }
-    } else {
-       newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
     }
-    if (newModule) {
-        if (unlikely(!extemp::UNIV::ARCH.empty())) {
-            newModule->setTargetTriple(extemp::UNIV::ARCH);
-        }
 
-        // Probably shouldn't be unwrapping a unique_ptr here
-        // but we can think about that another time
-        EXTLLVM::runPassManager(newModule.get());
+    if (jitCount == 1) {
+        // If we don't have the bitcode
+        // when is this true?
+        // on our very first run through!
+        // init.ll is the code on the first run
+        newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
     }
-    //std::stringstream ss;
-    if (unlikely(!newModule))
-    {
-// std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" << std::endl;
-// std::cout << pa.getMessage().str() << std::endl << pa.getLineNo() << std::endl;
+
+    if (unlikely(!newModule)) {
+        // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" << std::endl;
+        // std::cout << pa.getMessage().str() << std::endl << pa.getLineNo() << std::endl;
+
         std::string errstr;
         llvm::raw_string_ostream ss(errstr);
-        pa.print("LLVM IR",ss);
-        printf("%s\n",ss.str().c_str());
+        pa.print("LLVM IR", ss);
+        printf("%s\n", ss.str().c_str());
         return nullptr;
-    } else if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) {
+    } else if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) { // i can't believe this function returns true on an error
         std::cout << "\nInvalid LLVM IR\n";
         return nullptr;
     }
 
+    if (unlikely(!extemp::UNIV::ARCH.empty())) {
+        newModule->setTargetTriple(extemp::UNIV::ARCH);
+    }
+
+    // Probably shouldn't be unwrapping a unique_ptr here
+    // but we can think about that another time
     llvm::Module *modulePtr = newModule.get();
+    EXTLLVM::runPassManager(modulePtr);
     extemp::EXTLLVM::EE->addModule(std::move(newModule));
     extemp::EXTLLVM::EE->finalizeObject();
     return modulePtr;
 }
-
-}
-
-} // end namespace
+} // SchemeFFI
+} // extemp
 
