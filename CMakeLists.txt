@@ -1056,9 +1056,9 @@ if(BUILD_TESTS)
 
   # tests - core
   extempore_add_test(tests/core/system.xtm libs-core)
-  extempore_add_test(tests/core/adt.xtm libs-core)
-  extempore_add_test(tests/core/math.xtm libs-core)
   extempore_add_test(tests/core/std.xtm libs-core)
+  extempore_add_test(tests/core/math.xtm libs-core)
+  extempore_add_test(tests/core/adt.xtm libs-core)
   extempore_add_test(tests/core/xtlang.xtm libs-core)
   extempore_add_test(tests/core/generics.xtm libs-core)
   # # tests - external
