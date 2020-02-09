@@ -305,6 +305,14 @@ so basically all the global syms, "@thing", appear in sInlineSyms
         // trying to understand why this can't be run earlier!
         // if we run it on the first time through then it will be prepended to whatever is coming through,
         // which is init.ll
+        // i'm still not sure what the issue is, let me just change this number and read the error
+        /*
+LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
+  %offset_ptr = getelementptr inbounds %mzone, %mzone* %zone, i32 0, i32 1
+        */
+
+        // so that code causing the error appears to be in inline.ll
+        // when do we compile that? or are we linking?
 
         // need to avoid parsing the types twice
 
