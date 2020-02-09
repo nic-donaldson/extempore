@@ -44,8 +44,8 @@ namespace SchemeFFI {
 
 void initSchemeFFI(scheme* Scheme);
 
-}
+} // SchemeFFI
 
-} // end namespace
+} // extemp
 
 #endif
