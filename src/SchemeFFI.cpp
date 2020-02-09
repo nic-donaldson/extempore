@@ -237,8 +237,7 @@ static llvm::Module* jitCompile(std::string asmcode)
         sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
         sBitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
 
-        sInlineString = sBitcodeDotLLString;
-        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
+        insertMatchingSymbols(sBitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
         insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
 
         sLoadedInitialBitcodeAndSymbols = true;
@@ -256,7 +255,7 @@ static llvm::Module* jitCompile(std::string asmcode)
       // first time around this is true
       // second time around this is false
       auto newModule(
-          parseAssemblyString(sInlineString, pa, getGlobalContext()));
+          parseAssemblyString(sBitcodeDotLLString, pa, getGlobalContext()));
 
       if (!newModule) {
         std::cout << pa.getMessage().str() << std::endl;
@@ -319,7 +318,7 @@ static llvm::Module* jitCompile(std::string asmcode)
         auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
         if (likely(modOrErr)) {
             newModule = std::move(modOrErr.get());
-            asmcode = sInlineString + dstream.str() + asmcode;
+            asmcode = sInlineString + dstream.str() + asmcode; // at this point in time I think sInlineString holds inline.ll
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
 std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
                 newModule.reset();
