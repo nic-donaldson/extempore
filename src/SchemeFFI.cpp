@@ -244,10 +244,8 @@ static llvm::Module* jitCompile(std::string asmcode)
                 std::string bitcode;
                 llvm::raw_string_ostream bitstream(sInlineBitcode);
                 llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-                std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
-                std::stringstream inString;
-                inString << inStream.rdbuf();
-                sInlineString = inString.str();
+
+                sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
             } else {
 std::cout << pa.getMessage().str() << std::endl;
                 abort();
