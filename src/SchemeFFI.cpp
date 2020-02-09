@@ -182,30 +182,28 @@ void initSchemeFFI(scheme* sc)
 static std::regex sGlobalSymRegex = LLVMIRCompilation::sGlobalSymRegex;
 static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
 
+static std::string fileToString(const std::string& fileName)
+{
+    std::ifstream inStream(fileName);
+    std::stringstream inString;
+    inString << inStream.rdbuf();
+    return inString.str();
+}
+
 static void loadInitialBitcodeAndParseSymbols(std::unordered_set<std::string>& sInlineSyms, std::string& sInlineString)
 {
-    {
-        std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-        std::stringstream inString;
-        inString << inStream.rdbuf();
-        sInlineString = inString.str();
-    }
+    sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
 
     // pull out all regex matches into sInlineSyms
     std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
               std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
 
     // then do the same with inline.ll
-    {
-        std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
-        std::stringstream inString;
-        inString << inStream.rdbuf();
-        std::string tString = inString.str();
-        std::copy(std::sregex_token_iterator(tString.begin(), tString.end(),
-                                             sGlobalSymRegex, 1),
-                  std::sregex_token_iterator(),
-                  std::inserter(sInlineSyms, sInlineSyms.begin()));
-    }
+    const auto& tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+    std::copy(std::sregex_token_iterator(tString.begin(), tString.end(),
+                                         sGlobalSymRegex, 1),
+              std::sregex_token_iterator(),
+              std::inserter(sInlineSyms, sInlineSyms.begin()));
 }
 
 static llvm::Module* jitCompile(std::string asmcode)
