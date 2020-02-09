@@ -130,7 +130,7 @@ namespace extemp {
 namespace SchemeFFI {
 
 static llvm::Module* jitCompile(const std::string asmcode);
-  static LLVMIRCompilation IRCompiler;
+static LLVMIRCompilation IRCompiler;
 
 #include "ffi/utility.inc"
 #include "ffi/ipc.inc"
