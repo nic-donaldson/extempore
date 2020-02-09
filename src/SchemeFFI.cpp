@@ -188,8 +188,8 @@ static std::string SanitizeType(llvm::Type* Type)
 
 
 
-static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
-static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
+static std::regex sGlobalSymRegex = LLVMIRCompilation::sGlobalSymRegex;
+static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
 
 static llvm::Module* jitCompile(const std::string& String)
 {
@@ -268,7 +268,7 @@ std::cout << pa.getMessage().str() << std::endl;
         }
         auto func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-            dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
+	  dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
             bool first(true);
             for (const auto& arg : func->getArgumentList()) {
                 if (!first) {
@@ -276,14 +276,14 @@ std::cout << pa.getMessage().str() << std::endl;
                 } else {
                     first = false;
                 }
-                dstream << SanitizeType(arg.getType());
+                dstream << LLVMIRCompilation::SanitizeType(arg.getType());
             }
             if (func->isVarArg()) {
                 dstream << ", ...";
             }
             dstream << ")\n";
         } else {
-            auto str(SanitizeType(gv->getType()));
+	  auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
             dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
