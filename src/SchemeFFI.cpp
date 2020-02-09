@@ -250,7 +250,7 @@ static llvm::Module* jitCompile(std::string asmcode)
     // on the first run this will be true
     // on the second run too I think
     static bool first(true);
-    if (sInlineBitcode.empty() && first) {
+    if (sInlineBitcode.empty() && !first) {
       // need to avoid parsing the types twice
 
       // first time around this is true
