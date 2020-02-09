@@ -235,6 +235,7 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
 
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
+void runPassManager(llvm::Module* m);
 
 extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;

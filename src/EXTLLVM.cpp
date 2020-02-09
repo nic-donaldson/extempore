@@ -668,8 +668,8 @@ namespace extemp {
 namespace EXTLLVM {
 
 llvm::ExecutionEngine* EE = nullptr;
-llvm::legacy::PassManager* PM;
-llvm::legacy::PassManager* PM_NO;
+llvm::legacy::PassManager* PM = nullptr;
+llvm::legacy::PassManager* PM_NO = nullptr;
 llvm::Module* M = nullptr; // TODO: obsolete?
 std::vector<llvm::Module*> Ms;
 int64_t LLVM_COUNT = 0l;
@@ -880,6 +880,18 @@ void EXTLLVM::addModule(llvm::Module* Module)
         }
     }
     Ms.push_back(Module);
+}
+
+void EXTLLVM::runPassManager(llvm::Module* m)
+{
+    assert(PM);
+    assert(PM_NO);
+
+    if (EXTLLVM::OPTIMIZE_COMPILES) {
+        PM->run(*m);
+    } else {
+        PM_NO->run(*m);
+    }
 }
 
 const llvm::GlobalValue* EXTLLVM::getGlobalValue(const char* Name)
