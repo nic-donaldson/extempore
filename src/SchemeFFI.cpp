@@ -230,8 +230,13 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     // sInlineBitcode serves a dual purpose here just like sInlineString did so
     // we should introduce a new variable
+
+    // on the first run this will be true
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
+
+        // first time around this is true
+        // second time around this is false
         static bool first(true);
         if (!first) {
             auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
@@ -248,6 +253,8 @@ std::cout << pa.getMessage().str() << std::endl;
                 abort();
             }
         } else {
+
+            // set false for second time
             first = false;
         }
     }
