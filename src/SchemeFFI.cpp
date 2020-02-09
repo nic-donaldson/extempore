@@ -249,7 +249,7 @@ static llvm::Module* jitCompile(std::string asmcode)
 {
     // so the first file that comes through is runtime/init.ll
     // it begins with
-    // %mzone = type { i8*, i64, i64, i64, i8*, %mzone* rbrace
+    // %mzone = type { i8*, i64, i64, i64, i8*, %mzone* rbrace if I actually type the brace emacs decides to reindent everything i love computers
     // std::cout << asmcode << std::endl;
     // std::cout << "----------------------------------------------------------" << std::endl;
 
@@ -302,7 +302,7 @@ so basically all the global syms, "@thing", appear in sInlineSyms
     static bool haveBitcode(false);
     // on the first run this will be true
     // on the second run too I think
-    if (!isThisInitDotLL && !haveBitcode) {
+    if (!haveBitcode) {
         // trying to understand why this can't be run earlier!
         // if we run it on the first time through then it will be prepended to whatever is coming through,
         // which is init.ll
@@ -342,7 +342,8 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
 
     std::unique_ptr<llvm::Module> newModule = nullptr;
 
-    // once we have the inlinebitcode
+    // we have bitcode.ll on the second pass so we can insert it in front of
+    // modules now
     if (!isThisInitDotLL) {
         // module from bitcode.ll
         auto module(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
