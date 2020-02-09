@@ -1061,49 +1061,55 @@ if(BUILD_TESTS)
   extempore_add_test(tests/core/std.xtm libs-core)
   extempore_add_test(tests/core/xtlang.xtm libs-core)
   extempore_add_test(tests/core/generics.xtm libs-core)
-  # tests - external
-  extempore_add_test(tests/external/fft.xtm libs-external)
-  # examples - core
-  extempore_add_example_as_test(examples/core/audio_101.xtm 10 examples-audio)
-  # extempore_add_example_as_test(examples/core/extempore_lang.xtm 10 examples-core) # doesn't terminate
-  # extempore_add_example_as_test(examples/core/fasta_lang_shootout.xtm 10 examples-core) # no fdopen on Windows at this point
-  extempore_add_example_as_test(examples/core/fmsynth.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/core/mtaudio.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/core/nbody_lang_shootout.xtm 10 examples-core)
-  # extempore_add_example_as_test(examples/core/osc_101.xtm 10 examples-core) # currently non-working
-  # extempore_add_example_as_test(examples/core/polysynth.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/core/scheduler.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/core/topclock_metro.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/core/typeclasses.xtm 10 examples-core)
-  extempore_add_example_as_test(examples/core/xthread.xtm 10 examples-core)
-  # examples - external
-  extempore_add_example_as_test(examples/external/audio_player.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/convolution_reverb.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/electrofunk.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/gl-compatibility.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/going-native.xtm 60 examples-graphics)
-  extempore_add_example_as_test(examples/external/granulator.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/gui.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/openvg.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/portmidi-output.xtm 10 examples-audio) # no audio output, but sends MIDI messages
-  extempore_add_example_as_test(examples/external/portmidi.xtm 10 examples-audio)        # no audio output, but sends MIDI messages
-  extempore_add_example_as_test(examples/external/raymarcher.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/sampler.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/shader-tutorials/arrows.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/framebuffer.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/heatmap.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/particles.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/points.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/shadertoy.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/simple-triangle.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/texture.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/shader-tutorials/triangle.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/sing_a_song.xtm 10 examples-audio)
-  extempore_add_example_as_test(examples/external/spectrogram.xtm 10 examples-graphics) # contains audio as well
-  extempore_add_example_as_test(examples/external/xtmrender1.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/xtmrender2.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/xtmrender3.xtm 10 examples-graphics)
-  extempore_add_example_as_test(examples/external/xtmrender4.xtm 10 examples-graphics)
+  # # tests - external
+  # extempore_add_test(tests/external/fft.xtm libs-external)
+  # # examples - core
+  # extempore_add_example_as_test(examples/core/audio_101.xtm 10 examples-audio)
+  # # extempore_add_example_as_test(examples/core/extempore_lang.xtm 10 examples-core) # doesn't terminate
+  # # extempore_add_example_as_test(examples/core/fasta_lang_shootout.xtm 10 examples-core) # no fdopen on Windows at this point
+  # extempore_add_example_as_test(examples/core/fmsynth.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/core/mtaudio.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/core/nbody_lang_shootout.xtm 10 examples-core)
+  # # extempore_add_example_as_test(examples/core/osc_101.xtm 10 examples-core) # currently non-working
+  # # extempore_add_example_as_test(examples/core/polysynth.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/core/scheduler.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/core/topclock_metro.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/core/typeclasses.xtm 10 examples-core)
+  # extempore_add_example_as_test(examples/core/xthread.xtm 10 examples-core)
+  # # examples - external
+  # extempore_add_example_as_test(examples/external/audio_player.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/convolution_reverb.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/electrofunk.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/gl-compatibility.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/going-native.xtm 60 examples-graphics)
+  # extempore_add_example_as_test(examples/external/granulator.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/gui.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/openvg.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/portmidi-output.xtm 10 examples-audio) # no audio output, but sends MIDI messages
+  # extempore_add_example_as_test(examples/external/portmidi.xtm 10 examples-audio)        # no audio output, but sends MIDI messages
+  # extempore_add_example_as_test(examples/external/raymarcher.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/sampler.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/arrows.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/framebuffer.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/heatmap.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/particles.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/points.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/shadertoy.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/simple-triangle.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/texture.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/shader-tutorials/triangle.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/sing_a_song.xtm 10 examples-audio)
+  # extempore_add_example_as_test(examples/external/spectrogram.xtm 10 examples-graphics) # contains audio as well
+  # extempore_add_example_as_test(examples/external/xtmrender1.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/xtmrender2.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/xtmrender3.xtm 10 examples-graphics)
+  # extempore_add_example_as_test(examples/external/xtmrender4.xtm 10 examples-graphics)
+
+  # REPL tests (i.e. stuff in src/)
+  add_executable ( test_repl_jit tests/repl/jit.cpp )
+  add_test ( NAME repl_jit
+    COMMAND test_repl_jit
+    LABEL repl )
 
 endif(BUILD_TESTS)
 
