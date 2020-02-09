@@ -262,7 +262,6 @@ static llvm::Module* jitCompile(std::string asmcode)
         abort();
       }
 
-      std::string bitcode;
       llvm::raw_string_ostream bitstream(sInlineBitcode);
       llvm::WriteBitcodeToFile(newModule.get(), bitstream);
 
