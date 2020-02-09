@@ -226,16 +226,20 @@ static llvm::Module* jitCompile(std::string asmcode)
     // The first time we call jitCompile we need to load SHARE/runtime/bitcode.ll
     // because it is prepended to every module before JITing
     static bool sLoadedInitialBitcodeAndSymbols(false);
+    static std::string sInlineDotLLString;
+    static std::string sBitcodeDotLLString;
+
     static std::string sInlineString;
     static std::string sInlineBitcode;
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
-        sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
+        sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+        sBitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
 
-        const auto& tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-        insertMatchingSymbols(tString, sGlobalSymRegex, sInlineSyms);
+        sInlineString = sBitcodeDotLLString;
+        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
+        insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
 
         sLoadedInitialBitcodeAndSymbols = true;
     }
