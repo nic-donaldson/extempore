@@ -275,7 +275,7 @@ static llvm::Module* jitCompile(std::string asmcode)
         }
     }
 
-    std::unique_ptr<llvm::Module> newModule;
+
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
 
@@ -317,6 +317,7 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
+    std::unique_ptr<llvm::Module> newModule;
     if (!sInlineBitcode.empty()) {
         auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
         if (likely(modOrErr)) {
