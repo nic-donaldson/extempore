@@ -201,30 +201,10 @@ static llvm::Module* jitCompile(std::string asmcode)
     using namespace llvm;
 
     // Create an LLVM module to put our function into
-    legacy::PassManager *const PM = extemp::EXTLLVM::PM;
-    legacy::PassManager *const PM_NO = extemp::EXTLLVM::PM_NO;
+    // this comment feels like it needs to be moved
 
     SMDiagnostic pa;
 
-    // First time entry
-    // sLoadedInitialBitcodeAndSymbols == false
-    // sInlineString == ""
-    // sInlineBitcode == ""
-    // sInlineSyms is empty
-
-    // First time exit / second time entry
-    // sLoadedInitialBitcodeAndSymbols == true
-    // sInlineString == runtime/bitcode.ll contents
-    // sInlineBitcode == ""
-    // sInlineSyms has symbols from bitcode.ll and inline.ll
-
-    // Second time exit / third time entry
-    // inlinestring -> newmodule -> sinlinebitcode
-    // sInlineString == runtime/inline.ll contents (loaded for a second time?)
-    // sInlineBitcode == bitcode for runtime/bitcode.ll
-
-    // The first time we call jitCompile we need to load SHARE/runtime/bitcode.ll
-    // because it is prepended to every module before JITing
     static bool sLoadedInitialBitcodeAndSymbols(false);
     static std::string sInlineDotLLString;
     static std::string sBitcodeDotLLString;
@@ -242,9 +222,6 @@ static llvm::Module* jitCompile(std::string asmcode)
 
         sLoadedInitialBitcodeAndSymbols = true;
     }
-
-    // sInlineBitcode serves a dual purpose here just like sInlineString did so
-    // we should introduce a new variable
 
     // on the first run this will be true
     // on the second run too I think
@@ -264,10 +241,6 @@ static llvm::Module* jitCompile(std::string asmcode)
 
       llvm::raw_string_ostream bitstream(sInlineBitcode);
       llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-
-      sInlineString = sInlineDotLLString;
-      // sInlineString held bitcode.ll but now it holds inline.ll ?
-      // why not just use two strings
     }
     first = false;
 
