@@ -184,8 +184,8 @@ static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
 
 static llvm::Module* jitCompile(const std::string& String)
 {
-    // Create some module to put our function into it.
     using namespace llvm;
+    // Create an LLVM module to put our function into
     legacy::PassManager* PM = extemp::EXTLLVM::PM;
     legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
 
