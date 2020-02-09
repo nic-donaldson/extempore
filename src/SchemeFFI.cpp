@@ -129,7 +129,7 @@ namespace extemp {
 
 namespace SchemeFFI {
 
-static llvm::Module* jitCompile(const std::string& String);
+static llvm::Module* jitCompile(const std::string asmcode);
   static LLVMIRCompilation IRCompiler;
 
 #include "ffi/utility.inc"
@@ -182,14 +182,13 @@ void initSchemeFFI(scheme* sc)
 static std::regex sGlobalSymRegex = LLVMIRCompilation::sGlobalSymRegex;
 static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
 
-static llvm::Module* jitCompile(const std::string& String)
+static llvm::Module* jitCompile(std::string asmcode)
 {
     using namespace llvm;
     // Create an LLVM module to put our function into
     legacy::PassManager* PM = extemp::EXTLLVM::PM;
     legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
 
-    std::string asmcode(String);
     SMDiagnostic pa;
 
     static std::string sInlineString; // This is a hack for now, but it *WORKS*
