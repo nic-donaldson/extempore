@@ -336,7 +336,7 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
     std::unordered_set<std::string> ignoreSyms;
     insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
 
-    const std::string declarations_2 = globalDeclarations(symbols, sInlineSyms, ignoreSyms);
+    const std::string declarations = globalDeclarations(symbols, sInlineSyms, ignoreSyms);
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
@@ -350,9 +350,9 @@ LLVM IR: <string>:29:48: error: base element of getelementptr must be sized
         if (likely(module)) {
             newModule = std::move(module.get());
             // so every module but init.ll gets prepended with bitcode.ll, inline.ll, and any global declarations?
-            asmcode = sInlineDotLLString + declarations_2 + asmcode;
+            asmcode = sInlineDotLLString + declarations + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
-                std::cout << "**** DECL ****\n" << declarations_2 << "**** ENDDECL ****\n" << std::endl;
+                std::cout << "**** DECL ****\n" << declarations << "**** ENDDECL ****\n" << std::endl;
                 newModule.reset();
             }
         }
