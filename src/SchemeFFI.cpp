@@ -250,12 +250,14 @@ static llvm::Module* jitCompile(std::string asmcode)
             llvm::raw_string_ostream bitstream(sInlineBitcode);
             llvm::WriteBitcodeToFile(newModule.get(), bitstream);
             sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+            // sInlineString held bitcode.ll but now it holds inline.ll ?
+            // why not just use two strings
         } else {
-
             // set false for second time
             first = false;
         }
     }
+
     std::unique_ptr<llvm::Module> newModule;
     std::vector<std::string> symbols;
     std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sGlobalSymRegex, 1),
@@ -297,7 +299,9 @@ static llvm::Module* jitCompile(std::string asmcode)
             dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
-// std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+
+    // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+
     if (!sInlineBitcode.empty()) {
         auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
         if (likely(modOrErr)) {
