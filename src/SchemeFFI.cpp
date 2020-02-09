@@ -196,6 +196,56 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
               std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
 }
 
+// TODO: move semantics
+static std::string globalDeclarations(std::unordered_set<std::string>& symbols, std::unordered_set<std::string>& sInlineSyms, std::unordered_set<std::string>& ignoreSyms)
+{
+    std::string declarations;
+    std::stringstream dstream(declarations);
+    for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
+        const char* sym(iter->c_str());
+
+        // if the symbol from asmcode is present in inline.ll/bitcode.ll
+        // no need to declare it again?
+        if (sInlineSyms.find(sym) != sInlineSyms.end()) {
+            continue;
+        }
+
+        // if the symbol is declared in asmcode no need to declare it again
+        if (ignoreSyms.find(sym) != ignoreSyms.end()) {
+            continue;
+        }
+
+        auto gv = extemp::EXTLLVM::getGlobalValue(sym);
+        if (!gv) {
+            continue;
+        }
+
+        auto func(llvm::dyn_cast<llvm::Function>(gv));
+        if (func) {
+            dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
+
+            bool first(true);
+            for (const auto& arg : func->getArgumentList()) {
+                if (!first) {
+                    dstream << ", ";
+                } else {
+                    first = false;
+                }
+                dstream << LLVMIRCompilation::SanitizeType(arg.getType());
+            }
+
+            if (func->isVarArg()) {
+                dstream << ", ...";
+            }
+            dstream << ")\n";
+        } else {
+            auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
+            dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
+        }
+    }
+    return dstream.str();
+}
+
 static llvm::Module* jitCompile(std::string asmcode)
 {
     // so the first file that comes through is runtime/init.ll
@@ -278,50 +328,7 @@ so basically all the global syms, "@thing", appear in sInlineSyms
     std::unordered_set<std::string> ignoreSyms;
     insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
 
-    std::string declarations;
-    std::stringstream dstream(declarations);
-    for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        const char* sym(iter->c_str());
-
-        // if the symbol from asmcode is present in inline.ll/bitcode.ll
-        // no need to declare it again?
-        if (sInlineSyms.find(sym) != sInlineSyms.end()) {
-            continue;
-        }
-
-        // if the symbol is declared in asmcode no need to declare it again
-        if (ignoreSyms.find(sym) != ignoreSyms.end()) {
-            continue;
-        }
-
-        auto gv = extemp::EXTLLVM::getGlobalValue(sym);
-        if (!gv) {
-            continue;
-        }
-
-        auto func(llvm::dyn_cast<llvm::Function>(gv));
-        if (func) {
-            dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
-
-            bool first(true);
-            for (const auto& arg : func->getArgumentList()) {
-                if (!first) {
-                    dstream << ", ";
-                } else {
-                    first = false;
-                }
-                dstream << LLVMIRCompilation::SanitizeType(arg.getType());
-            }
-
-            if (func->isVarArg()) {
-                dstream << ", ...";
-            }
-            dstream << ")\n";
-        } else {
-            auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
-            dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
-        }
-    }
+    const std::string declarations_2 = globalDeclarations(symbols, sInlineSyms, ignoreSyms);
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
@@ -334,9 +341,10 @@ so basically all the global syms, "@thing", appear in sInlineSyms
 
         if (likely(module)) {
             newModule = std::move(module.get());
-            asmcode = sInlineDotLLString + dstream.str() + asmcode;
+            // so every module but init.ll gets prepended with bitcode.ll, inline.ll, and any global declarations?
+            asmcode = sInlineDotLLString + declarations_2 + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
-                std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+                std::cout << "**** DECL ****\n" << declarations_2 << "**** ENDDECL ****\n" << std::endl;
                 newModule.reset();
             }
         }
