@@ -359,7 +359,9 @@ so basically all the global syms, "@thing", appear in sInlineSyms
         pa.print("LLVM IR", ss);
         printf("%s\n", ss.str().c_str());
         return nullptr;
-    } else if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) { // i can't believe this function returns true on an error
+    }
+
+    if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) { // i can't believe this function returns true on an error
         std::cout << "\nInvalid LLVM IR\n";
         return nullptr;
     }
