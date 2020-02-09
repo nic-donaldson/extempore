@@ -240,16 +240,16 @@ static llvm::Module* jitCompile(std::string asmcode)
         static bool first(true);
         if (!first) {
             auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
-            if (newModule) {
-                std::string bitcode;
-                llvm::raw_string_ostream bitstream(sInlineBitcode);
-                llvm::WriteBitcodeToFile(newModule.get(), bitstream);
 
-                sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-            } else {
-std::cout << pa.getMessage().str() << std::endl;
+            if (!newModule) {
+                std::cout << pa.getMessage().str() << std::endl;
                 abort();
             }
+
+            std::string bitcode;
+            llvm::raw_string_ostream bitstream(sInlineBitcode);
+            llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+            sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
         } else {
 
             // set false for second time
