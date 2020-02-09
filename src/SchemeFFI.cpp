@@ -265,7 +265,8 @@ static llvm::Module* jitCompile(std::string asmcode)
             std::string bitcode;
             llvm::raw_string_ostream bitstream(sInlineBitcode);
             llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-            sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+
+            sInlineString = sInlineDotLLString;
             // sInlineString held bitcode.ll but now it holds inline.ll ?
             // why not just use two strings
         } else {
