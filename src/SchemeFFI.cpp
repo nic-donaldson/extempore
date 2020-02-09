@@ -182,48 +182,54 @@ void initSchemeFFI(scheme* sc)
 static std::regex sGlobalSymRegex = LLVMIRCompilation::sGlobalSymRegex;
 static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
 
+static void loadInitialBitcodeAndParseSymbols(std::unordered_set<std::string>& sInlineSyms, std::string& sInlineString)
+{
+    {
+        std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+        std::stringstream inString;
+        inString << inStream.rdbuf();
+        sInlineString = inString.str();
+    }
+
+    // pull out all regex matches into sInlineSyms
+    std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
+              std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
+
+    // then do the same with inline.ll
+    {
+        std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
+        std::stringstream inString;
+        inString << inStream.rdbuf();
+        std::string tString = inString.str();
+        std::copy(std::sregex_token_iterator(tString.begin(), tString.end(),
+                                             sGlobalSymRegex, 1),
+                  std::sregex_token_iterator(),
+                  std::inserter(sInlineSyms, sInlineSyms.begin()));
+    }
+}
+
 static llvm::Module* jitCompile(std::string asmcode)
 {
     using namespace llvm;
+
     // Create an LLVM module to put our function into
     legacy::PassManager *const PM = extemp::EXTLLVM::PM;
     legacy::PassManager *const PM_NO = extemp::EXTLLVM::PM_NO;
 
     SMDiagnostic pa;
 
-    // So I'm gonna split sInlineString here, it's currently serving two purposes
-    // - hold the contents of SHARE/runtime/bitcode.ll
-    // - indicate whether or not we've inserted syms from SHARE/runtime/bitcode.ll and inline.ll into sInlineSyms
-
-    // If I remember correctly from last time I looked at this code, we use this
-    // to cache something?
+    // The first time we call jitCompile we need to load SHARE/runtime/bitcode.ll
+    // because it is prepended to every module before JITing
+    static bool sLoadedInitialBitcodeAndSymbols(false);
     static std::string sInlineString;
     static std::string sInlineBitcode;
     static std::unordered_set<std::string> sInlineSyms;
 
-    // yeah if there's nothing in the string, load it
-    if (sInlineString.empty()) {
-        {
-            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-            std::stringstream inString;
-            inString << inStream.rdbuf();
-            sInlineString = inString.str();
-        }
-
-	// then pull out all regex matches into sInlineSyms
-        std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
-                std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
-
-	// then do the same with inline.ll
-        {
-            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
-            std::stringstream inString;
-            inString << inStream.rdbuf();
-            std::string tString = inString.str();
-            std::copy(std::sregex_token_iterator(tString.begin(), tString.end(), sGlobalSymRegex, 1),
-                    std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
-        }
+    if (sLoadedInitialBitcodeAndSymbols == false) {
+        loadInitialBitcodeAndParseSymbols(sInlineSyms, sInlineString);
+        sLoadedInitialBitcodeAndSymbols = true;
     }
+
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
         static bool first(true);
