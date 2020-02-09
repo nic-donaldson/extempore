@@ -190,6 +190,12 @@ static std::string fileToString(const std::string& fileName)
     return inString.str();
 }
 
+static void insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
+{
+    std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
+              std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
+}
+
 static void
 loadBitcodeLLAndParseSymbols(std::unordered_set<std::string>& sInlineSyms,
                              std::string &sInlineString) {
@@ -283,17 +289,15 @@ static llvm::Module* jitCompile(std::string asmcode)
     }
 
     std::unique_ptr<llvm::Module> newModule;
-    std::vector<std::string> symbols;
-    std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sGlobalSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(symbols, symbols.begin()));
-    std::sort(symbols.begin(), symbols.end());
-    auto end(std::unique(symbols.begin(), symbols.end()));
+    std::unordered_set<std::string> symbols;
+    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
+
     std::unordered_set<std::string> ignoreSyms;
-    std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sDefineSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(ignoreSyms, ignoreSyms.begin()));
+    insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
+
     std::string declarations;
     llvm::raw_string_ostream dstream(declarations);
-    for (auto iter = symbols.begin(); iter != end; ++iter) {
+    for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const char* sym(iter->c_str());
         if (sInlineSyms.find(sym) != sInlineSyms.end() || ignoreSyms.find(sym) != ignoreSyms.end()) {
             continue;
