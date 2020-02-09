@@ -199,8 +199,7 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 // TODO: move semantics
 static std::string globalDeclarations(std::unordered_set<std::string>& symbols, std::unordered_set<std::string>& sInlineSyms, std::unordered_set<std::string>& ignoreSyms)
 {
-    std::string declarations;
-    std::stringstream dstream(declarations);
+    std::stringstream dstream;
     for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
         const char* sym(iter->c_str());
 
