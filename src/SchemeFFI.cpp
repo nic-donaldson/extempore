@@ -248,33 +248,30 @@ static llvm::Module* jitCompile(std::string asmcode)
     // we should introduce a new variable
 
     // on the first run this will be true
-    if (sInlineBitcode.empty()) {
-        // need to avoid parsing the types twice
+    // on the second run too I think
+    static bool first(true);
+    if (sInlineBitcode.empty() && first) {
+      // need to avoid parsing the types twice
 
-        // first time around this is true
-        // second time around this is false
-        static bool first(true);
-        if (!first) {
-            auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
+      // first time around this is true
+      // second time around this is false
+      auto newModule(
+          parseAssemblyString(sInlineString, pa, getGlobalContext()));
 
-            if (!newModule) {
-                std::cout << pa.getMessage().str() << std::endl;
-                abort();
-            }
+      if (!newModule) {
+        std::cout << pa.getMessage().str() << std::endl;
+        abort();
+      }
 
-            std::string bitcode;
-            llvm::raw_string_ostream bitstream(sInlineBitcode);
-            llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+      std::string bitcode;
+      llvm::raw_string_ostream bitstream(sInlineBitcode);
+      llvm::WriteBitcodeToFile(newModule.get(), bitstream);
 
-            sInlineString = sInlineDotLLString;
-            // sInlineString held bitcode.ll but now it holds inline.ll ?
-            // why not just use two strings
-        } else {
-            // set false for second time
-            first = false;
-        }
+      sInlineString = sInlineDotLLString;
+      // sInlineString held bitcode.ll but now it holds inline.ll ?
+      // why not just use two strings
     }
-
+    first = false;
 
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
