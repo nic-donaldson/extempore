@@ -120,7 +120,6 @@
     ascii_normal()
 #endif
 
-#include <queue>
 #include <EXTMutex.h>
 #include <EXTLLVM.h>
 #include <LLVMIRCompilation.h>
