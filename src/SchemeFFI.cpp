@@ -248,6 +248,29 @@ static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::
     return dstream.str();
 }
 
+static void loadInitialBitcodeAndSymbols(std::string& sInlineDotLLString, std::unordered_set<std::string>& sInlineSyms, std::string& sInlineBitcode)
+{
+    using namespace llvm;
+    SMDiagnostic pa;
+
+    sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+    const std::string bitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+    insertMatchingSymbols(bitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
+    insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
+
+    // put bitcode.ll -> sInlineBitcode
+    auto newModule(
+        parseAssemblyString(bitcodeDotLLString, pa, getGlobalContext()));
+
+    if (!newModule) {
+      std::cout << pa.getMessage().str() << std::endl;
+      abort();
+    }
+
+    llvm::raw_string_ostream bitstream(sInlineBitcode);
+    llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+}
+
 static llvm::Module* jitCompile(std::string asmcode)
 {
     // so the first file that comes through is runtime/init.ll
@@ -257,8 +280,6 @@ static llvm::Module* jitCompile(std::string asmcode)
     // std::cout << "----------------------------------------------------------" << std::endl;
 
     using namespace llvm;
-
-    SMDiagnostic pa;
 
     // the first time we call jitCompile it's init.ll which requires
     // special behaviour
@@ -270,24 +291,7 @@ static llvm::Module* jitCompile(std::string asmcode)
     static std::unordered_set<std::string> sInlineSyms;
 
     if (sLoadedInitialBitcodeAndSymbols == false) {
-        sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-        const std::string bitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-
-        insertMatchingSymbols(bitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
-        insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
-
-        // put bitcode.ll -> sInlineBitcode
-        auto newModule(
-            parseAssemblyString(bitcodeDotLLString, pa, getGlobalContext()));
-
-        if (!newModule) {
-            std::cout << pa.getMessage().str() << std::endl;
-            abort();
-        }
-
-        llvm::raw_string_ostream bitstream(sInlineBitcode);
-        llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-
+        loadInitialBitcodeAndSymbols(sInlineDotLLString, sInlineSyms, sInlineBitcode);
         sLoadedInitialBitcodeAndSymbols = true;
     }
 
@@ -314,6 +318,7 @@ so basically all the global syms, "@thing", appear in sInlineSyms
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
     std::unique_ptr<llvm::Module> newModule = nullptr;
+    SMDiagnostic pa;
 
     if (!isThisInitDotLL) {
         // module from bitcode.ll
