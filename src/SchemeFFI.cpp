@@ -196,8 +196,14 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 }
 
 // TODO: move semantics
-static std::string globalDeclarations(std::unordered_set<std::string>& symbols, std::unordered_set<std::string>& sInlineSyms, std::unordered_set<std::string>& ignoreSyms)
+static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms)
 {
+    std::unordered_set<std::string> symbols;
+    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
+
+    std::unordered_set<std::string> ignoreSyms;
+    insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
+
     std::stringstream dstream;
     for (const auto& sym : symbols) {
         // if the symbol from asmcode is present in inline.ll/bitcode.ll
@@ -305,13 +311,7 @@ from llvm 3.8.0 docs:
 so basically all the global syms, "@thing", appear in sInlineSyms
     */
 
-    std::unordered_set<std::string> symbols;
-    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
-
-    std::unordered_set<std::string> ignoreSyms;
-    insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
-
-    const std::string declarations = globalDeclarations(symbols, sInlineSyms, ignoreSyms);
+    const std::string declarations = necessaryGlobalDeclarations(asmcode, sInlineSyms);
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 
