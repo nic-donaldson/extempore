@@ -189,6 +189,7 @@ static std::string fileToString(const std::string& fileName)
     return inString.str();
 }
 
+// insertMatchingSymbols finds tokens in code that match regex and inserts them into containingSet
 static void insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
 {
     std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
@@ -257,9 +258,6 @@ static llvm::Module* jitCompile(std::string asmcode)
 
     using namespace llvm;
 
-    // Create an LLVM module to put our function into
-    // this comment feels like it needs to be moved
-
     SMDiagnostic pa;
 
     // the first time we call jitCompile it's init.ll which requires
@@ -317,8 +315,6 @@ so basically all the global syms, "@thing", appear in sInlineSyms
 
     std::unique_ptr<llvm::Module> newModule = nullptr;
 
-    // we have bitcode.ll on the second pass so we can insert it in front of
-    // modules now
     if (!isThisInitDotLL) {
         // module from bitcode.ll
         auto module(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
@@ -335,10 +331,6 @@ so basically all the global syms, "@thing", appear in sInlineSyms
     }
 
     if (isThisInitDotLL) {
-        // If we don't have the bitcode
-        // when is this true?
-        // on our very first run through!
-        // init.ll is the code on the first run
         newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
     }
 
