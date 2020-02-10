@@ -199,21 +199,18 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 static std::string globalDeclarations(std::unordered_set<std::string>& symbols, std::unordered_set<std::string>& sInlineSyms, std::unordered_set<std::string>& ignoreSyms)
 {
     std::stringstream dstream;
-    for (auto iter = symbols.begin(); iter != symbols.end(); ++iter) {
-        const char* sym(iter->c_str());
-
+    for (const auto& sym : symbols) {
         // if the symbol from asmcode is present in inline.ll/bitcode.ll
         // no need to declare it again?
-        if (sInlineSyms.find(sym) != sInlineSyms.end()) {
+        if (sInlineSyms.count(sym) == 1) {
             continue;
         }
 
-        // if the symbol is declared in asmcode no need to declare it again
-        if (ignoreSyms.find(sym) != ignoreSyms.end()) {
+        if (ignoreSyms.count(sym) == 1) {
             continue;
         }
 
-        auto gv = extemp::EXTLLVM::getGlobalValue(sym);
+        auto gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
         if (!gv) {
             continue;
         }
