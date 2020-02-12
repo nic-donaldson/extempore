@@ -67,6 +67,7 @@
 
 #include <random>
 #include <fstream>
+#include <unordered_map>
 #include "stdarg.h"
 #include "EXTLLVM.h"
 #include "EXTThread.h"
@@ -818,42 +819,40 @@ void initLLVM()
         EE->updateGlobalMapping(elem.name, elem.address);
     }
 
-      // tell LLVM about some built-in functions
-            EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
-            EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
-            EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
-            EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
-            EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
-            EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
-            EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
-            EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
-            EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
-            EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
-            EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
-            EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
-            EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
-            EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
-            EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
-            EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
-            EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
-            EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
-            EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
-            EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
-            EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
-            EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
-            EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
-            EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
-            EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
-            EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
-      EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-      EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-      extemp::EXTLLVM::EE->finalizeObject();
-      return;
+    // tell LLVM about some built-in functions
+    EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
+    EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
+    EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
+    EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
+    EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
+    EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
+    EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
+    EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
+    EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
+    EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
+    EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
+    EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
+    EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
+    EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
+    EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
+    EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
+    EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
+    EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
+    EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
+    EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
+    EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
+    EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
+    EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
+    EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
+    EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
+    EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
+    EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
+    EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
+    extemp::EXTLLVM::EE->finalizeObject();
+    return;
     }
   }
 }
-
-#include <unordered_map>
 
 static std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
 
