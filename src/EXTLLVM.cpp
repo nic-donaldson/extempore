@@ -74,7 +74,6 @@
 #include "UNIV.h"
 #include "TaskScheduler.h"
 #include "Scheme.h"
-#include "pcre.h"
 #include "OSC.h"
 #include "math.h"
 #include "BranchPrediction.h"
@@ -854,7 +853,7 @@ void initLLVM()
   }
 }
 
-static std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
+extern std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
 
 namespace extemp {
 
@@ -893,14 +892,7 @@ void EXTLLVM::runPassManager(llvm::Module* m)
     }
 }
 
-const llvm::GlobalValue* EXTLLVM::getGlobalValue(const char* Name)
-{
-    auto iter(sGlobalMap.find(Name));
-    if (likely(iter != sGlobalMap.end())) {
-        return iter->second;
-    }
-    return nullptr;
-}
+const llvm::GlobalValue* EXTLLVM::getGlobalValue(const char* Name);
 
 const llvm::GlobalVariable* EXTLLVM::getGlobalVariable(const char* Name)
 {

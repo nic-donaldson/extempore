@@ -202,18 +202,18 @@ static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
 
-    std::unordered_set<std::string> ignoreSyms;
-    insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
+    std::unordered_set<std::string> definedSyms;
+    insertMatchingSymbols(asmcode, sDefineSymRegex, definedSyms);
 
     std::stringstream dstream;
     for (const auto& sym : symbols) {
         // if the symbol from asmcode is present in inline.ll/bitcode.ll
-        // no need to declare it again?
+        // don't redeclare it as they'll be included in the module
         if (sInlineSyms.count(sym) == 1) {
             continue;
         }
 
-        if (ignoreSyms.count(sym) == 1) {
+        if (definedSyms.count(sym) == 1) {
             continue;
         }
 

@@ -382,6 +382,7 @@ if (DYLIB)
     src/OSC.cpp
     src/Scheme.cpp
     src/SchemeFFI.cpp
+    src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
     src/TaskScheduler.cpp
@@ -391,12 +392,13 @@ else()
   add_executable(extempore src/Extempore.cpp
     src/AudioDevice.cpp
     src/EXTLLVM.cpp
+    src/LLVMIRCompilation.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
-    src/LLVMIRCompilation.cpp
     src/OSC.cpp
     src/Scheme.cpp
     src/SchemeFFI.cpp
+    src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
     src/TaskScheduler.cpp
@@ -1106,7 +1108,8 @@ if(BUILD_TESTS)
   # extempore_add_example_as_test(examples/external/xtmrender4.xtm 10 examples-graphics)
 
   # REPL tests (i.e. stuff in src/)
-  add_executable ( test_repl_jit tests/repl/jit.cpp )
+  add_executable ( test_repl_jit tests/repl/jit.cpp src/EXTLLVM.cpp )
+  target_include_directories ( test_repl_jit PRIVATE include PRIVATE ${EXT_LLVM_DIR}/include )
   add_test ( NAME repl_jit
     COMMAND test_repl_jit
     LABEL repl )
