@@ -1058,11 +1058,11 @@ if(BUILD_TESTS)
 
   # tests - core
   extempore_add_test(tests/core/system.xtm libs-core)
-  extempore_add_test(tests/core/std.xtm libs-core)
-  extempore_add_test(tests/core/math.xtm libs-core)
-  extempore_add_test(tests/core/adt.xtm libs-core)
-  extempore_add_test(tests/core/xtlang.xtm libs-core)
-  extempore_add_test(tests/core/generics.xtm libs-core)
+  # extempore_add_test(tests/core/std.xtm libs-core)
+  # extempore_add_test(tests/core/math.xtm libs-core)
+  # extempore_add_test(tests/core/adt.xtm libs-core)
+  # extempore_add_test(tests/core/xtlang.xtm libs-core)
+  # extempore_add_test(tests/core/generics.xtm libs-core)
   # # tests - external
   # extempore_add_test(tests/external/fft.xtm libs-external)
   # # examples - core
@@ -1108,7 +1108,7 @@ if(BUILD_TESTS)
   # extempore_add_example_as_test(examples/external/xtmrender4.xtm 10 examples-graphics)
 
   # REPL tests (i.e. stuff in src/)
-  add_executable ( test_repl_jit tests/repl/jit.cpp src/EXTLLVM.cpp )
+  add_executable ( test_repl_jit tests/repl/jit.cpp src/EXTLLVMGlobalMap.cpp )
   target_include_directories ( test_repl_jit PRIVATE include PRIVATE ${EXT_LLVM_DIR}/include )
   add_test ( NAME repl_jit
     COMMAND test_repl_jit
