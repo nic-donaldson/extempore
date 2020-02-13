@@ -5,3 +5,9 @@
 #include <string>
 
 extern std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
+
+namespace extemp {
+  namespace EXTLLVM {
+    const llvm::GlobalValue* getGlobalValue(const char* Name);
+  } // EXTLLVM
+} // extemp

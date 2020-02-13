@@ -192,6 +192,7 @@ static std::string fileToString(const std::string& fileName)
 // insertMatchingSymbols finds tokens in code that match regex and inserts them into containingSet
 static void insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
 {
+    return LLVMIRCompilation::insertMatchingSymbols(code, regex, containingSet);
     std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
               std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
 }
@@ -199,6 +200,7 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 // TODO: move semantics
 static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms)
 {
+    return LLVMIRCompilation::necessaryGlobalDeclarations(asmcode, sInlineSyms);
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
 
