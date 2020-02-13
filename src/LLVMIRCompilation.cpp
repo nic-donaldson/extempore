@@ -5,12 +5,18 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Function.h"
 
+#include <regex>
+#include <string>
+
 namespace extemp {
 
   // LLVMIRCompile captures all the LLVM stuff we need to take a string
   // of LLVM IR and produce an LLVM Module
   LLVMIRCompilation::LLVMIRCompilation() {
   }
+
+  const std::regex LLVMIRCompilation::sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize); 
+  const std::regex LLVMIRCompilation::sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 
   void LLVMIRCompilation::insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
   {
@@ -81,7 +87,4 @@ namespace extemp {
     }
     return str;
 }
-
-  std::regex LLVMIRCompilation::sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize); 
-  std::regex LLVMIRCompilation::sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 }

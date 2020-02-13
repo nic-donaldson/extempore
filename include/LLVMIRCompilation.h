@@ -15,8 +15,8 @@ namespace extemp {
     static void insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet);
     static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms);
     static std::string SanitizeType(llvm::Type* Type);
-    static std::regex sGlobalSymRegex;
-    static std::regex sDefineSymRegex;
+    static const std::regex sGlobalSymRegex;
+    static const std::regex sDefineSymRegex;
   private:
   };
 } // extemp
