@@ -54,7 +54,6 @@
 #include "llvm/IR/Module.h"
 #include "llvm/LinkAllPasses.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetOptions.h"
@@ -131,8 +130,6 @@
 // llvm_scheme foreign function -> string name
 // also is not thread safe!
 std::map<foreign_func, std::string> LLVM_SCHEME_FF_MAP;
-
-extemp::EXTMutex alloc_mutex("alloc mutex");
 
 EXPORT void* malloc16(size_t Size)
 {
@@ -820,7 +817,7 @@ EXPORT llvm_zone_t* llvm_pop_zone_stack()
 
 EXPORT void* llvm_zone_malloc(llvm_zone_t* zone, uint64_t size)
 {
-    extemp::EXTMutex::ScopedLock lock(alloc_mutex);
+    extemp::EXTMutex::ScopedLock lock(extemp::EXTLLVM2::alloc_mutex);
 #if DEBUG_ZONE_ALLOC
     printf("MallocZone: %p:%p:%lld:%lld:%lld\n",zone,zone->memory,zone->offset,zone->size,size);
 #endif
@@ -1031,13 +1028,9 @@ void initLLVM()
     if (unlikely(extemp::EXTLLVM2::EE)) {
         return;
     }
-    alloc_mutex.init();
-    llvm::TargetOptions Opts;
-    Opts.GuaranteedTailCallOpt = true;
-    Opts.UnsafeFPMath = false;
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    LLVMInitializeX86Disassembler();
+
+    extemp::EXTLLVM2::initLLVM();
+
     auto& context(llvm::getGlobalContext());
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     M = module.get();
@@ -1048,6 +1041,9 @@ void initLLVM()
     // Build engine with JIT
     llvm::EngineBuilder factory(std::move(module));
     factory.setEngineKind(llvm::EngineKind::JIT);
+    llvm::TargetOptions Opts;
+    Opts.GuaranteedTailCallOpt = true;
+    Opts.UnsafeFPMath = false;
     factory.setTargetOptions(Opts);
     auto mm(llvm::make_unique<llvm::SectionMemoryManager>());
     MM = mm.get();
