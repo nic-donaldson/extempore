@@ -1,13 +1,20 @@
 #pragma once
 
-#include "llvm/IR/GlobalValue.h"
 #include <unordered_map>
 #include <string>
 
-extern std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
+namespace llvm {
+    class GlobalVariable;
+    class GlobalValue;
+    class Function;
+}
 
 namespace extemp {
   namespace EXTLLVM {
+    bool haveGlobalValue(const char* Name);
     const llvm::GlobalValue* getGlobalValue(const char* Name);
+    const llvm::GlobalVariable* getGlobalVariable(const char* Name);
+    const void addFunction(const llvm::Function& function);
+    const void addGlobal(const llvm::GlobalVariable& global);
   } // EXTLLVM
 } // extemp

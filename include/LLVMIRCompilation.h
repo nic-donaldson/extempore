@@ -1,11 +1,12 @@
 #pragma once
 
-#include "llvm/IR/Type.h"
-#include "llvm/Support/raw_ostream.h"
-
 #include <string>
 #include <regex>
 #include <unordered_set>
+
+namespace llvm {
+    class Type;
+}
 
 namespace extemp {
 class LLVMIRCompilation {

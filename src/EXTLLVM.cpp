@@ -77,6 +77,7 @@
 #include "OSC.h"
 #include "math.h"
 #include "BranchPrediction.h"
+#include "EXTLLVMGlobalMap.h"
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -853,29 +854,15 @@ void initLLVM()
   }
 }
 
-extern std::unordered_map<std::string, const llvm::GlobalValue*> sGlobalMap;
-
 namespace extemp {
 
 void EXTLLVM::addModule(llvm::Module* Module)
 {
     for (const auto& function : Module->getFunctionList()) {
-        std::string str;
-        llvm::raw_string_ostream stream(str);
-        function.printAsOperand(stream, false);
-        auto result(sGlobalMap.insert(std::make_pair(stream.str().substr(1), &function)));
-        if (!result.second) {
-            result.first->second = &function;
-        }
+        EXTLLVM::addFunction(function);
     }
     for (const auto& global : Module->getGlobalList()) {
-        std::string str;
-        llvm::raw_string_ostream stream(str);
-        global.printAsOperand(stream, false);
-        auto result(sGlobalMap.insert(std::make_pair(stream.str().substr(1), &global)));
-        if (!result.second) {
-            result.first->second = &global;
-        }
+        EXTLLVM::addGlobal(global);
     }
     Ms.push_back(Module);
 }
@@ -892,16 +879,15 @@ void EXTLLVM::runPassManager(llvm::Module* m)
     }
 }
 
-const llvm::GlobalValue* EXTLLVM::getGlobalValue(const char* Name);
-
-const llvm::GlobalVariable* EXTLLVM::getGlobalVariable(const char* Name)
+    const llvm::GlobalVariable* EXTLLVM::getGlobalVariable(const char* Name);
+    /*
 {
     auto val(getGlobalValue(Name));
     if (likely(val)) {
         return llvm::dyn_cast<llvm::GlobalVariable>(val);
     }
     return nullptr;
-}
+    }*/
 
 const llvm::Function* EXTLLVM::getFunction(const char* Name) {
     auto val(getGlobalValue(Name));

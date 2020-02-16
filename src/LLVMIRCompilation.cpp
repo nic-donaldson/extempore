@@ -1,12 +1,32 @@
 #include <LLVMIRCompilation.h>
 #include <EXTLLVMGlobalMap.h>
 
+#include "llvm/IR/Function.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/Function.h"
 
+#include <list>
 #include <regex>
 #include <string>
+#include <iterator>
+
+/*
+// this typechecks could be basis for fakes?
+namespace llvm {
+    class Argument {
+    public:
+        Type* getType() const;
+    };
+    typedef std::list<Argument> ArgumentListType;
+    class Function {
+    public:
+        Type* getReturnType() const;
+        bool isVarArg() const;
+        const ArgumentListType &ist() const;
+    };
+    class Type;
+}
+*/
 
 namespace extemp {
 
@@ -44,12 +64,12 @@ namespace extemp {
             continue;
         }
 
-        auto gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
+        const llvm::Value* gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
         if (!gv) {
             continue;
         }
 
-        auto func(llvm::dyn_cast<llvm::Function>(gv));
+        const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
             dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
 
