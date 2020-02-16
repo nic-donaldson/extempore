@@ -669,12 +669,9 @@ namespace extemp {
 
 namespace EXTLLVM {
 
-llvm::legacy::PassManager* PM = nullptr;
-llvm::legacy::PassManager* PM_NO = nullptr;
 llvm::Module* M = nullptr; // TODO: obsolete?
 std::vector<llvm::Module*> Ms;
 int64_t LLVM_COUNT = 0l;
-bool OPTIMIZE_COMPILES = true;
 bool VERIFY_COMPILES = true;
 
 static llvm::SectionMemoryManager* MM = nullptr;
@@ -1129,29 +1126,7 @@ void initLLVM()
     std::cout << LLVM_VERSION_STRING;
     std::cout << " MCJIT" << std::endl;
     ascii_normal();
-    PM_NO = new llvm::legacy::PassManager();
-    PM_NO->add(llvm::createAlwaysInlinerPass());
-    PM = new llvm::legacy::PassManager();
-    PM->add(llvm::createAggressiveDCEPass());
-    PM->add(llvm::createAlwaysInlinerPass());
-    PM->add(llvm::createArgumentPromotionPass());
-    PM->add(llvm::createCFGSimplificationPass());
-    PM->add(llvm::createDeadStoreEliminationPass());
-    PM->add(llvm::createFunctionInliningPass());
-    PM->add(llvm::createGVNPass(true));
-    PM->add(llvm::createIndVarSimplifyPass());
-    PM->add(llvm::createInstructionCombiningPass());
-    PM->add(llvm::createJumpThreadingPass());
-    PM->add(llvm::createLICMPass());
-    PM->add(llvm::createLoopDeletionPass());
-    PM->add(llvm::createLoopRotatePass());
-    PM->add(llvm::createLoopUnrollPass());
-    PM->add(llvm::createMemCpyOptPass());
-    PM->add(llvm::createPromoteMemoryToRegisterPass());
-    PM->add(llvm::createReassociatePass());
-    PM->add(llvm::createScalarReplAggregatesPass());
-    PM->add(llvm::createSCCPPass());
-    PM->add(llvm::createTailCallEliminationPass());
+    extemp::EXTLLVM2::initPassManagers();
 
     static struct {
         const char* name;
@@ -1211,15 +1186,4 @@ void EXTLLVM::addModule(llvm::Module* Module)
     Ms.push_back(Module);
 }
 
-void EXTLLVM::runPassManager(llvm::Module* m)
-{
-    assert(PM);
-    assert(PM_NO);
-
-    if (EXTLLVM::OPTIMIZE_COMPILES) {
-        PM->run(*m);
-    } else {
-        PM_NO->run(*m);
-    }
-}
 }

@@ -145,7 +145,7 @@ static LLVMIRCompilation IRCompiler;
 // include "ffi/llvm.inc"
 static pointer optimizeCompiles(scheme* Scheme, pointer Args)
 {
-    EXTLLVM::OPTIMIZE_COMPILES = (pair_car(Args) == Scheme->T);
+    EXTLLVM2::OPTIMIZE_COMPILES = (pair_car(Args) == Scheme->T);
     return Scheme->T;
 }
 
@@ -1014,7 +1014,7 @@ should replace this with Module introspection/reflection
     // Probably shouldn't be unwrapping a unique_ptr here
     // but we can think about that another time
     llvm::Module *modulePtr = newModule.get();
-    EXTLLVM::runPassManager(modulePtr);
+    EXTLLVM2::runPassManager(modulePtr);
     extemp::EXTLLVM2::EE->addModule(std::move(newModule));
     extemp::EXTLLVM2::EE->finalizeObject();
 

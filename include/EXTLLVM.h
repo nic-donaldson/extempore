@@ -235,14 +235,10 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
 
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
-void runPassManager(llvm::Module* m);
 
 extern llvm::Module* M;
 extern int64_t LLVM_COUNT;
-extern bool OPTIMIZE_COMPILES;
 extern bool VERIFY_COMPILES;
-extern llvm::legacy::PassManager* PM;
-extern llvm::legacy::PassManager* PM_NO;
 extern std::vector<llvm::Module*> Ms;
 
 void initLLVM();
