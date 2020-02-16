@@ -878,23 +878,4 @@ void EXTLLVM::runPassManager(llvm::Module* m)
         PM_NO->run(*m);
     }
 }
-
-    const llvm::GlobalVariable* EXTLLVM::getGlobalVariable(const char* Name);
-    /*
-{
-    auto val(getGlobalValue(Name));
-    if (likely(val)) {
-        return llvm::dyn_cast<llvm::GlobalVariable>(val);
-    }
-    return nullptr;
-    }*/
-
-const llvm::Function* EXTLLVM::getFunction(const char* Name) {
-    auto val(getGlobalValue(Name));
-    if (likely(val)) {
-        return llvm::dyn_cast<llvm::Function>(val);
-    }
-    return nullptr;
-}
-
 }
