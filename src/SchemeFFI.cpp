@@ -200,7 +200,7 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
 // TODO: move semantics
 static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms)
 {
-    return LLVMIRCompilation::necessaryGlobalDeclarations(asmcode, sInlineSyms);
+    return IRCompiler.necessaryGlobalDeclarations(asmcode, sInlineSyms);
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
 
@@ -313,6 +313,11 @@ from llvm 3.8.0 docs:
 "LLVM identifiers come in two basic types: global and local. Global identifiers (functions, global variables) begin with the '@' character."
 
 so basically all the global syms, "@thing", appear in sInlineSyms
+
+this is pretty rudimentary won't handle LLVM comments or linkage types e.g. "private".
+should replace this with Module introspection/reflection
+
+"LLVM programs are composed of Module‘s, each of which is a translation unit of the input programs. Each module consists of functions, global variables, and symbol table entries. Modules may be combined together with the LLVM linker, which merges function (and global variable) definitions, resolves forward declarations, and merges symbol table entries."
     */
 
     const std::string declarations = necessaryGlobalDeclarations(asmcode, sInlineSyms);

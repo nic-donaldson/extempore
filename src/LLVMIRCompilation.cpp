@@ -24,7 +24,7 @@ namespace extemp {
                 std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
   }
 
-  std::string LLVMIRCompilation::necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms)
+  std::string LLVMIRCompilation::necessaryGlobalDeclarations(const std::string& asmcode, const std::unordered_set<std::string>& sInlineSyms)
   {
     std::unordered_set<std::string> symbols;
     insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
