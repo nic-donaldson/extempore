@@ -70,6 +70,7 @@
 #include <unordered_map>
 #include "stdarg.h"
 #include "EXTLLVM.h"
+#include "EXTLLVM2.h"
 #include "EXTThread.h"
 #include "UNIV.h"
 #include "TaskScheduler.h"
@@ -241,7 +242,7 @@ EXPORT void llvm_schedule_callback(long long time, void* dat)
 
 EXPORT void* llvm_get_function_ptr(char* fname)
 {
-  return reinterpret_cast<void*>(extemp::EXTLLVM::EE->getFunctionAddress(fname));
+  return reinterpret_cast<void*>(extemp::EXTLLVM2::EE->getFunctionAddress(fname));
 }
 
 EXPORT char* extitoa(int64_t val)
@@ -580,7 +581,7 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
   // Module* M = extemp::EXTLLVM::M;
   std::string funcname(xtlang_name);
   std::string getter("_getter");
-  void*(*p)() = (void*(*)()) extemp::EXTLLVM::EE->getFunctionAddress(funcname + getter);
+  void*(*p)() = (void*(*)()) extemp::EXTLLVM2::EE->getFunctionAddress(funcname + getter);
   if (!p) {
     printf("Error attempting to set environment variable in closure %s.%s\n",fname,vname);
     return _sc->F;
@@ -668,7 +669,6 @@ namespace extemp {
 
 namespace EXTLLVM {
 
-llvm::ExecutionEngine* EE = nullptr;
 llvm::legacy::PassManager* PM = nullptr;
 llvm::legacy::PassManager* PM_NO = nullptr;
 llvm::Module* M = nullptr; // TODO: obsolete?
@@ -687,7 +687,7 @@ uint64_t getSymbolAddress(const std::string& name) {
 {
     size_t code_size = 1024 * 100;
     std::string Error;
-    llvm::TargetMachine *TM = extemp::EXTLLVM::EE->getTargetMachine();
+    llvm::TargetMachine *TM = extemp::EXTLLVM2::EE->getTargetMachine();
     llvm::Triple Triple = TM->getTargetTriple();
     const llvm::Target TheTarget = TM->getTarget();
     std::string TripleName = Triple.getTriple();
@@ -1031,7 +1031,7 @@ EXPORT int64_t thread_sleep(int64_t Secs, int64_t Nanosecs)
 
 void initLLVM()
 {
-    if (unlikely(EE)) {
+    if (unlikely(extemp::EXTLLVM2::EE)) {
         return;
     }
     alloc_mutex.init();
@@ -1087,8 +1087,8 @@ void initLLVM()
     }
     llvm::TargetMachine* tm = factory.selectTarget(triple, "", cpu, lattrs);
 #endif // _WIN32
-    EE = factory.create(tm);
-    EE->DisableLazyCompilation(true);
+    extemp::EXTLLVM2::EE = factory.create(tm);
+    extemp::EXTLLVM2::EE->DisableLazyCompilation(true);
     ascii_normal();
     std::cout << "ARCH           : " << std::flush;
     ascii_info();
@@ -1160,39 +1160,39 @@ void initLLVM()
         { "llvm_zone_destroy", uintptr_t(&llvm_zone_destroy) },
     };
     for (auto& elem : mappingTable) {
-        EE->updateGlobalMapping(elem.name, elem.address);
+        extemp::EXTLLVM2::EE->updateGlobalMapping(elem.name, elem.address);
     }
 
     // tell LLVM about some built-in functions
-    EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
-    EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
-    EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
-    EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
-    EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
-    EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
-    EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
-    EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
-    EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
-    EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
-    EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
-    EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
-    EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
-    EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
-    EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
-    EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
-    EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
-    EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
-    EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
-    EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
-    EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
-    EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
-    EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
-    EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
-    EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
-    EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
-    EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-    EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-    extemp::EXTLLVM::EE->finalizeObject();
+    extemp::EXTLLVM2::EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
+    extemp::EXTLLVM2::EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
+    extemp::EXTLLVM2::EE->finalizeObject();
     return;
     }
   }

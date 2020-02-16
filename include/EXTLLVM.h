@@ -237,7 +237,6 @@ uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
 void runPassManager(llvm::Module* m);
 
-extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;
 extern int64_t LLVM_COUNT;
 extern bool OPTIMIZE_COMPILES;
