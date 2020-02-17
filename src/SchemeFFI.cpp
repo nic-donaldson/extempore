@@ -219,21 +219,18 @@ static pointer get_struct_size(scheme* Scheme, pointer Args)
     return mk_integer(Scheme, size);
 }
 
+// TODO: do we still need this function?
 static llvm::StructType* getNamedType(const char* name) {
-    return EXTLLVM2::FirstModule->getTypeByName(name);
+    return EXTLLVM2::getTypeByName(name);
 }
 
 static pointer get_named_struct_size(scheme* Scheme, pointer Args)
 {
-    llvm::Module* M = EXTLLVM2::FirstModule;
     auto type(getNamedType(string_value(pair_car(Args))));
     if (!type) {
         return Scheme->F;
     }
-    auto layout(new llvm::DataLayout(M));
-    long size = layout->getStructLayout(type)->getSizeInBytes();
-    delete layout;
-    return mk_integer(Scheme, size);
+    return mk_integer(Scheme, EXTLLVM2::getNamedStructSize(type));
 }
 
 static char tmp_str_a[1024];
@@ -509,25 +506,6 @@ static pointer callClosure(scheme* Scheme, pointer Args)
     return mk_integer(Scheme, (*fptr)(closure[0], ivalue(pair_cadr(Args))));
 }
 
-static pointer printLLVMModule(scheme* Scheme, pointer Args) // TODO: This isn't used?
-{
-    std::string str;
-    llvm::raw_string_ostream ss(str);
-    if (list_length(Scheme, Args) > 0) {
-        const llvm::GlobalValue* val = extemp::EXTLLVM::getGlobalValue(string_value(pair_car(Args)));
-        if (!val) {
-            std::cerr << "No such value found in LLVM Module" << std::endl;
-            return Scheme->F;
-        }
-        ss << *val;
-        printf("At address: %p\n%s\n",val, ss.str().c_str());
-    } else {
-        ss << *extemp::EXTLLVM2::FirstModule;
-    }
-    printf("%s", ss.str().c_str());
-    return Scheme->T;
-}
-
 static pointer printLLVMFunction(scheme* Scheme, pointer Args)
 {
     auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
@@ -694,15 +672,6 @@ static pointer get_named_type(scheme* Scheme, pointer Args)
     return Scheme->NIL;
 }
 
-static pointer get_global_module(scheme* Scheme, pointer Args)
-{
-    auto m(EXTLLVM2::FirstModule);
-    if (!m) {
-        return Scheme->F;
-    }
-    return mk_cptr(Scheme, m);
-}
-
 static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
 {
     auto m(reinterpret_cast<llvm::Module*>(cptr_value(pair_car(Args))));
@@ -783,7 +752,6 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
         { "llvm:add-llvm-alias", &add_llvm_alias }, \
         { "llvm:get-llvm-alias", &get_llvm_alias }, \
         { "llvm:get-named-type", &get_named_type }, \
-        { "llvm:get-global-module", &get_global_module }, \
         { "llvm:export-module", &export_llvmmodule_bitcode }
     
     

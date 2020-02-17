@@ -215,5 +215,16 @@ namespace EXTLLVM2 {
         return Modules;
     }
 
+    llvm::StructType* getTypeByName(const char* name) {
+        return FirstModule->getTypeByName(name);
+    }
+
+    long getNamedStructSize(llvm::StructType* type) {
+        auto layout(new llvm::DataLayout(FirstModule));
+        long size = layout->getStructLayout(type)->getSizeInBytes();
+        delete layout;
+        return size;
+    }
+
 } // namespace EXTLLVM2
 } // namespace extemp

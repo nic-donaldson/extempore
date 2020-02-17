@@ -218,7 +218,6 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
 extern int64_t LLVM_COUNT;
 extern bool VERIFY_COMPILES;
 
-
 void initLLVM();
 
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
