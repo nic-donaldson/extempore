@@ -24,11 +24,12 @@ namespace extemp {
     extern std::vector<llvm::Module*> Ms;
     extern llvm::SectionMemoryManager* MM;
 
-    void initLLVM();
+    bool initLLVM();
     void initPassManagers();
     void runPassManager(llvm::Module* m);
     void addModule(llvm::Module* Module);
     uint64_t getSymbolAddress(const std::string&);
     void addGlobalMapping(const char*, uintptr_t);
+    void finalize();
   } // EXTLLVM2
 } // extemp

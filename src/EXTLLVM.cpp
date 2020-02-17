@@ -1022,12 +1022,9 @@ EXPORT int64_t thread_sleep(int64_t Secs, int64_t Nanosecs)
 
 void initLLVM()
 {
-    if (unlikely(extemp::EXTLLVM2::EE)) {
+    if (!extemp::EXTLLVM2::initLLVM()) {
         return;
     }
-
-    extemp::EXTLLVM2::initLLVM();
-    
 
     // tell LLVM about some built-in functions
     extemp::EXTLLVM2::addGlobalMapping("llvm_zone_destroy", uintptr_t(&llvm_zone_destroy));
@@ -1059,7 +1056,10 @@ void initLLVM()
     extemp::EXTLLVM2::addGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
     extemp::EXTLLVM2::addGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
     extemp::EXTLLVM2::addGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-    extemp::EXTLLVM2::EE->finalizeObject();
+
+    // it's a bit awkward that we do it this way but we'll get there...
+    extemp::EXTLLVM2::finalize();
+
     return;
     }
   }

@@ -33,13 +33,16 @@ namespace EXTLLVM2 {
     // TODO: make this static once it's fully moved over
     llvm::SectionMemoryManager* MM = nullptr;
 
-    void initLLVM() {
+    bool initLLVM() {
+        if (EE) {
+            return false;
+        }
+
         alloc_mutex.init();
 
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
         LLVMInitializeX86Disassembler();
-
 
         auto& context(llvm::getGlobalContext());
         auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
@@ -145,11 +148,16 @@ namespace EXTLLVM2 {
         std::cout << LLVM_VERSION_STRING;
         std::cout << " MCJIT" << std::endl;
         ascii_normal();
-        extemp::EXTLLVM2::initPassManagers();
+        initPassManagers();
+        return true;
     }
 
     void addGlobalMapping(const char* name, uintptr_t address) {
         EE->updateGlobalMapping(name, address);
+    }
+
+    void finalize() {
+        EE->finalizeObject();
     }
 
     void initPassManagers() {
