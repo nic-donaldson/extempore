@@ -239,7 +239,7 @@ EXPORT void llvm_schedule_callback(long long time, void* dat)
 
 EXPORT void* llvm_get_function_ptr(char* fname)
 {
-  return reinterpret_cast<void*>(extemp::EXTLLVM2::EE->getFunctionAddress(fname));
+  return reinterpret_cast<void*>(extemp::EXTLLVM2::ExecEngine->getFunctionAddress(fname));
 }
 
 EXPORT char* extitoa(int64_t val)
@@ -578,7 +578,7 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
   // Module* M = extemp::EXTLLVM::M;
   std::string funcname(xtlang_name);
   std::string getter("_getter");
-  void*(*p)() = (void*(*)()) extemp::EXTLLVM2::EE->getFunctionAddress(funcname + getter);
+  void*(*p)() = (void*(*)()) extemp::EXTLLVM2::ExecEngine->getFunctionAddress(funcname + getter);
   if (!p) {
     printf("Error attempting to set environment variable in closure %s.%s\n",fname,vname);
     return _sc->F;
@@ -678,7 +678,7 @@ uintptr_t getSymbolAddress(const std::string& name) {
 {
     size_t code_size = 1024 * 100;
     std::string Error;
-    llvm::TargetMachine *TM = extemp::EXTLLVM2::EE->getTargetMachine();
+    llvm::TargetMachine *TM = extemp::EXTLLVM2::ExecEngine->getTargetMachine();
     llvm::Triple Triple = TM->getTargetTriple();
     const llvm::Target TheTarget = TM->getTarget();
     std::string TripleName = Triple.getTriple();

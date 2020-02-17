@@ -316,9 +316,9 @@ static pointer get_global_variable_type(scheme* Scheme, pointer Args)
 static pointer get_function_pointer(scheme* Scheme, pointer Args)
 {
     auto name(string_value(pair_car(Args)));
-    void* p = EXTLLVM2::EE->getPointerToGlobalIfAvailable(name);
+    void* p = EXTLLVM2::ExecEngine->getPointerToGlobalIfAvailable(name);
     if (!p) { // look for it as a JIT-compiled function
-        p = reinterpret_cast<void*>(EXTLLVM2::EE->getFunctionAddress(name));
+        p = reinterpret_cast<void*>(EXTLLVM2::ExecEngine->getFunctionAddress(name));
         if (!p) {
             return Scheme->F;
         }
@@ -328,7 +328,7 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
 
 static pointer remove_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::EE->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -343,7 +343,7 @@ static pointer remove_function(scheme* Scheme, pointer Args)
 
 static pointer remove_global_var(scheme* Scheme, pointer Args)
 {
-    auto var(EXTLLVM2::EE->FindGlobalVariableNamed(string_value(pair_car(Args))));
+    auto var(EXTLLVM2::ExecEngine->FindGlobalVariableNamed(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -354,7 +354,7 @@ static pointer remove_global_var(scheme* Scheme, pointer Args)
 
 static pointer erase_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::EE->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -370,11 +370,11 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
     char name[1024];
     strcpy(name, string_value(pair_car(Args)));
     strcat(name, "_native");
-    auto func(EXTLLVM2::EE->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
-    void* p = EXTLLVM2::EE->getPointerToFunction(func);
+    void* p = EXTLLVM2::ExecEngine->getPointerToFunction(func);
     if (!p) {
         return Scheme->F;
     }
@@ -384,7 +384,7 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
-    llvm::ExecutionEngine* EE = EXTLLVM2::EE;
+    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
 #ifdef LLVM_EE_LOCK
     llvm::MutexGuard locked(EE->lock);
 #endif
@@ -625,7 +625,7 @@ static pointer bind_symbol(scheme* Scheme, pointer Args)
     auto library(cptr_value(pair_car(Args)));
     auto sym(string_value(pair_cadr(Args)));
 
-    llvm::ExecutionEngine* EE = EXTLLVM2::EE;
+    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
     llvm::MutexGuard locked(EE->lock);
 #ifdef _WIN32
     auto ptr(reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(library), sym)));
@@ -643,7 +643,7 @@ static pointer update_mapping(scheme* Scheme, pointer Args)
 {
     auto sym(string_value(pair_car(Args)));
     auto ptr(cptr_value(pair_cadr(Args)));
-    llvm::ExecutionEngine* EE = EXTLLVM2::EE;
+    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
     llvm::MutexGuard locked(EE->lock);
     // returns previous value of the mapping, or NULL if not set
     auto oldval(EE->updateGlobalMapping(sym, reinterpret_cast<uint64_t>(ptr)));
@@ -961,8 +961,8 @@ should replace this with Module introspection/reflection
     // but we can think about that another time
     llvm::Module *modulePtr = newModule.get();
     EXTLLVM2::runPassManager(modulePtr);
-    extemp::EXTLLVM2::EE->addModule(std::move(newModule));
-    extemp::EXTLLVM2::EE->finalizeObject();
+    extemp::EXTLLVM2::ExecEngine->addModule(std::move(newModule));
+    extemp::EXTLLVM2::ExecEngine->finalizeObject();
 
     isThisInitDotLL = false;
 

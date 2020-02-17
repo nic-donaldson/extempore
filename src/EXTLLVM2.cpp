@@ -20,7 +20,7 @@
 namespace extemp {
 namespace EXTLLVM2 {
     bool OPTIMIZE_COMPILES = true;
-    llvm::ExecutionEngine* EE = nullptr;
+    llvm::ExecutionEngine* ExecEngine = nullptr;
     llvm::legacy::PassManager* PM = nullptr;
     llvm::legacy::PassManager* PM_NO = nullptr;
     llvm::Module* M = nullptr;
@@ -61,7 +61,7 @@ namespace EXTLLVM2 {
     }
 
     bool initLLVM() {
-        if (EE) {
+        if (ExecEngine) {
             return false;
         }
 
@@ -131,9 +131,9 @@ namespace EXTLLVM2 {
             }
             tm = factory.selectTarget(triple, "", cpu, lattrs);
         }
-        extemp::EXTLLVM2::EE = factory.create(tm);
+        extemp::EXTLLVM2::ExecEngine = factory.create(tm);
 
-        extemp::EXTLLVM2::EE->DisableLazyCompilation(true);
+        extemp::EXTLLVM2::ExecEngine->DisableLazyCompilation(true);
         ascii_normal();
         std::cout << "ARCH           : " << std::flush;
         ascii_info();
@@ -178,11 +178,11 @@ namespace EXTLLVM2 {
     }
 
     void addGlobalMapping(const char* name, uintptr_t address) {
-        EE->updateGlobalMapping(name, address);
+        ExecEngine->updateGlobalMapping(name, address);
     }
 
     void finalize() {
-        EE->finalizeObject();
+        ExecEngine->finalizeObject();
     }
 
 

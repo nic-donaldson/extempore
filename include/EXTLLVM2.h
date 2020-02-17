@@ -15,7 +15,7 @@ namespace llvm {
 
 namespace extemp {
   namespace EXTLLVM2 {
-    extern llvm::ExecutionEngine* EE;
+    extern llvm::ExecutionEngine* ExecEngine;
     extern llvm::Module* M;
     extern std::vector<llvm::Module*> Ms;
 
