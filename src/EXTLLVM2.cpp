@@ -11,6 +11,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/Support/MutexGuard.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
 
@@ -60,6 +61,10 @@ namespace EXTLLVM2 {
         PM->add(llvm::createTailCallEliminationPass());
     }
 
+    // just a name we give this for the moment
+    // this function probably shouldn't exist
+    void onetwothree(llvm::Module* Module);
+
     bool initLLVM() {
         if (ExecEngine) {
             return false;
@@ -72,7 +77,7 @@ namespace EXTLLVM2 {
         auto& context(llvm::getGlobalContext());
         auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
         FirstModule = module.get();
-        addModule(FirstModule);
+        onetwothree(FirstModule);
         if (!extemp::UNIV::ARCH.empty()) {
             FirstModule->setTargetTriple(extemp::UNIV::ARCH);
         }
@@ -181,10 +186,15 @@ namespace EXTLLVM2 {
         ExecEngine->updateGlobalMapping(name, address);
     }
 
+    uint64_t addGlobalMappingUnderEELock(const char* name, uintptr_t address) {
+        llvm::MutexGuard locked(ExecEngine->lock);
+        // returns previous value of the mapping, or NULL if not set
+        return ExecEngine->updateGlobalMapping(name, address);
+    }
+
     void finalize() {
         ExecEngine->finalizeObject();
     }
-
 
     void runPassManager(llvm::Module *m) {
         assert(PM);
@@ -197,7 +207,7 @@ namespace EXTLLVM2 {
         }
     }
 
-    void addModule(llvm::Module* Module) {
+    void onetwothree(llvm::Module* Module) {
         for (const auto& function : Module -> getFunctionList()) {
             EXTLLVM::addFunction(function);
         }
@@ -205,6 +215,17 @@ namespace EXTLLVM2 {
             EXTLLVM::addGlobal(global);
         }
         Modules.push_back(Module);
+    }
+
+    llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
+        llvm::Module *modulePtr = Module.get();
+        runPassManager(modulePtr);
+        ExecEngine->addModule(std::move(Module));
+        ExecEngine->finalizeObject();
+        if (modulePtr) {
+            onetwothree(modulePtr);
+        }
+        return modulePtr;
     }
 
     uintptr_t getSymbolAddress(const std::string& name) {

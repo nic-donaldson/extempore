@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <memory>
 
 namespace llvm {
   class ExecutionEngine;
@@ -19,10 +20,11 @@ namespace extemp {
 
     bool initLLVM();
     void addGlobalMapping(const char*, uintptr_t);
+    uint64_t addGlobalMappingUnderEELock(const char*, uintptr_t);
     void finalize();
 
     void runPassManager(llvm::Module* m);
-    void addModule(llvm::Module* Module);
+    llvm::Module* addModule(std::unique_ptr<llvm::Module> Module);
 
     uintptr_t getSymbolAddress(const std::string&);
     uintptr_t getFunctionAddress(const std::string&);

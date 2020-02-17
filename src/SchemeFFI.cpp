@@ -156,7 +156,6 @@ static pointer jitCompileIRString(scheme* Scheme, pointer Args)
     if (!modulePtr) {
         return Scheme->F;
     }
-    extemp::EXTLLVM2::addModule(modulePtr);
     return mk_cptr(Scheme, modulePtr);
 }
 
@@ -621,10 +620,8 @@ static pointer update_mapping(scheme* Scheme, pointer Args)
 {
     auto sym(string_value(pair_car(Args)));
     auto ptr(cptr_value(pair_cadr(Args)));
-    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
-    llvm::MutexGuard locked(EE->lock);
-    // returns previous value of the mapping, or NULL if not set
-    auto oldval(EE->updateGlobalMapping(sym, reinterpret_cast<uint64_t>(ptr)));
+
+    auto oldval(EXTLLVM2::addGlobalMappingUnderEELock(sym, reinterpret_cast<uintptr_t>(ptr)));
     return mk_cptr(Scheme, reinterpret_cast<void*>(oldval));
 }
 
@@ -927,10 +924,7 @@ should replace this with Module introspection/reflection
 
     // Probably shouldn't be unwrapping a unique_ptr here
     // but we can think about that another time
-    llvm::Module *modulePtr = newModule.get();
-    EXTLLVM2::runPassManager(modulePtr);
-    extemp::EXTLLVM2::ExecEngine->addModule(std::move(newModule));
-    extemp::EXTLLVM2::ExecEngine->finalizeObject();
+    llvm::Module* modulePtr = extemp::EXTLLVM2::addModule(std::move(newModule));
 
     isThisInitDotLL = false;
 
