@@ -1033,8 +1033,10 @@ void initLLVM()
     }
 
     // tell LLVM about some built-in functions
-    extemp::EXTLLVM2::addGlobalMapping("llvm_zone_destroy", uintptr_t(&llvm_zone_destroy));
-    extemp::EXTLLVM2::addGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
+    extemp::EXTLLVM2::addGlobalMapping("llvm_zone_destroy",
+                                       uintptr_t(&llvm_zone_destroy));
+    extemp::EXTLLVM2::addGlobalMapping("get_address_offset",
+                                       (uint64_t)&get_address_offset);
     extemp::EXTLLVM2::addGlobalMapping("string_hash", (uint64_t)&string_hash);
     extemp::EXTLLVM2::addGlobalMapping("swap64i", (uint64_t)&swap64i);
     extemp::EXTLLVM2::addGlobalMapping("swap64f", (uint64_t)&swap64f);
@@ -1061,13 +1063,14 @@ void initLLVM()
     extemp::EXTLLVM2::addGlobalMapping("cptr_value", (uint64_t)&cptr_value);
     extemp::EXTLLVM2::addGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
     extemp::EXTLLVM2::addGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-    extemp::EXTLLVM2::addGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
+    extemp::EXTLLVM2::addGlobalMapping("sys_slurp_file",
+                                       (uint64_t)&sys_slurp_file);
 
     // it's a bit awkward that we do it this way but we'll get there...
     extemp::EXTLLVM2::finalize();
 
     return;
-    }
-  }
+}
+}
 }
 
