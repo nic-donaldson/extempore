@@ -678,7 +678,7 @@ uintptr_t getSymbolAddress(const std::string& name) {
 {
     size_t code_size = 1024 * 100;
     std::string Error;
-    llvm::TargetMachine *TM = extemp::EXTLLVM2::ExecEngine->getTargetMachine();
+    llvm::TargetMachine *TM = extemp::EXTLLVM2::getTargetMachine();
     llvm::Triple Triple = TM->getTargetTriple();
     const llvm::Target TheTarget = TM->getTarget();
     std::string TripleName = Triple.getTriple();

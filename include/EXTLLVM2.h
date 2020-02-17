@@ -8,6 +8,7 @@ namespace llvm {
   class ExecutionEngine;
   class Module;
   class StructType;
+  class TargetMachine;
 }
 
 namespace extemp {
@@ -32,5 +33,8 @@ namespace extemp {
     // to expose the whole module
     llvm::StructType* getTypeByName(const char*);
     long getNamedStructSize(llvm::StructType*);
+
+    // pass through but to ExecEngine
+    llvm::TargetMachine* getTargetMachine();
   } // EXTLLVM2
 } // extemp

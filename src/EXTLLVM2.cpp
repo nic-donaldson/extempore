@@ -230,5 +230,9 @@ namespace EXTLLVM2 {
         return size;
     }
 
+    llvm::TargetMachine* getTargetMachine() {
+        return ExecEngine->getTargetMachine();
+    }
+
 } // namespace EXTLLVM2
 } // namespace extemp
