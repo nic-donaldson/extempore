@@ -146,39 +146,10 @@ namespace EXTLLVM2 {
         std::cout << " MCJIT" << std::endl;
         ascii_normal();
         extemp::EXTLLVM2::initPassManagers();
+    }
 
-        // tell LLVM about some built-in functions
-        extemp::EXTLLVM2::EE->updateGlobalMapping("llvm_zone_destroy", uintptr_t(&llvm_zone_destroy));
-        extemp::EXTLLVM2::EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("swap64f", (uint64_t)&swap64f);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("swap32i", (uint64_t)&swap32i);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("swap32f", (uint64_t)&swap32f);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("unswap64i", (uint64_t)&unswap64i);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("unswap64f", (uint64_t)&unswap64f);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("unswap32i", (uint64_t)&unswap32i);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("unswap32f", (uint64_t)&unswap32f);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("rsplit", (uint64_t)&rsplit);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("rmatch", (uint64_t)&rmatch);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("rreplace", (uint64_t)&rreplace);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("r64value", (uint64_t)&r64value);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_double", (uint64_t)&mk_double);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("r32value", (uint64_t)&r32value);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_float", (uint64_t)&mk_float);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i64", (uint64_t)&mk_i64);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i32", (uint64_t)&mk_i32);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i16", (uint64_t)&mk_i16);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i8", (uint64_t)&mk_i8);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_i1", (uint64_t)&mk_i1);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("string_value", (uint64_t)&string_value);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_string", (uint64_t)&mk_string);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("cptr_value", (uint64_t)&cptr_value);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("mk_cptr", (uint64_t)&mk_cptr);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("sys_sharedir", (uint64_t)&sys_sharedir);
-        extemp::EXTLLVM2::EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
-        extemp::EXTLLVM2::EE->finalizeObject();
-        return;
+    void addGlobalMapping(const char* name, uintptr_t address) {
+        EE->updateGlobalMapping(name, address);
     }
 
     void initPassManagers() {

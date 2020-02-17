@@ -29,5 +29,6 @@ namespace extemp {
     void runPassManager(llvm::Module* m);
     void addModule(llvm::Module* Module);
     uint64_t getSymbolAddress(const std::string&);
+    void addGlobalMapping(const char*, uintptr_t);
   } // EXTLLVM2
 } // extemp
