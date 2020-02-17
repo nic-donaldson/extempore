@@ -145,7 +145,7 @@ static LLVMIRCompilation IRCompiler;
 // include "ffi/llvm.inc"
 static pointer optimizeCompiles(scheme* Scheme, pointer Args)
 {
-    EXTLLVM2::OPTIMIZE_COMPILES = (pair_car(Args) == Scheme->T);
+    EXTLLVM2::setOptimize((pair_car(Args) == Scheme->T));
     return Scheme->T;
 }
 

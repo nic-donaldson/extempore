@@ -1,12 +1,10 @@
 #pragma once
 
-#include <EXTMutex.h>
 #include <vector>
 
 namespace llvm {
   class ExecutionEngine;
   class Module;
-  class SectionMemoryManager;
 
   namespace legacy {
     class PassManager;
@@ -16,10 +14,8 @@ namespace llvm {
 namespace extemp {
   namespace EXTLLVM2 {
     extern llvm::ExecutionEngine* EE;
-    extern bool OPTIMIZE_COMPILES;
     extern llvm::Module* M;
     extern std::vector<llvm::Module*> Ms;
-    extern llvm::SectionMemoryManager* MM;
 
     bool initLLVM();
     void initPassManagers();
@@ -28,5 +24,6 @@ namespace extemp {
     uint64_t getSymbolAddress(const std::string&);
     void addGlobalMapping(const char*, uintptr_t);
     void finalize();
+    bool setOptimize(const bool);
   } // EXTLLVM2
 } // extemp

@@ -29,6 +29,10 @@ namespace EXTLLVM2 {
     // TODO: make this static once it's fully moved over
     llvm::SectionMemoryManager* MM = nullptr;
 
+    bool setOptimize(const bool b) {
+        OPTIMIZE_COMPILES = b;
+    }
+
     bool initLLVM() {
         if (EE) {
             return false;
