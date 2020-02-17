@@ -219,12 +219,12 @@ static pointer get_struct_size(scheme* Scheme, pointer Args)
 }
 
 static llvm::StructType* getNamedType(const char* name) {
-    return EXTLLVM2::M->getTypeByName(name);
+    return EXTLLVM2::FirstModule->getTypeByName(name);
 }
 
 static pointer get_named_struct_size(scheme* Scheme, pointer Args)
 {
-    llvm::Module* M = EXTLLVM2::M;
+    llvm::Module* M = EXTLLVM2::FirstModule;
     auto type(getNamedType(string_value(pair_car(Args))));
     if (!type) {
         return Scheme->F;
@@ -521,7 +521,7 @@ static pointer printLLVMModule(scheme* Scheme, pointer Args) // TODO: This isn't
         ss << *val;
         printf("At address: %p\n%s\n",val, ss.str().c_str());
     } else {
-        ss << *extemp::EXTLLVM2::M;
+        ss << *extemp::EXTLLVM2::FirstModule;
     }
     printf("%s", ss.str().c_str());
     return Scheme->T;
@@ -543,7 +543,7 @@ static pointer llvm_print_all_closures(scheme* Scheme, pointer Args) // TODO
     char rgx[1024];
     strcpy(rgx, x);
     strcat(rgx, "_.*");
-    for (auto module : EXTLLVM::getModules()) {
+    for (auto module : EXTLLVM2::getModules()) {
         for (const auto& func : module->getFunctionList()) {
             if (func.hasName() && rmatch(rgx, func.getName().data())) {
                 std::string str;
@@ -558,7 +558,7 @@ static pointer llvm_print_all_closures(scheme* Scheme, pointer Args) // TODO
 
 static pointer llvm_print_all_modules(scheme* Scheme, pointer Args) // TODO
 {
-    for (auto module : EXTLLVM::getModules()) {
+    for (auto module : EXTLLVM2::getModules()) {
         std::string str;
         llvm::raw_string_ostream ss(str);
         ss << *module;
@@ -570,7 +570,7 @@ static pointer llvm_print_all_modules(scheme* Scheme, pointer Args) // TODO
 static pointer llvm_print_closure(scheme* Scheme, pointer Args) // TODO
 {
     auto fname(string_value(pair_car(Args)));
-    for (auto module : EXTLLVM::getModules()) {
+    for (auto module : EXTLLVM2::getModules()) {
         for (const auto& func : module->getFunctionList()) {
             if (func.hasName() && !strcmp(func.getName().data(), fname)) {
                 std::string str;
@@ -592,7 +592,7 @@ static pointer llvm_closure_last_name(scheme* Scheme, pointer Args)
     strcpy(rgx, x);
     strcat(rgx, "__[0-9]*");
     const char* last_name(nullptr);
-    for (auto module : EXTLLVM::getModules()) {
+    for (auto module : EXTLLVM2::getModules()) {
         for (const auto& func : module->getFunctionList()) {
             if (func.hasName() && rmatch(rgx, func.getName().data())) {
                 last_name = func.getName().data();
@@ -695,7 +695,7 @@ static pointer get_named_type(scheme* Scheme, pointer Args)
 
 static pointer get_global_module(scheme* Scheme, pointer Args)
 {
-    auto m(EXTLLVM2::M);
+    auto m(EXTLLVM2::FirstModule);
     if (!m) {
         return Scheme->F;
     }

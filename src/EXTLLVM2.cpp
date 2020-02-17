@@ -23,8 +23,8 @@ namespace EXTLLVM2 {
     llvm::ExecutionEngine* ExecEngine = nullptr;
     llvm::legacy::PassManager* PM = nullptr;
     llvm::legacy::PassManager* PM_NO = nullptr;
-    llvm::Module* M = nullptr;
-    std::vector<llvm::Module*> Ms;
+    llvm::Module* FirstModule = nullptr;
+    std::vector<llvm::Module*> Modules;
 
     // TODO: make this static once it's fully moved over
     llvm::SectionMemoryManager* MM = nullptr;
@@ -71,10 +71,10 @@ namespace EXTLLVM2 {
 
         auto& context(llvm::getGlobalContext());
         auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
-        M = module.get();
-        addModule(M);
+        FirstModule = module.get();
+        addModule(FirstModule);
         if (!extemp::UNIV::ARCH.empty()) {
-            M->setTargetTriple(extemp::UNIV::ARCH);
+            FirstModule->setTargetTriple(extemp::UNIV::ARCH);
         }
 
         // Build engine with JIT
@@ -204,11 +204,15 @@ namespace EXTLLVM2 {
         for (const auto& global : Module->getGlobalList()) {
             EXTLLVM::addGlobal(global);
         }
-        Ms.push_back(Module);
+        Modules.push_back(Module);
     }
 
     uintptr_t getSymbolAddress(const std::string& name) {
         return MM->getSymbolAddress(name);
+    }
+
+    std::vector<llvm::Module*>& getModules() {
+        return Modules;
     }
 
 } // namespace EXTLLVM2

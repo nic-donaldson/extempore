@@ -16,8 +16,7 @@ namespace llvm {
 namespace extemp {
   namespace EXTLLVM2 {
     extern llvm::ExecutionEngine* ExecEngine;
-    extern llvm::Module* M;
-    extern std::vector<llvm::Module*> Ms;
+    extern llvm::Module* FirstModule; // TODO: why?
 
     bool initLLVM();
     void runPassManager(llvm::Module* m);
@@ -26,5 +25,6 @@ namespace extemp {
     void addGlobalMapping(const char*, uintptr_t);
     void finalize();
     bool setOptimize(const bool);
+    std::vector<llvm::Module*>& getModules(); // TODO: probably shouldn't expose this
   } // EXTLLVM2
 } // extemp
