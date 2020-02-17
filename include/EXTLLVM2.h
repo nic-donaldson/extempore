@@ -9,6 +9,8 @@ namespace llvm {
   class Module;
   class StructType;
   class TargetMachine;
+  class Function;
+  class GlobalVariable;
 }
 
 namespace extemp {
@@ -24,6 +26,10 @@ namespace extemp {
 
     uintptr_t getSymbolAddress(const std::string&);
     uintptr_t getFunctionAddress(const std::string&);
+    void* getPointerToGlobalIfAvailable(const std::string&);
+    llvm::Function* FindFunctionNamed(const std::string&);
+    llvm::GlobalVariable* FindGlobalVariableNamed(const std::string&);
+    void* getPointerToFunction(llvm::Function* function);
 
     bool setOptimize(const bool);
     std::vector<llvm::Module*>& getModules(); // TODO: probably shouldn't expose this

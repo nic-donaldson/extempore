@@ -314,9 +314,9 @@ static pointer get_global_variable_type(scheme* Scheme, pointer Args)
 static pointer get_function_pointer(scheme* Scheme, pointer Args)
 {
     auto name(string_value(pair_car(Args)));
-    void* p = EXTLLVM2::ExecEngine->getPointerToGlobalIfAvailable(name);
+    void* p = EXTLLVM2::getPointerToGlobalIfAvailable(name);
     if (!p) { // look for it as a JIT-compiled function
-        p = reinterpret_cast<void*>(EXTLLVM2::ExecEngine->getFunctionAddress(name));
+        p = reinterpret_cast<void*>(EXTLLVM2::getFunctionAddress(name));
         if (!p) {
             return Scheme->F;
         }
@@ -326,7 +326,7 @@ static pointer get_function_pointer(scheme* Scheme, pointer Args)
 
 static pointer remove_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -341,7 +341,7 @@ static pointer remove_function(scheme* Scheme, pointer Args)
 
 static pointer remove_global_var(scheme* Scheme, pointer Args)
 {
-    auto var(EXTLLVM2::ExecEngine->FindGlobalVariableNamed(string_value(pair_car(Args))));
+    auto var(EXTLLVM2::FindGlobalVariableNamed(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -352,7 +352,7 @@ static pointer remove_global_var(scheme* Scheme, pointer Args)
 
 static pointer erase_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -368,11 +368,11 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
     char name[1024];
     strcpy(name, string_value(pair_car(Args)));
     strcat(name, "_native");
-    auto func(EXTLLVM2::ExecEngine->FindFunctionNamed(string_value(pair_car(Args))));
+    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
-    void* p = EXTLLVM2::ExecEngine->getPointerToFunction(func);
+    void* p = EXTLLVM2::getPointerToFunction(func);
     if (!p) {
         return Scheme->F;
     }
@@ -382,9 +382,8 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
-    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
 #ifdef LLVM_EE_LOCK
-    llvm::MutexGuard locked(EE->lock);
+    llvm::MutexGuard locked(EXTLLVM2::ExecEngine->lock);
 #endif
     auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
     if (unlikely(!func)) {
@@ -440,7 +439,7 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
             return Scheme->F;
         }
     }
-    llvm::GenericValue gv = EE->runFunction(func, fargs);
+    llvm::GenericValue gv = EXTLLVM2::ExecEngine->runFunction(func, fargs);
     switch(func->getReturnType()->getTypeID()) {
     case llvm::Type::FloatTyID:
         return mk_real(Scheme, gv.FloatVal);

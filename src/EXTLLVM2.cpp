@@ -212,7 +212,24 @@ namespace EXTLLVM2 {
     }
 
     uintptr_t getFunctionAddress(const std::string& name) {
-        ExecEngine->getFunctionAddress(name);
+        return ExecEngine->getFunctionAddress(name);
+    }
+
+    void* getPointerToGlobalIfAvailable(const std::string& name) {
+        return ExecEngine->getPointerToGlobalIfAvailable(name);
+    }
+
+    llvm::Function* FindFunctionNamed(const std::string& name) {
+        return ExecEngine->FindFunctionNamed(name.c_str());
+    }
+
+    llvm::GlobalVariable* FindGlobalVariableNamed(const std::string& name) {
+        return ExecEngine->FindGlobalVariableNamed(name.c_str());
+    }
+
+    void* getPointerToFunction(llvm::Function* function) {
+
+        return ExecEngine->getPointerToFunction(function);
     }
 
     std::vector<llvm::Module*>& getModules() {
