@@ -211,6 +211,10 @@ namespace EXTLLVM2 {
         return MM->getSymbolAddress(name);
     }
 
+    uintptr_t getFunctionAddress(const std::string& name) {
+        ExecEngine->getFunctionAddress(name);
+    }
+
     std::vector<llvm::Module*>& getModules() {
         return Modules;
     }

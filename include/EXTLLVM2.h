@@ -15,11 +15,15 @@ namespace extemp {
     extern llvm::ExecutionEngine* ExecEngine;
 
     bool initLLVM();
-    void runPassManager(llvm::Module* m);
-    void addModule(llvm::Module* Module);
-    uintptr_t getSymbolAddress(const std::string&);
     void addGlobalMapping(const char*, uintptr_t);
     void finalize();
+
+    void runPassManager(llvm::Module* m);
+    void addModule(llvm::Module* Module);
+
+    uintptr_t getSymbolAddress(const std::string&);
+    uintptr_t getFunctionAddress(const std::string&);
+
     bool setOptimize(const bool);
     std::vector<llvm::Module*>& getModules(); // TODO: probably shouldn't expose this
 
