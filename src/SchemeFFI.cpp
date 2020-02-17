@@ -155,7 +155,7 @@ static pointer jitCompileIRString(scheme* Scheme, pointer Args)
     if (!modulePtr) {
         return Scheme->F;
     }
-    extemp::EXTLLVM::addModule(modulePtr);
+    extemp::EXTLLVM2::addModule(modulePtr);
     return mk_cptr(Scheme, modulePtr);
 }
 

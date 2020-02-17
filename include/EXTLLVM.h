@@ -234,8 +234,6 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
     return tls_llvm_zone_stacksize;
 }
 
-void addModule(llvm::Module* m);
-
 extern int64_t LLVM_COUNT;
 extern bool VERIFY_COMPILES;
 

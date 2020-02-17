@@ -1065,11 +1065,3 @@ void initLLVM()
   }
 }
 
-namespace extemp {
-
-void EXTLLVM::addModule(llvm::Module* Module)
-{
-    return EXTLLVM2::addModule(Module);
-}
-
-}
