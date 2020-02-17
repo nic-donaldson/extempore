@@ -219,12 +219,12 @@ static pointer get_struct_size(scheme* Scheme, pointer Args)
 }
 
 static llvm::StructType* getNamedType(const char* name) {
-    return EXTLLVM::M->getTypeByName(name);
+    return EXTLLVM2::M->getTypeByName(name);
 }
 
 static pointer get_named_struct_size(scheme* Scheme, pointer Args)
 {
-    llvm::Module* M = EXTLLVM::M;
+    llvm::Module* M = EXTLLVM2::M;
     auto type(getNamedType(string_value(pair_car(Args))));
     if (!type) {
         return Scheme->F;
@@ -521,7 +521,7 @@ static pointer printLLVMModule(scheme* Scheme, pointer Args) // TODO: This isn't
         ss << *val;
         printf("At address: %p\n%s\n",val, ss.str().c_str());
     } else {
-        ss << *extemp::EXTLLVM::M;
+        ss << *extemp::EXTLLVM2::M;
     }
     printf("%s", ss.str().c_str());
     return Scheme->T;
@@ -695,7 +695,7 @@ static pointer get_named_type(scheme* Scheme, pointer Args)
 
 static pointer get_global_module(scheme* Scheme, pointer Args)
 {
-    auto m(EXTLLVM::M);
+    auto m(EXTLLVM2::M);
     if (!m) {
         return Scheme->F;
     }

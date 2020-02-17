@@ -37,13 +37,14 @@
 #define _EXTLLVM_H
 
 #include "Scheme.h"
-#include <vector>
-#include <string>
-#include <memory>
-
 #include "EXTMutex.h"
 #include "BranchPrediction.h"
 #include "UNIV.h"
+#include <EXTLLVM2.h>
+
+#include <vector>
+#include <string>
+#include <memory>
 
 struct zone_hooks_t {
   uint64_t space; // here just so we don't get <i8*,i8*>
@@ -236,16 +237,15 @@ inline uint64_t llvm_threads_get_zone_stacksize() {
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
 
-extern llvm::Module* M;
 extern int64_t LLVM_COUNT;
 extern bool VERIFY_COMPILES;
-extern std::vector<llvm::Module*> Ms;
+
 
 void initLLVM();
 const llvm::Function* getFunction(const char* name);
 const llvm::GlobalVariable* getGlobalVariable(const char* name);
 const llvm::GlobalValue* getGlobalValue(const char* name);
-inline std::vector<llvm::Module*>& getModules() { return Ms; } // not going to protect these!!!
+inline std::vector<llvm::Module*>& getModules() { return extemp::EXTLLVM2::Ms; } // not going to protect these!!!
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 
 }

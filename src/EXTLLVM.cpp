@@ -666,8 +666,7 @@ namespace extemp {
 
 namespace EXTLLVM {
 
-llvm::Module* M = nullptr; // TODO: obsolete?
-std::vector<llvm::Module*> Ms;
+    // std::vector<llvm::Module*> Ms;
 int64_t LLVM_COUNT = 0l;
 bool VERIFY_COMPILES = true;
 
@@ -1033,10 +1032,10 @@ void initLLVM()
 
     auto& context(llvm::getGlobalContext());
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
-    M = module.get();
-    addModule(M);
+    extemp::EXTLLVM2::M = module.get();
+    addModule(extemp::EXTLLVM2::M);
     if (!extemp::UNIV::ARCH.empty()) {
-        M->setTargetTriple(extemp::UNIV::ARCH);
+        extemp::EXTLLVM2::M->setTargetTriple(extemp::UNIV::ARCH);
     }
     // Build engine with JIT
     llvm::EngineBuilder factory(std::move(module));
@@ -1173,13 +1172,7 @@ namespace extemp {
 
 void EXTLLVM::addModule(llvm::Module* Module)
 {
-    for (const auto& function : Module->getFunctionList()) {
-        EXTLLVM::addFunction(function);
-    }
-    for (const auto& global : Module->getGlobalList()) {
-        EXTLLVM::addGlobal(global);
-    }
-    Ms.push_back(Module);
+    return EXTLLVM2::addModule(Module);
 }
 
 }

@@ -1,6 +1,7 @@
 // If EXTLLVM was so good why didn't they make an EXTLLVM2?
 #include <EXTLLVM2.h>
 #include <EXTMutex.h>
+#include <EXTLLVMGlobalMap.h>
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
@@ -9,6 +10,8 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
+
+#include <vector>
 
 namespace extemp {
 namespace EXTLLVM2 {
@@ -20,6 +23,8 @@ namespace EXTLLVM2 {
     llvm::ExecutionEngine* EE = nullptr;
     llvm::legacy::PassManager* PM = nullptr;
     llvm::legacy::PassManager* PM_NO = nullptr;
+    llvm::Module* M = nullptr;
+    std::vector<llvm::Module*> Ms;
 
     void initLLVM() {
         alloc_mutex.init();
@@ -29,7 +34,8 @@ namespace EXTLLVM2 {
         LLVMInitializeX86Disassembler();
 
         /*auto& context(llvm::getGlobalContext());
-          auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));*/
+        auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
+        M = module.get(); */
     }
 
     void initPassManagers() {
@@ -69,6 +75,16 @@ namespace EXTLLVM2 {
         } else {
             PM_NO->run(*m);
         }
+    }
+
+    void addModule(llvm::Module* Module) {
+        for (const auto& function : Module -> getFunctionList()) {
+            EXTLLVM::addFunction(function);
+        }
+        for (const auto& global : Module->getGlobalList()) {
+            EXTLLVM::addGlobal(global);
+        }
+        Ms.push_back(Module);
     }
 
 } // namespace EXTLLVM2
