@@ -670,7 +670,7 @@ namespace EXTLLVM {
 int64_t LLVM_COUNT = 0l;
 bool VERIFY_COMPILES = true;
 
-uint64_t getSymbolAddress(const std::string& name) {
+uintptr_t getSymbolAddress(const std::string& name) {
     return extemp::EXTLLVM2::getSymbolAddress(name);
 }
 

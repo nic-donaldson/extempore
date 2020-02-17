@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
+#include <string>
 
 namespace llvm {
   class ExecutionEngine;
@@ -18,10 +20,9 @@ namespace extemp {
     extern std::vector<llvm::Module*> Ms;
 
     bool initLLVM();
-    void initPassManagers();
     void runPassManager(llvm::Module* m);
     void addModule(llvm::Module* Module);
-    uint64_t getSymbolAddress(const std::string&);
+    uintptr_t getSymbolAddress(const std::string&);
     void addGlobalMapping(const char*, uintptr_t);
     void finalize();
     bool setOptimize(const bool);

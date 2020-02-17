@@ -33,6 +33,33 @@ namespace EXTLLVM2 {
         OPTIMIZE_COMPILES = b;
     }
 
+    void initPassManagers() {
+        PM_NO = new llvm::legacy::PassManager();
+        PM_NO->add(llvm::createAlwaysInlinerPass());
+
+        PM = new llvm::legacy::PassManager();
+        PM->add(llvm::createAggressiveDCEPass());
+        PM->add(llvm::createAlwaysInlinerPass());
+        PM->add(llvm::createArgumentPromotionPass());
+        PM->add(llvm::createCFGSimplificationPass());
+        PM->add(llvm::createDeadStoreEliminationPass());
+        PM->add(llvm::createFunctionInliningPass());
+        PM->add(llvm::createGVNPass(true));
+        PM->add(llvm::createIndVarSimplifyPass());
+        PM->add(llvm::createInstructionCombiningPass());
+        PM->add(llvm::createJumpThreadingPass());
+        PM->add(llvm::createLICMPass());
+        PM->add(llvm::createLoopDeletionPass());
+        PM->add(llvm::createLoopRotatePass());
+        PM->add(llvm::createLoopUnrollPass());
+        PM->add(llvm::createMemCpyOptPass());
+        PM->add(llvm::createPromoteMemoryToRegisterPass());
+        PM->add(llvm::createReassociatePass());
+        PM->add(llvm::createScalarReplAggregatesPass());
+        PM->add(llvm::createSCCPPass());
+        PM->add(llvm::createTailCallEliminationPass());
+    }
+
     bool initLLVM() {
         if (EE) {
             return false;
@@ -158,33 +185,6 @@ namespace EXTLLVM2 {
         EE->finalizeObject();
     }
 
-    void initPassManagers() {
-        PM_NO = new llvm::legacy::PassManager();
-        PM_NO->add(llvm::createAlwaysInlinerPass());
-
-        PM = new llvm::legacy::PassManager();
-
-        PM->add(llvm::createAggressiveDCEPass());
-        PM->add(llvm::createAlwaysInlinerPass());
-        PM->add(llvm::createArgumentPromotionPass());
-        PM->add(llvm::createCFGSimplificationPass());
-        PM->add(llvm::createDeadStoreEliminationPass());
-        PM->add(llvm::createFunctionInliningPass());
-        PM->add(llvm::createGVNPass(true));
-        PM->add(llvm::createIndVarSimplifyPass());
-        PM->add(llvm::createInstructionCombiningPass());
-        PM->add(llvm::createJumpThreadingPass());
-        PM->add(llvm::createLICMPass());
-        PM->add(llvm::createLoopDeletionPass());
-        PM->add(llvm::createLoopRotatePass());
-        PM->add(llvm::createLoopUnrollPass());
-        PM->add(llvm::createMemCpyOptPass());
-        PM->add(llvm::createPromoteMemoryToRegisterPass());
-        PM->add(llvm::createReassociatePass());
-        PM->add(llvm::createScalarReplAggregatesPass());
-        PM->add(llvm::createSCCPPass());
-        PM->add(llvm::createTailCallEliminationPass());
-    }
 
     void runPassManager(llvm::Module *m) {
         assert(PM);
@@ -207,7 +207,7 @@ namespace EXTLLVM2 {
         Ms.push_back(Module);
     }
 
-    uint64_t getSymbolAddress(const std::string& name) {
+    uintptr_t getSymbolAddress(const std::string& name) {
         return MM->getSymbolAddress(name);
     }
 
