@@ -147,17 +147,8 @@ namespace EXTLLVM2 {
         ascii_normal();
         extemp::EXTLLVM2::initPassManagers();
 
-        static struct {
-            const char* name;
-            uintptr_t   address;
-        } mappingTable[] = {
-            { "llvm_zone_destroy", uintptr_t(&llvm_zone_destroy) },
-        };
-        for (auto& elem : mappingTable) {
-            extemp::EXTLLVM2::EE->updateGlobalMapping(elem.name, elem.address);
-        }
-
         // tell LLVM about some built-in functions
+        extemp::EXTLLVM2::EE->updateGlobalMapping("llvm_zone_destroy", uintptr_t(&llvm_zone_destroy));
         extemp::EXTLLVM2::EE->updateGlobalMapping("get_address_offset", (uint64_t)&get_address_offset);
         extemp::EXTLLVM2::EE->updateGlobalMapping("string_hash", (uint64_t)&string_hash);
         extemp::EXTLLVM2::EE->updateGlobalMapping("swap64i", (uint64_t)&swap64i);
