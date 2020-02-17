@@ -814,7 +814,13 @@ EXPORT llvm_zone_t* llvm_pop_zone_stack()
 
 EXPORT void* llvm_zone_malloc(llvm_zone_t* zone, uint64_t size)
 {
-    extemp::EXTMutex::ScopedLock lock(extemp::EXTLLVM2::alloc_mutex);
+    static extemp::EXTMutex alloc_mutex("alloc mutex");
+    // TODO: is this thread-safe?
+    if (!alloc_mutex.initialised()) {
+        alloc_mutex.init();
+    }
+
+    extemp::EXTMutex::ScopedLock lock(alloc_mutex);
 #if DEBUG_ZONE_ALLOC
     printf("MallocZone: %p:%p:%lld:%lld:%lld\n",zone,zone->memory,zone->offset,zone->size,size);
 #endif

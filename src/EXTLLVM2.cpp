@@ -19,10 +19,6 @@
 
 namespace extemp {
 namespace EXTLLVM2 {
-    // should probably move this a bit closer
-    // to where it is used
-    EXTMutex alloc_mutex("alloc mutex");
-
     bool OPTIMIZE_COMPILES = true;
     llvm::ExecutionEngine* EE = nullptr;
     llvm::legacy::PassManager* PM = nullptr;
@@ -37,8 +33,6 @@ namespace EXTLLVM2 {
         if (EE) {
             return false;
         }
-
-        alloc_mutex.init();
 
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();

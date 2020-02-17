@@ -62,7 +62,10 @@ public:
             m_mutex.unlock();
         }
     };
-private:
+
+    bool initialised() { return m_initialised; }
+
+  private:
     std::string          m_name;
     bool                 m_initialised;
 #ifdef _WIN32
