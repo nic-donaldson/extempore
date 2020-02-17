@@ -65,6 +65,7 @@
 
 #include "SchemeFFI.h"
 #include <EXTLLVM2.h>
+#include <EXTLLVMGlobalMap.h>
 #include "AudioDevice.h"
 #include "UNIV.h"
 #include "TaskScheduler.h"

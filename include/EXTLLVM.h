@@ -240,10 +240,6 @@ extern bool VERIFY_COMPILES;
 
 void initLLVM();
 
-const llvm::Function* getFunction(const char* name);
-const llvm::GlobalVariable* getGlobalVariable(const char* name);
-const llvm::GlobalValue* getGlobalValue(const char* name);
-
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 
 }
