@@ -823,8 +823,7 @@ void initSchemeFFI(scheme* sc)
     }
 }
 
-static std::regex sGlobalSymRegex = LLVMIRCompilation::sGlobalSymRegex;
-static std::regex sDefineSymRegex = LLVMIRCompilation::sDefineSymRegex;
+
 
 static std::string fileToString(const std::string& fileName)
 {
@@ -842,59 +841,6 @@ static void insertMatchingSymbols(const std::string& code, const std::regex& reg
               std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
 }
 
-// TODO: move semantics
-static std::string necessaryGlobalDeclarations(const std::string& asmcode, std::unordered_set<std::string>& sInlineSyms)
-{
-    return IRCompiler.necessaryGlobalDeclarations(asmcode, sInlineSyms);
-    std::unordered_set<std::string> symbols;
-    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
-
-    std::unordered_set<std::string> definedSyms;
-    insertMatchingSymbols(asmcode, sDefineSymRegex, definedSyms);
-
-    std::stringstream dstream;
-    for (const auto& sym : symbols) {
-        // if the symbol from asmcode is present in inline.ll/bitcode.ll
-        // don't redeclare it as they'll be included in the module
-        if (sInlineSyms.count(sym) == 1) {
-            continue;
-        }
-
-        if (definedSyms.count(sym) == 1) {
-            continue;
-        }
-
-        auto gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
-        if (!gv) {
-            continue;
-        }
-
-        auto func(llvm::dyn_cast<llvm::Function>(gv));
-        if (func) {
-            dstream << "declare " << LLVMIRCompilation::SanitizeType(func->getReturnType()) << " @" << sym << " (";
-
-            bool first(true);
-            for (const auto& arg : func->getArgumentList()) {
-                if (!first) {
-                    dstream << ", ";
-                } else {
-                    first = false;
-                }
-                dstream << LLVMIRCompilation::SanitizeType(arg.getType());
-            }
-
-            if (func->isVarArg()) {
-                dstream << ", ...";
-            }
-            dstream << ")\n";
-        } else {
-            auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
-            dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
-        }
-    }
-    return dstream.str();
-}
-
 static void loadInitialBitcodeAndSymbols(std::string& sInlineDotLLString, std::unordered_set<std::string>& sInlineSyms, std::string& sInlineBitcode)
 {
     using namespace llvm;
@@ -902,8 +848,8 @@ static void loadInitialBitcodeAndSymbols(std::string& sInlineDotLLString, std::u
 
     sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
     const std::string bitcodeDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-    insertMatchingSymbols(bitcodeDotLLString, sGlobalSymRegex, sInlineSyms);
-    insertMatchingSymbols(sInlineDotLLString, sGlobalSymRegex, sInlineSyms);
+    insertMatchingSymbols(bitcodeDotLLString, extemp::LLVMIRCompilation::globalSymRegex, sInlineSyms);
+    insertMatchingSymbols(sInlineDotLLString, extemp::LLVMIRCompilation::globalSymRegex, sInlineSyms);
 
     // put bitcode.ll -> sInlineBitcode
     auto newModule(
@@ -965,7 +911,7 @@ should replace this with Module introspection/reflection
 "LLVM programs are composed of Module‘s, each of which is a translation unit of the input programs. Each module consists of functions, global variables, and symbol table entries. Modules may be combined together with the LLVM linker, which merges function (and global variable) definitions, resolves forward declarations, and merges symbol table entries."
     */
 
-    const std::string declarations = necessaryGlobalDeclarations(asmcode, sInlineSyms);
+    const std::string declarations = IRCompiler.necessaryGlobalDeclarations(asmcode, sInlineSyms);
 
     // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
 

@@ -22,8 +22,8 @@ public:
                         std::unordered_set<std::string> &containingSet);
 
   static std::string SanitizeType(llvm::Type *Type);
-  static const std::regex sGlobalSymRegex;
-  static const std::regex sDefineSymRegex;
+  static const std::regex globalSymRegex;
+  static const std::regex defineSymRegex;
 
 private:
 };

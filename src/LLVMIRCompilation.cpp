@@ -32,11 +32,12 @@ namespace extemp {
 
   // LLVMIRCompile captures all the LLVM stuff we need to take a string
   // of LLVM IR and produce an LLVM Module
+  // or at least that's a long term goal?
   LLVMIRCompilation::LLVMIRCompilation() {
   }
 
-  const std::regex LLVMIRCompilation::sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize); 
-  const std::regex LLVMIRCompilation::sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
+  const std::regex LLVMIRCompilation::globalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize); 
+  const std::regex LLVMIRCompilation::defineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 
   void LLVMIRCompilation::insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
   {
@@ -47,10 +48,10 @@ namespace extemp {
   std::string LLVMIRCompilation::necessaryGlobalDeclarations(const std::string& asmcode, const std::unordered_set<std::string>& sInlineSyms)
   {
     std::unordered_set<std::string> symbols;
-    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
+    insertMatchingSymbols(asmcode, globalSymRegex, symbols);
 
     std::unordered_set<std::string> definedSyms;
-    insertMatchingSymbols(asmcode, sDefineSymRegex, definedSyms);
+    insertMatchingSymbols(asmcode, defineSymRegex, definedSyms);
 
     std::stringstream dstream;
     for (const auto& sym : symbols) {
