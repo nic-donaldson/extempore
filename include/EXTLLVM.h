@@ -111,25 +111,6 @@ EXPORT int64_t imp_rand1_i64(int64_t a);
 
 // this added for dodgy continuations support
 
-namespace llvm {
-class Module;
-class GlobalVariable;
-class GlobalValue;
-class Function;
-class StructType;
-class ModuleProvider;
-class SectionMemoryManager;
-class ExecutionEngine;
-
-namespace legacy
-{
-
-class PassManager;
-
-}
-
-} // end llvm namespace
-
 namespace extemp
 {
 
