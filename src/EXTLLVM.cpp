@@ -670,10 +670,8 @@ namespace EXTLLVM {
 int64_t LLVM_COUNT = 0l;
 bool VERIFY_COMPILES = true;
 
-static llvm::SectionMemoryManager* MM = nullptr;
-
 uint64_t getSymbolAddress(const std::string& name) {
-    return MM->getSymbolAddress(name);
+    return extemp::EXTLLVM2::getSymbolAddress(name);
 }
 
     EXPORT const char* llvm_disassemble(const unsigned char* Code, int syntax)
@@ -1030,6 +1028,7 @@ void initLLVM()
 
     extemp::EXTLLVM2::initLLVM();
 
+    /*
     auto& context(llvm::getGlobalContext());
     auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
     extemp::EXTLLVM2::M = module.get();
@@ -1045,41 +1044,52 @@ void initLLVM()
     Opts.UnsafeFPMath = false;
     factory.setTargetOptions(Opts);
     auto mm(llvm::make_unique<llvm::SectionMemoryManager>());
-    MM = mm.get();
+    extemp::EXTLLVM2::MM = mm.get();
     factory.setMCJITMemoryManager(std::move(mm));
-#ifdef _WIN32
-    if (!extemp::UNIV::ATTRS.empty()) {
-        factory.setMAttrs(extemp::UNIV::ATTRS);
-    }
-    if (!extemp::UNIV::CPU.empty()) {
-        factory.setMCPU(extemp::UNIV::CPU);
-    }
-    llvm::TargetMachine* tm = factory.selectTarget();
-#else
-    factory.setOptLevel(llvm::CodeGenOpt::Aggressive);
-    llvm::Triple triple(llvm::sys::getProcessTriple());
-    std::string cpu;
-    if (!extemp::UNIV::CPU.empty()) {
-        cpu = extemp::UNIV::CPU.front();
-    } else {
-        cpu = llvm::sys::getHostCPUName();
-    }
-    llvm::SmallVector<std::string, 10> lattrs;
-    if (!extemp::UNIV::ATTRS.empty()) {
-        for (const auto& attr : extemp::UNIV::ATTRS) {
-            lattrs.append(1, attr);
+
+    #ifdef _WIN32
+    bool windows = true;
+    #else
+    bool windows = false;
+    #endif
+
+    llvm::TargetMachine* tm = nullptr;
+    if (windows) {
+        if (!extemp::UNIV::ATTRS.empty()) {
+            factory.setMAttrs(extemp::UNIV::ATTRS);
         }
-    } else {
-        llvm::StringMap<bool> HostFeatures;
-        llvm::sys::getHostCPUFeatures(HostFeatures);
-        for (auto& feature : HostFeatures) {
-            std::string att = feature.getValue() ? feature.getKey().str() : std::string("-") + feature.getKey().str();
-            lattrs.append(1, att);
+        if (!extemp::UNIV::CPU.empty()) {
+            factory.setMCPU(extemp::UNIV::CPU);
         }
+        tm = factory.selectTarget();
+    } else {
+        factory.setOptLevel(llvm::CodeGenOpt::Aggressive);
+        llvm::Triple triple(llvm::sys::getProcessTriple());
+        std::string cpu;
+        if (!extemp::UNIV::CPU.empty()) {
+            cpu = extemp::UNIV::CPU.front();
+        } else {
+            cpu = llvm::sys::getHostCPUName();
+        }
+        llvm::SmallVector<std::string, 10> lattrs;
+        if (!extemp::UNIV::ATTRS.empty()) {
+            for (const auto &attr : extemp::UNIV::ATTRS) {
+                lattrs.append(1, attr);
+            }
+        } else {
+            llvm::StringMap<bool> HostFeatures;
+            llvm::sys::getHostCPUFeatures(HostFeatures);
+            for (auto &feature : HostFeatures) {
+                std::string att = feature.getValue()
+                                  ? feature.getKey().str()
+                                  : std::string("-") + feature.getKey().str();
+                lattrs.append(1, att);
+            }
+        }
+        tm = factory.selectTarget(triple, "", cpu, lattrs);
     }
-    llvm::TargetMachine* tm = factory.selectTarget(triple, "", cpu, lattrs);
-#endif // _WIN32
     extemp::EXTLLVM2::EE = factory.create(tm);
+
     extemp::EXTLLVM2::EE->DisableLazyCompilation(true);
     ascii_normal();
     std::cout << "ARCH           : " << std::flush;
@@ -1164,6 +1174,7 @@ void initLLVM()
     extemp::EXTLLVM2::EE->updateGlobalMapping("sys_slurp_file", (uint64_t)&sys_slurp_file);
     extemp::EXTLLVM2::EE->finalizeObject();
     return;
+    */
     }
   }
 }

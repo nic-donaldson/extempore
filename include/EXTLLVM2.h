@@ -6,6 +6,7 @@
 namespace llvm {
   class ExecutionEngine;
   class Module;
+  class SectionMemoryManager;
 
   namespace legacy {
     class PassManager;
@@ -21,10 +22,12 @@ namespace extemp {
     extern extemp::EXTMutex alloc_mutex;
     extern llvm::Module* M;
     extern std::vector<llvm::Module*> Ms;
+    extern llvm::SectionMemoryManager* MM;
 
     void initLLVM();
     void initPassManagers();
     void runPassManager(llvm::Module* m);
     void addModule(llvm::Module* Module);
+    uint64_t getSymbolAddress(const std::string&);
   } // EXTLLVM2
 } // extemp

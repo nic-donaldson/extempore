@@ -376,6 +376,7 @@ if (DYLIB)
   add_library(extempore SHARED src/Extempore.cpp
     src/AudioDevice.cpp
     src/EXTLLVM.cpp
+    src/EXTLLVM2.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
     src/LLVMIRCompilation.cpp
@@ -392,6 +393,7 @@ else()
   add_executable(extempore src/Extempore.cpp
     src/AudioDevice.cpp
     src/EXTLLVM.cpp
+    src/EXTLLVM2.cpp
     src/LLVMIRCompilation.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
@@ -1058,8 +1060,9 @@ if(BUILD_TESTS)
 
   # tests - core
   extempore_add_test(tests/core/system.xtm libs-core)
-  # extempore_add_test(tests/core/std.xtm libs-core)
-  # extempore_add_test(tests/core/math.xtm libs-core)
+  # extempore_add_test(tests/core/builtins.xtm libs-core)
+  extempore_add_test(tests/core/std.xtm libs-core)
+  extempore_add_test(tests/core/math.xtm libs-core)
   # extempore_add_test(tests/core/adt.xtm libs-core)
   # extempore_add_test(tests/core/xtlang.xtm libs-core)
   # extempore_add_test(tests/core/generics.xtm libs-core)
