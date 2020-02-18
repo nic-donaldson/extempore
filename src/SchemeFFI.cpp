@@ -800,8 +800,6 @@ static std::string fileToString(const std::string& fileName)
 static void insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
 {
     return LLVMIRCompilation::insertMatchingSymbols(code, regex, containingSet);
-    std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
-              std::sregex_token_iterator(), std::inserter(containingSet, containingSet.begin()));
 }
 
 static void loadInitialBitcodeAndSymbols(std::string& sInlineDotLLString, std::unordered_set<std::string>& sInlineSyms, std::string& sInlineBitcode)
