@@ -1,5 +1,7 @@
 #pragma once
 
+#include "llvm/Support/Mutex.h"
+
 #include <vector>
 #include <cstdint>
 #include <string>
@@ -12,6 +14,7 @@ namespace llvm {
   class TargetMachine;
   class Function;
   class GlobalVariable;
+  class GenericValue;
 }
 
 namespace extemp {
@@ -44,5 +47,7 @@ namespace extemp {
 
     // pass through but to ExecEngine
     llvm::TargetMachine* getTargetMachine();
+    llvm::sys::Mutex& getEEMutex(); // this is annoying I hope we can lose it
+    llvm::GenericValue runFunction(llvm::Function*, std::vector<llvm::GenericValue>);
   } // EXTLLVM2
 } // extemp

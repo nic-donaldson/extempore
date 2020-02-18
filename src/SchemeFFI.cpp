@@ -382,7 +382,7 @@ static pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 static pointer call_compiled(scheme* Scheme, pointer Args)
 {
 #ifdef LLVM_EE_LOCK
-    llvm::MutexGuard locked(EXTLLVM2::ExecEngine->lock);
+    llvm::MutexGuard locked(EXTLLVM2::getEEMutex());
 #endif
     auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
     if (unlikely(!func)) {
@@ -438,7 +438,7 @@ static pointer call_compiled(scheme* Scheme, pointer Args)
             return Scheme->F;
         }
     }
-    llvm::GenericValue gv = EXTLLVM2::ExecEngine->runFunction(func, fargs);
+    llvm::GenericValue gv = EXTLLVM2::runFunction(func, fargs);
     switch(func->getReturnType()->getTypeID()) {
     case llvm::Type::FloatTyID:
         return mk_real(Scheme, gv.FloatVal);
@@ -602,15 +602,13 @@ static pointer bind_symbol(scheme* Scheme, pointer Args)
     auto library(cptr_value(pair_car(Args)));
     auto sym(string_value(pair_cadr(Args)));
 
-    llvm::ExecutionEngine* EE = EXTLLVM2::ExecEngine;
-    llvm::MutexGuard locked(EE->lock);
 #ifdef _WIN32
     auto ptr(reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(library), sym)));
 #else
     auto ptr(dlsym(library, sym));
 #endif
     if (likely(ptr)) {
-        EE->updateGlobalMapping(sym, reinterpret_cast<uint64_t>(ptr));
+        extemp::EXTLLVM2::addGlobalMappingUnderEELock(sym, reinterpret_cast<uint64_t>(ptr));
         return Scheme->T;
     }
     return Scheme->F;

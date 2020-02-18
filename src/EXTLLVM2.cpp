@@ -5,6 +5,7 @@
 #include <UNIV.h>
 
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
@@ -270,6 +271,14 @@ namespace EXTLLVM2 {
 
     llvm::TargetMachine* getTargetMachine() {
         return ExecEngine->getTargetMachine();
+    }
+
+    llvm::sys::Mutex& getEEMutex() {
+        return ExecEngine->lock;
+    }
+
+    llvm::GenericValue runFunction(llvm::Function* func, std::vector<llvm::GenericValue> fargs) {
+        return ExecEngine->runFunction(func, fargs);
     }
 
 } // namespace EXTLLVM2
