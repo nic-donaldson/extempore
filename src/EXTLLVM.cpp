@@ -536,6 +536,16 @@ bool llvm_check_valid_dot_symbol(scheme* sc, char* symbol) {
   return y != sc->NIL;
 }
 
+uint64_t string_hash(const char* str)
+{
+    uint64_t result(0);
+    unsigned char c;
+    while((c = *(str++))) {
+        result = result * 33 + uint8_t(c);
+    }
+    return result;
+}
+
 static char* get_address_type(uint64_t id, closure_address_table* table)
 {
     while (table)
@@ -665,10 +675,6 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
 namespace extemp {
 
 namespace EXTLLVM {
-
-    // std::vector<llvm::Module*> Ms;
-int64_t LLVM_COUNT = 0l;
-bool VERIFY_COMPILES = true;
 
 uintptr_t getSymbolAddress(const std::string& name) {
     return extemp::EXTLLVM2::getSymbolAddress(name);

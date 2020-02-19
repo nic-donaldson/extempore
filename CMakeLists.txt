@@ -382,6 +382,7 @@ if (DYLIB)
     src/LLVMIRCompilation.cpp
     src/OSC.cpp
     src/Scheme.cpp
+    src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
     src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp
@@ -399,6 +400,7 @@ else()
     src/Extempore.cpp
     src/OSC.cpp
     src/Scheme.cpp
+    src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
     src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp

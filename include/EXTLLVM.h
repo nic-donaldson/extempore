@@ -94,15 +94,7 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym);
 bool llvm_check_valid_dot_symbol(scheme* sc, char* symbol);
 bool regex_split(char* str, char** a, char** b);
 
-static inline uint64_t string_hash(const char* str)
-{
-    uint64_t result(0);
-    unsigned char c;
-    while((c = *(str++))) {
-        result = result * 33 + uint8_t(c);
-    }
-    return result;
-}
+inline uint64_t string_hash(const char* str);
 
 EXPORT double imp_randd();
 EXPORT int64_t imp_rand1_i64(int64_t a);
@@ -214,9 +206,6 @@ inline void llvm_threads_dec_zone_stacksize() {
 inline uint64_t llvm_threads_get_zone_stacksize() {
     return tls_llvm_zone_stacksize;
 }
-
-extern int64_t LLVM_COUNT;
-extern bool VERIFY_COMPILES;
 
 void initLLVM();
 

@@ -19,8 +19,6 @@ namespace llvm {
 
 namespace extemp {
   namespace EXTLLVM2 {
-    extern llvm::ExecutionEngine* ExecEngine;
-
     bool initLLVM();
     void addGlobalMapping(const char*, uintptr_t);
     uint64_t addGlobalMappingUnderEELock(const char*, uintptr_t);
