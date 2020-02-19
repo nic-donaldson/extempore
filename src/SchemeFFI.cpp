@@ -41,7 +41,6 @@
 #include "llvm/AsmParser/Parser.h"
 
 #include "SchemeFFI.h"
-#include <EXTLLVMGlobalMap.h>
 #include "AudioDevice.h"
 #include "UNIV.h"
 #include "TaskScheduler.h"
@@ -129,6 +128,7 @@ static pointer ff_get_name(scheme* Scheme, pointer Args)
    return mk_string(Scheme,name);
 }
 
+// TODO: rehome this
 static pointer llvm_disasm(scheme* Scheme, pointer Args)
 {
     int lgth = list_length(Scheme, Args);
