@@ -65,7 +65,7 @@ namespace extemp {
             continue;
         }
 
-        const llvm::Value* gv = extemp::EXTLLVM::getGlobalValue(sym.c_str());
+        const llvm::Value* gv = extemp::EXTLLVM::GlobalMap::getGlobalValue(sym.c_str());
         if (!gv) {
             continue;
         }

@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main(int argc, char **argv) {
-    if (extemp::EXTLLVM::haveGlobalValue("hello")) {
+    if (extemp::EXTLLVM::GlobalMap::haveGlobalValue("hello")) {
         return 1;
     }
 

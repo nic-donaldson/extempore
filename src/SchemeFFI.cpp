@@ -36,32 +36,9 @@
 // LLVM includes //
 ///////////////////
 
-#include <fstream>
-
 // must be included before anything which pulls in <Windows.h>
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/AsmParser/Parser.h"
-#include "llvm-c/Core.h"
-#include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/ExecutionEngine/Interpreter.h"
-#include "llvm/IR/CallingConv.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/LinkAllPasses.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/MutexGuard.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/raw_os_ostream.h"
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Verifier.h"
 
 #include "SchemeFFI.h"
 #include <EXTLLVMGlobalMap.h>
@@ -70,8 +47,6 @@
 #include "TaskScheduler.h"
 #include "SchemeProcess.h"
 #include "SchemeREPL.h"
-#include <unordered_set>
-#include <unordered_map>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -83,11 +58,9 @@
 #include <dirent.h>
 #endif
 
-// setting this define should make call_compiled thread safe BUT ...
-// also extremely SLOW !
-
-
-
+#include <fstream>
+#include <unordered_set>
+#include <unordered_map>
 #include <regex>
 
 ////////////////////////////////
@@ -128,8 +101,6 @@
 namespace extemp {
 
 namespace SchemeFFI {
-
-
 
 #include "ffi/utility.inc"
 #include "ffi/ipc.inc"

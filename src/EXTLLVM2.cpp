@@ -210,10 +210,10 @@ namespace EXTLLVM2 {
 
     void onetwothree(llvm::Module* Module) {
         for (const auto& function : Module -> getFunctionList()) {
-            EXTLLVM::addFunction(function);
+            EXTLLVM::GlobalMap::addFunction(function);
         }
         for (const auto& global : Module->getGlobalList()) {
-            EXTLLVM::addGlobal(global);
+            EXTLLVM::GlobalMap::addGlobal(global);
         }
         Modules.push_back(Module);
     }

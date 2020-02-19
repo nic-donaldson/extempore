@@ -215,7 +215,7 @@ pointer jitCompileIRString(scheme *Scheme, pointer Args) {
 
 pointer get_function(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -224,7 +224,7 @@ pointer get_function(scheme* Scheme, pointer Args)
 
 pointer get_globalvar(scheme* Scheme, pointer Args)
 {
-    auto var(extemp::EXTLLVM::getGlobalVariable(string_value(pair_car(Args))));
+    auto var(extemp::EXTLLVM::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -280,7 +280,7 @@ static char tmp_str_b[4096];
 
 pointer get_function_args(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -315,14 +315,14 @@ pointer get_function_args(scheme* Scheme, pointer Args)
 
 pointer get_function_varargs(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     return (func && func->isVarArg()) ? Scheme->T : Scheme->F;
 }
 
 
 pointer get_function_type(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -333,7 +333,7 @@ pointer get_function_type(scheme* Scheme, pointer Args)
 }
 pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -342,7 +342,7 @@ pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 pointer get_global_variable_type(scheme* Scheme, pointer Args)
 {
     using namespace llvm;
-    auto var(extemp::EXTLLVM::getGlobalVariable(string_value(pair_car(Args))));
+    auto var(extemp::EXTLLVM::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -421,6 +421,8 @@ pointer llvm_call_void_native(scheme* Scheme, pointer Args)
     return Scheme->T;
 }
 
+// setting this define should make call_compiled thread safe BUT ...
+// also extremely SLOW !
 #define LLVM_EE_LOCK
 
 pointer call_compiled(scheme* Scheme, pointer Args)
@@ -561,7 +563,7 @@ pointer llvm_print_all_modules(scheme* Scheme, pointer Args) // TODO
 
 pointer printLLVMFunction(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
     std::string str;
     llvm::raw_string_ostream ss(str);
     ss << *func;

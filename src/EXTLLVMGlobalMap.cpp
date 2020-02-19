@@ -14,7 +14,7 @@ std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
 
 namespace extemp {
 namespace EXTLLVM {
-    //namespace GlobalMap {
+namespace GlobalMap {
 bool haveGlobalValue(const char *Name) { return sGlobalMap.count(Name) > 0; }
 
 const void addFunction(const llvm::Function &function) {
@@ -62,6 +62,6 @@ const llvm::Function *getFunction(const char *Name) {
   }
   return nullptr;
 }
-    //} // namespace GlobalMap
+} // namespace GlobalMap
 } // namespace EXTLLVM
 } // namespace extemp
