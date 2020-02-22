@@ -47,5 +47,8 @@ namespace extemp {
     llvm::TargetMachine* getTargetMachine();
     llvm::sys::Mutex& getEEMutex(); // this is annoying I hope we can lose it
     llvm::GenericValue runFunction(llvm::Function*, std::vector<llvm::GenericValue>);
+
+    // this doesn't feel like it belongs here too much
+    const char* llvm_disassemble(const unsigned char*, int);
   } // EXTLLVM2
 } // extemp

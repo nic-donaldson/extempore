@@ -128,22 +128,6 @@ static pointer ff_get_name(scheme* Scheme, pointer Args)
    return mk_string(Scheme,name);
 }
 
-// TODO: rehome this
-static pointer llvm_disasm(scheme* Scheme, pointer Args)
-{
-    int lgth = list_length(Scheme, Args);
-    int syntax = (lgth > 1) ? ivalue(pair_cadr(Args)) : 1;
-    if (syntax > 1) {
-      std::cout << "Syntax argument must be either 0: at&t or 1: intel" << std::endl;
-      std::cout << "The default is 1: intel" << std::endl;
-      syntax = 1;
-    }
-    auto name(LLVM::llvm_closure_last_name(Scheme, Args));
-    auto fptr(reinterpret_cast<unsigned char*>(cptr_value(LLVM::get_function_pointer(Scheme,
-            cons(Scheme, name, pair_cdr(Args))))));
-    return mk_string(Scheme, extemp::EXTLLVM::llvm_disassemble(fptr, syntax));
-}
-
 static std::unordered_map<std::string, std::string> LLVM_ALIAS_TABLE;
 
 static pointer add_llvm_alias(scheme* Scheme, pointer Args)
@@ -194,9 +178,9 @@ static pointer get_llvm_alias(scheme* Scheme, pointer Args)
         { "llvm:update-mapping", &extemp::SchemeFFI::LLVM::update_mapping }, \
         { "llvm:get-named-type", &extemp::SchemeFFI::LLVM::get_named_type }, \
         { "llvm:export-module", &extemp::SchemeFFI::LLVM::export_llvmmodule_bitcode }, \
+        { "llvm:disassemble", &extemp::SchemeFFI::LLVM::llvm_disasm },  \
         { "llvm:ffi-set-name", &ff_set_name }, \
         { "llvm:ffi-get-name", &ff_get_name }, \
-        { "llvm:disassemble", &llvm_disasm }, \
         { "llvm:add-llvm-alias", &add_llvm_alias }, \
         { "llvm:get-llvm-alias", &get_llvm_alias }
     

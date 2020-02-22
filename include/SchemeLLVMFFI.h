@@ -38,6 +38,7 @@ namespace LLVM {
   pointer update_mapping(scheme* Scheme, pointer Args);
   pointer get_named_type(scheme* Scheme, pointer Args);
   pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args);
+  pointer llvm_disasm(scheme* Scheme, pointer Args);
 }
 } // namespace SchemeFFI
 } // namespace extemp

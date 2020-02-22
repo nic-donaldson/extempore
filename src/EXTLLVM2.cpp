@@ -10,9 +10,13 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCDisassembler.h"
+#include "llvm/MC/MCInstPrinter.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Support/MutexGuard.h"
+#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
 
@@ -279,6 +283,57 @@ namespace EXTLLVM2 {
 
     llvm::GenericValue runFunction(llvm::Function* func, std::vector<llvm::GenericValue> fargs) {
         return ExecEngine->runFunction(func, fargs);
+    }
+
+    const char* llvm_disassemble(const unsigned char* Code, int syntax) {
+        size_t code_size = 1024 * 100;
+        std::string Error;
+        llvm::TargetMachine *TM = extemp::EXTLLVM2::getTargetMachine();
+        llvm::Triple Triple = TM->getTargetTriple();
+        const llvm::Target TheTarget = TM->getTarget();
+        std::string TripleName = Triple.getTriple();
+        // const llvm::Target* TheTarget =
+        // llvm::TargetRegistry::lookupTarget(ArchName,Triple,Error);
+        const llvm::MCRegisterInfo *MRI(TheTarget.createMCRegInfo(TripleName));
+        const llvm::MCAsmInfo *AsmInfo(
+            TheTarget.createMCAsmInfo(*MRI, TripleName));
+        const llvm::MCSubtargetInfo *STI(
+            TheTarget.createMCSubtargetInfo(TripleName, "", ""));
+        const llvm::MCInstrInfo *MII(TheTarget.createMCInstrInfo());
+        // const llvm::MCInstrAnalysis*
+        // MIA(TheTarget->createMCInstrAnalysis(MII->get()));
+        llvm::MCContext Ctx(AsmInfo, MRI, nullptr);
+        llvm::MCDisassembler *DisAsm(TheTarget.createMCDisassembler(*STI, Ctx));
+        llvm::MCInstPrinter *IP(TheTarget.createMCInstPrinter(
+            Triple, syntax, *AsmInfo, *MII, *MRI)); //,*STI));
+        IP->setPrintImmHex(true);
+        IP->setUseMarkup(true);
+        std::string out_str;
+        llvm::raw_string_ostream OS(out_str);
+        llvm::ArrayRef<uint8_t> mem(Code, code_size);
+        uint64_t size;
+        uint64_t index;
+        OS << "\n";
+        for (index = 0; index < code_size; index += size) {
+            llvm::MCInst Inst;
+            if (DisAsm->getInstruction(Inst, size, mem.slice(index), index,
+                                       llvm::nulls(), llvm::nulls())) {
+                auto instSize(*reinterpret_cast<const size_t*>(Code + index));
+                if (instSize <= 0) {
+                    break;
+                }
+                OS.indent(4);
+                OS.write("0x", 2);
+                OS.write_hex(size_t(Code) + index);
+                OS.write(": ", 2);
+                OS.write_hex(instSize);
+                IP->printInst(&Inst, OS, "", *STI);
+                OS << "\n";
+            } else if (!size) {
+                size = 1;
+            }
+        }
+        return strdup(OS.str().c_str());
     }
 
 } // namespace EXTLLVM2

@@ -721,6 +721,21 @@ pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     return Scheme->T;
 }
 
+pointer llvm_disasm(scheme* Scheme, pointer Args)
+{
+    int lgth = list_length(Scheme, Args);
+    int syntax = (lgth > 1) ? ivalue(pair_cadr(Args)) : 1;
+    if (syntax > 1) {
+      std::cout << "Syntax argument must be either 0: at&t or 1: intel" << std::endl;
+      std::cout << "The default is 1: intel" << std::endl;
+      syntax = 1;
+    }
+    auto name(llvm_closure_last_name(Scheme, Args));
+    auto fptr(reinterpret_cast<unsigned char*>(cptr_value(get_function_pointer(Scheme,
+            cons(Scheme, name, pair_cdr(Args))))));
+    return mk_string(Scheme, extemp::EXTLLVM2::llvm_disassemble(fptr, syntax));
+}
+
 } // namespace LLVM
 } // namespace SchemeFFI
 } // namespace extemp
