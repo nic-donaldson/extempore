@@ -37,8 +37,9 @@
 ///////////////////
 
 // must be included before anything which pulls in <Windows.h>
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/AsmParser/Parser.h"
+// just left this commented out here because this comment seem important
+// #include "llvm/ADT/StringExtras.h"
+
 
 #include "SchemeFFI.h"
 #include "AudioDevice.h"
@@ -93,7 +94,6 @@
     ascii_normal()
 #endif
 
-#include <EXTMutex.h>
 #include <EXTLLVM.h>
 #include <SchemeLLVMFFI.h>
 

@@ -19,6 +19,8 @@ namespace llvm {
 
 namespace extemp {
   namespace EXTLLVM2 {
+    // returns true if initialization was performed, doesn't necessarily indicate
+    // success. call this more than once and it should return false.
     bool initLLVM();
     void addGlobalMapping(const char*, uintptr_t);
     uint64_t addGlobalMappingUnderEELock(const char*, uintptr_t);

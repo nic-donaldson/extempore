@@ -1,11 +1,21 @@
 #include <EXTLLVMGlobalMap.h>
 #include <LLVMIRCompilation.h>
+// see TODO below #include <EXTLLVM2.h>
 
 #include <iostream>
 
 int main(int argc, char **argv) {
     if (extemp::EXTLLVM::GlobalMap::haveGlobalValue("hello")) {
+        std::cerr << "\"hello\" shouldn't be in the globals map" << std::endl;
         return 1;
+    }
+
+    {
+        /* TODO: figure out getting this to build with univ, pcre
+        if (extemp::EXTLLVM2::initLLVM() == false) {
+            std::cerr << "initLLVM should return true the first time!" << std::endl;
+        }
+        */
     }
 
     {
