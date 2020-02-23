@@ -1,4 +1,3 @@
-.ccls-cache/*
 # extmpore binary executable
 extempore
 extempore.exe
@@ -103,3 +102,9 @@ BulletDynamics.dll
 
 # ignore toml
 /*.toml
+
+# ccls is a clang-based LSP server
+.ccls-cache/*
+
+# compile commands is a file that tells tools how the code was built
+compile_commands.json

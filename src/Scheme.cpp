@@ -63,7 +63,6 @@
 #include <execinfo.h>
 #endif
 
-#include "pcre.h"
 #include "EXTLLVM.h"
 #include "BranchPrediction.h"
 //#include "EXTMonitor"
