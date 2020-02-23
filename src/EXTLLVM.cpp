@@ -40,33 +40,13 @@
 // must be included before anything which pulls in <Windows.h>
 #include "llvm/AsmParser/Parser.h"
 #include "llvm/Config/llvm-config.h" // for LLVM_VERSION_STRING
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/ExecutionEngine/Interpreter.h"
+
+// if you remove this it segfaults for some reason?
+// if you look at the header it does some kind of magic so
+// maybe that's not unexpected
 #include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/ExecutionEngine/SectionMemoryManager.h"
-#include "llvm/IR/CallingConv.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/Module.h"
-#include "llvm/LinkAllPasses.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/Support/MemoryObject.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCDisassembler.h"
-#include "llvm/MC/MCInst.h"
-#include "llvm/MC/MCInstPrinter.h"
-#include "llvm/MC/MCContext.h"
 
 #include <random>
-#include <fstream>
-#include <unordered_map>
 #include "stdarg.h"
 #include "EXTLLVM.h"
 #include "EXTLLVM2.h"
@@ -147,8 +127,6 @@ EXPORT void free16(void* Ptr) {
     free(Ptr);
 #endif
 }
-
-
 
 // LLVM RUNTIME ERROR
 EXPORT void llvm_runtime_error(int error, void* arg)
