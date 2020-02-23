@@ -65,10 +65,7 @@
 
 #include "EXTLLVM.h"
 #include "BranchPrediction.h"
-//#include "EXTMonitor"
-//#include "EXTThread"
 
-//#include <iosfwd>
 #include <iomanip>
 
 #define _SCHEME_SOURCE

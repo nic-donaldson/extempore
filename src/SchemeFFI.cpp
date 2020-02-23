@@ -40,7 +40,6 @@
 // just left this commented out here because this comment seem important
 // #include "llvm/ADT/StringExtras.h"
 
-
 #include "SchemeFFI.h"
 #include "AudioDevice.h"
 #include "UNIV.h"
@@ -59,9 +58,7 @@
 #endif
 
 #include <fstream>
-#include <unordered_set>
 #include <unordered_map>
-#include <regex>
 
 ////////////////////////////////
 
