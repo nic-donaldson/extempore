@@ -663,10 +663,12 @@ namespace extemp {
 
 namespace EXTLLVM {
 
+// TODO: seems like we could remove the indirection
 uintptr_t getSymbolAddress(const std::string& name) {
     return extemp::EXTLLVM2::getSymbolAddress(name);
 }
 
+// TODO: seems like we could maybe remove the indirection
 EXPORT const char* llvm_disassemble(const unsigned char* Code, int syntax)
 {
     return extemp::EXTLLVM2::llvm_disassemble(Code, syntax);
