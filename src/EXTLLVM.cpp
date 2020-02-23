@@ -127,10 +127,6 @@
 #define LEAKY_ZONES 1
 #define EXTENSIBLE_ZONES 1
 
-// llvm_scheme foreign function -> string name
-// also is not thread safe!
-std::map<foreign_func, std::string> LLVM_SCHEME_FF_MAP;
-
 EXPORT void* malloc16(size_t Size)
 {
 #ifdef _WIN32
@@ -152,16 +148,7 @@ EXPORT void free16(void* Ptr) {
 #endif
 }
 
-const char* llvm_scheme_ff_get_name(foreign_func ff)
-{
-    return LLVM_SCHEME_FF_MAP[ff].c_str();
-}
 
-void llvm_scheme_ff_set_name(foreign_func ff,const char* name)
-{
-    LLVM_SCHEME_FF_MAP[ff] = std::string(name);
-    return;
-}
 
 // LLVM RUNTIME ERROR
 EXPORT void llvm_runtime_error(int error, void* arg)

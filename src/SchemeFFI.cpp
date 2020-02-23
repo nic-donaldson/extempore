@@ -95,9 +95,9 @@
 #include <SchemeLLVMFFI.h>
 
 namespace extemp {
-
 namespace SchemeFFI {
 
+// I would like to move all of these into their own .cpp
 #include "ffi/utility.inc"
 #include "ffi/ipc.inc"
 #include "ffi/assoc.inc"
@@ -107,6 +107,26 @@ namespace SchemeFFI {
 #include "ffi/sys_zone.inc"
 #include "ffi/misc.inc"
 #include "ffi/regex.inc"
+
+// llvm_scheme foreign function -> string name
+// also is not thread safe!
+std::map<foreign_func, std::string> LLVM_SCHEME_FF_MAP;
+
+// these two functions were originally declared with extern "C"
+// but I can't see that it matters. am I missing something?
+// if that detail isn't important they should be folded into
+// the next two functions
+
+const char* llvm_scheme_ff_get_name(foreign_func ff)
+{
+    return LLVM_SCHEME_FF_MAP[ff].c_str();
+}
+
+void llvm_scheme_ff_set_name(foreign_func ff,const char* name)
+{
+    LLVM_SCHEME_FF_MAP[ff] = std::string(name);
+    return;
+}
 
 static pointer ff_set_name(scheme* Scheme, pointer Args)
 {
