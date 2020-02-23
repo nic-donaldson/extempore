@@ -37,14 +37,9 @@
 #define _EXTLLVM_H
 
 #include "Scheme.h"
-#include "EXTMutex.h"
 #include "BranchPrediction.h"
-#include "UNIV.h"
-#include <EXTLLVM2.h>
 
-#include <vector>
-#include <string>
-#include <memory>
+#include <EXTLLVM2.h>
 
 struct zone_hooks_t {
   uint64_t space; // here just so we don't get <i8*,i8*>
