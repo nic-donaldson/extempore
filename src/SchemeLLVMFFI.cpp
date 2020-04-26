@@ -38,27 +38,26 @@ static std::string fileToString(const std::string &fileName) {
   return inString.str();
 }
 
-static llvm::Module *jitCompile(const std::string asmcode);
 static LLVMIRCompilation IRCompiler;
 
 static void
 loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
                              std::unordered_set<std::string> &sInlineSyms,
                              std::string &sInlineBitcode) {
-  using namespace llvm;
-  SMDiagnostic pa;
+  llvm::SMDiagnostic pa;
 
   sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
   const std::string bitcodeDotLLString =
       fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-  LLVMIRCompilation::insertMatchingSymbols(bitcodeDotLLString,
-                        extemp::LLVMIRCompilation::globalSymRegex, sInlineSyms);
-  LLVMIRCompilation::insertMatchingSymbols(sInlineDotLLString,
-                        extemp::LLVMIRCompilation::globalSymRegex, sInlineSyms);
+  LLVMIRCompilation::insertMatchingSymbols(
+      bitcodeDotLLString, extemp::LLVMIRCompilation::globalSymRegex,
+      sInlineSyms);
+  LLVMIRCompilation::insertMatchingSymbols(
+      sInlineDotLLString, extemp::LLVMIRCompilation::globalSymRegex,
+      sInlineSyms);
 
   // put bitcode.ll -> sInlineBitcode
-  auto newModule(
-      parseAssemblyString(bitcodeDotLLString, pa, getGlobalContext()));
+  auto newModule(llvm::parseAssemblyString(bitcodeDotLLString, pa, llvm::getGlobalContext()));
 
   if (!newModule) {
     std::cout << pa.getMessage().str() << std::endl;
@@ -70,23 +69,13 @@ loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
 }
 
 static llvm::Module *jitCompile(std::string asmcode) {
-  // so the first file that comes through is runtime/init.ll
-  // it begins with
-  // %mzone = type { i8*, i64, i64, i64, i8*, %mzone* rbrace if I actually type
-  // the brace emacs decides to reindent everything i love computers std::cout
-  // << asmcode << std::endl; std::cout <<
-  // "----------------------------------------------------------" << std::endl;
-
-  using namespace llvm;
-
   // the first time we call jitCompile it's init.ll which requires
   // special behaviour
   static bool isThisInitDotLL(true);
 
   static bool sLoadedInitialBitcodeAndSymbols(false);
   static std::string sInlineDotLLString;
-  static std::string
-      sInlineBitcode; // contains compiled bitcode from bitcode.ll
+  static std::string sInlineBitcode; // contains compiled bitcode from bitcode.ll
   static std::unordered_set<std::string> sInlineSyms;
 
   if (sLoadedInitialBitcodeAndSymbols == false) {
@@ -95,33 +84,7 @@ static llvm::Module *jitCompile(std::string asmcode) {
     sLoadedInitialBitcodeAndSymbols = true;
   }
 
-  // contents of sInlineSyms:
   /*
-is_integer, llvm_zone_mark_size, llvm_zone_mark, llvm_zone_create,
-llvm_zone_create_extern, llvm_peek_zone_stack, llvm_peek_zone_stack_extern,
-ascii_text_color, llvm_now, is_cptr_or_str, is_cptr, is_real, is_type, sscanf,
-fscanf, ftoui64, ftoi16, dtoi1, i32toui64, ftod, is_integer_extern, i16toi1,
-i64toi32, i16toi8, sprintf, ftoi8, i64toi16, i32toptr, dtoui8, i16toi32,
-i8toui64, fprintf, ftoi1, i1toi16, ftoui32, llvm_zone_ptr_set_size, is_string,
-ftoi64, printf, i8toi1, i64tod, i32toi1, impc_null, impc_false, i64toi8,
-ui64tof, impc_true, dtoi32, i8toi64, ptrtoi32, i1toi8, i64toi1, ftoi32,
-i16toui64, ui8tod, i32toi64, i1toi64, dtof, i8toi16, ftoui16,
-llvm_push_zone_stack, i32toi8, i32toi16, ftoui1, ui1tod, i64tof, ptrtoi64,
-new_address_table, i8toui32, i32tof, i8tof, i1tof, ui32tof, ui16tof, ui8tof,
-ui1tof, dtoui32, dtoi64, i16tod, dtoi16, i1toi32, dtoi8,
-ascii_text_color_extern, i16toui32, dtoui64, i1tod, fp80ptrtod, dtoui16, dtoui1,
-i32tod, ftoui8, i8toi32, i8tod, llvm_zone_reset, TIME, i16toi64, ui64tod,
-i16tof, ui32tod, ui16tod, i64toptr, llvm_push_zone_stack_extern, ptrtoi16,
-i16toptr
-
-
-  for (const auto &sym : sInlineSyms) {
-      std::cout << sym << ", ";
-  }
-  std::cout <<
-"-------------------------------------------------------------------" <<
-std::endl;
-
 e.g. new_address_table is the first definition in inline.ll it appears as
 @new_address_table which matches the globalsymregex we're using from llvm 3.8.0
 docs: "LLVM identifiers come in two basic types: global and local. Global
@@ -146,12 +109,12 @@ declarations, and merges symbol table entries."
   // << std::endl;
 
   std::unique_ptr<llvm::Module> newModule = nullptr;
-  SMDiagnostic pa;
+  llvm::SMDiagnostic pa;
 
   if (!isThisInitDotLL) {
     // module from bitcode.ll
     auto module(parseBitcodeFile(
-        llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
+        llvm::MemoryBufferRef(sInlineBitcode, "<string>"), llvm::getGlobalContext()));
 
     if (likely(module)) {
       newModule = std::move(module.get());
@@ -169,7 +132,7 @@ declarations, and merges symbol table entries."
   }
 
   if (isThisInitDotLL) {
-    newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
+    newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
   }
 
   if (unlikely(!newModule)) {
@@ -184,9 +147,7 @@ declarations, and merges symbol table entries."
     return nullptr;
   }
 
-  static bool VERIFY_COMPILES = true;
-  if (VERIFY_COMPILES &&
-      verifyModule(*newModule)) { // i can't believe this function returns true
+  if (verifyModule(*newModule)) { // i can't believe this function returns true
                                   // on an error
     std::cout << "\nInvalid LLVM IR\n";
     return nullptr;
@@ -341,7 +302,6 @@ pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 }
 pointer get_global_variable_type(scheme* Scheme, pointer Args)
 {
-    using namespace llvm;
     auto var(extemp::EXTLLVM::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
@@ -526,7 +486,7 @@ pointer llvm_convert_double_constant(scheme* Scheme, pointer Args)
 }
 
 int64_t LLVM_COUNT = 0;
-pointer llvm_count(scheme* Scheme, pointer Args)
+pointer llvm_count(scheme* Scheme, pointer)
 {
     return mk_integer(Scheme, LLVM_COUNT);
 }
@@ -550,7 +510,7 @@ pointer callClosure(scheme* Scheme, pointer Args)
     return mk_integer(Scheme, (*fptr)(closure[0], ivalue(pair_cadr(Args))));
 }
 
-pointer llvm_print_all_modules(scheme* Scheme, pointer Args) // TODO
+pointer llvm_print_all_modules(scheme* Scheme, pointer) // TODO
 {
     for (auto module : EXTLLVM2::getModules()) {
         std::string str;

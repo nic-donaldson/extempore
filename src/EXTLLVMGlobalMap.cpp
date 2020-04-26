@@ -17,7 +17,7 @@ namespace EXTLLVM {
 namespace GlobalMap {
 bool haveGlobalValue(const char *Name) { return sGlobalMap.count(Name) > 0; }
 
-const void addFunction(const llvm::Function &function) {
+void addFunction(const llvm::Function &function) {
   std::string str;
   llvm::raw_string_ostream stream(str);
   function.printAsOperand(stream, false);
@@ -28,7 +28,7 @@ const void addFunction(const llvm::Function &function) {
   }
 }
 
-const void addGlobal(const llvm::GlobalVariable &global) {
+void addGlobal(const llvm::GlobalVariable &global) {
   std::string str;
   llvm::raw_string_ostream stream(str);
   global.printAsOperand(stream, false);
