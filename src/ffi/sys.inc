@@ -133,16 +133,16 @@ static pointer dirlist(scheme* Scheme, pointer Args)
 {
 #ifdef _WIN32
     char* path = string_value(pair_car(Args));
-    std::tr2::sys::path bpath(path);
-    if (!std::tr2::sys::exists(bpath)) {
+    std::experimental::filesystem::path bpath(path);
+    if (!std::experimental::filesystem::exists(bpath)) {
         return Scheme->NIL;
     }
-    if (!std::tr2::sys::is_directory(bpath)) {
+    if (!std::experimental::filesystem::is_directory(bpath)) {
         return Scheme->NIL;
     }
-    std::tr2::sys::directory_iterator end_it;
+    std::experimental::filesystem::directory_iterator end_it;
     pointer list = Scheme->NIL;
-    for (std::tr2::sys::directory_iterator it(bpath); it != end_it; ++it) {
+    for (std::experimental::filesystem::directory_iterator it(bpath); it != end_it; ++it) {
         EnvInjector injector(Scheme, list);
         pointer tlist = cons(Scheme, mk_string(Scheme, it->path().string().c_str()), list);
         list = tlist;
@@ -217,27 +217,14 @@ static pointer commandOutput(scheme* Scheme, pointer Args)
 
 static pointer getEnv(scheme* Scheme, pointer Args)
 {
-  const char* varname = string_value(pair_car(Args));
+  const char* var = string_value(pair_car(Args));
+  const char* val = std::getenv(var);
 
-#ifdef _WIN32
-  char outbuf[8192]; // oughtta be enough for anyone
-  size_t varsize;
-
-  int res = getenv_s(&varsize, outbuf, 8192, varname);
-
-  if (res == 0){
-	return mk_string(Scheme, outbuf);
+  if (val != NULL){
+	return mk_string(Scheme, val);
   }else{
     return Scheme->F;
   }
-#else
-  char* value = getenv(varname);
-  if (value != NULL){
-	return mk_string(Scheme, value);
-  }else{
-    return Scheme->F;
-  }
-#endif
 }
 
 static pointer setEnv(scheme* Scheme, pointer Args)

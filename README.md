@@ -1,36 +1,64 @@
 # Extempore
 
+![`master` branch: build & test](https://github.com/digego/extempore/workflows/Build%20&%20run%20tests/badge.svg?branch=master)
+
+![Latest release](https://github.com/digego/extempore/workflows/Release/badge.svg)
+
 A programming environment for cyberphysical programming.
 
 ## Getting started
 
-To get started, you can either download a binary release or build
-Extempore from source yourself.
+### The easy way
 
-### Download a pre-built binary
+Download [VSCode](https://code.visualstudio.com/), install the Extempore
+extension and then use the _Extempore: Download binary_ command to do the rest.
 
-Download a
-[binary release](https://github.com/digego/extempore/releases), unzip
-it and run `extempore.exe` from inside the `extempore` folder.
+For more details, head to the [Quickstart
+page](https://extemporelang.github.io/docs/overview/quickstart/) in Extempore's
+online docs.
+
+### The slightly harder way (for those who don't want to use VSCode)
+
+Download the latest [binary
+release](https://github.com/digego/extempore/releases) for your platform, unzip
+it and run `extempore` (`extempore.exe` on Windows) from inside the `extempore`
+folder.
+
+Then, [set up your text editor of
+choice](https://extemporelang.github.io/docs/guides/editor-support/) and away
+you go.
 
 ### Build from source
 
-This will download and build all the dependencies you need (including
-LLVM). So, if you've got a C++ compiler (for `gcc`, version 4.9 or
-later is required), git and CMake, here are some one-liner build
-commands:
+This will download and build all the dependencies you need (including LLVM). So,
+if you've got a C++ compiler (for `gcc`, version 4.9 or later is required), git
+and CMake, here are some one-liner build commands:
 
 On **Linux/macOS**:
 
-    git clone https://github.com/digego/extempore && mkdir extempore/cmake-build && cd extempore/cmake-build && cmake .. && make && sudo make install
+    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake .. && make && sudo make install
     
-On **Linux/macOS with JACK**:
+On **Windows** (if you're using VS2017---adjust as necessary for your VS
+version):
 
-    git clone https://github.com/digego/extempore && mkdir extempore/cmake-build && cd extempore/cmake-build && cmake -DJACK=ON .. && make && sudo make install
-    
-On **Windows**:
+    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake -G "Visual Studio 15 2017" -A x64 .. && cmake --build . --target INSTALL --config Release
 
-    git clone https://github.com/digego/extempore && mkdir extempore/cmake-build && cd extempore/cmake-build && cmake -G"Visual Studio 14 2015 Win64" .. && cmake --build . --target ALL_BUILD --config Release
+#### Other build-from-source notes
+
+- the Extempore build is [automatically
+  tested](https://github.com/digego/extempore/actions?query=workflow%3A%22Build+%26+run+tests%22)
+  on Ubuntu (LTS versions back to 16.04), macOS (latest only) and Windows
+  (Server 2016 & 2019), so if you're on one of those platforms (or similar)
+  these steps should just work---if you're on a different distro/version then
+  things will still proabaly work, but you might have to modify some of the
+  steps
+
+- if you want to download the Extempore binary assets as well (required for some
+  of the examples, but a ~300MB downloaded) then add the `-DASSETS=ON` CMake
+  option to the above build commands
+
+- the `install` target will build both the `extempore` binary executable and
+  AOT-compile the standard library (for faster startup)
 
 ## See Extempore in action
 
@@ -42,6 +70,7 @@ Check out these videos:
 - [The Physics Playroom - interactive installation](https://vimeo.com/58239256)
 - [An *old* Graphics Demo](https://vimeo.com/37293927)
 - [A Programmer's Guide to Western Music](https://www.youtube.com/watch?v=xpSYWd_aIiI)
+- [Ben's livecoding gig videos](https://benswift.me/livecoding/)
 
 ## Docs & Community
 
@@ -51,6 +80,8 @@ You can also join the Extempore community:
 
 - [Extempore google group](http://groups.google.com/group/extemporelang)
 - [Extempore mailing list](mailto:extemporelang@googlegroups.com)
+- [#extempore on chat.toplap.org](https://chat.toplap.org/home) (although not as
+  well-monitored as the mailing list)
 
 ## Cite Extempore
 
@@ -59,7 +90,7 @@ You can also join the Extempore community:
 
 ## Licence
 
-Copyright (c) 2011-2018, Andrew Sorensen
+Copyright (c) 2011-2020, Andrew Sorensen
 
 All rights reserved.
 
