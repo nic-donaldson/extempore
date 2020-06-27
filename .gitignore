@@ -2,12 +2,17 @@
 extempore
 extempore.exe
 extempore.lib
+extempore.so
+extempore.dll
+extempore.dylib
+libextempore.so
 
 # boost
 /boost
 
 # cmake & other build tools
 /build
+/buildlib
 /cmake-build
 /out # this is where MSVS puts the CMake build stuff
 /extras/cmake/aot.cmake

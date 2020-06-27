@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 3.1) # we use target_sources()
-project(Extempore VERSION 0.8.6)
+project(Extempore VERSION 0.8.7)
 
-option(ASIO "use the ASIO Portaudio backend" OFF)
-option(JACK "use the Jack Portaudio backend" OFF)
-option(DYLIB "build extempore as a dynamic library" OFF)
-option(PACKAGE "set up install targets for packaging" OFF)
 option(ASSETS "download multimedia assets (approx 500MB)" OFF)
 option(BUILD_TESTS "build test targets (including examples)" ON)
+option(PACKAGE "set up install targets for packaging" OFF)
+
 option(EXTERNAL_SHLIBS_AUDIO "download & build audio-related external library dependencies" ON)
 option(EXTERNAL_SHLIBS_GRAPHICS "download & build graphics-related external library dependencies" ON)
 set(EXTERNAL_SHLIBS (EXTERNAL_SHLIBS_AUDIO OR EXTERNAL_SHLIBS_GRAPHICS))
+
+# optional audio backends (see INSTALL.md)
+option(ASIO "use the ASIO Portaudio backend" OFF)
+option(JACK "use the Jack Portaudio backend" OFF)
+option(DYLIB "build extempore as a dynamic library" OFF)
 
 ## this is useful because we can group targets together (e.g. all the AOT libs)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -318,8 +321,8 @@ else()
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DLLVM_ENABLE_TERMINFO=OFF
       -DLLVM_ENABLE_ZLIB=OFF
-      -DLLVM_INCLUDE_TOOLS=OFF
-      -DLLVM_BUILD_TOOLS=OFF
+      -DLLVM_INCLUDE_TOOLS=ON
+      -DLLVM_BUILD_TOOLS=ON
       -DLLVM_INCLUDE_UTILS=OFF
       -DLLVM_BUILD_RUNTIME=OFF
       -DLLVM_INCLUDE_EXAMPLES=OFF
@@ -340,8 +343,8 @@ else()
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DLLVM_ENABLE_TERMINFO=OFF
       -DLLVM_ENABLE_ZLIB=OFF
-      -DLLVM_INCLUDE_TOOLS=OFF
-      -DLLVM_BUILD_TOOLS=OFF
+      -DLLVM_INCLUDE_TOOLS=ON
+      -DLLVM_BUILD_TOOLS=ON
       -DLLVM_INCLUDE_UTILS=OFF
       -DLLVM_BUILD_RUNTIME=OFF
       -DLLVM_INCLUDE_EXAMPLES=OFF
@@ -516,6 +519,8 @@ elseif(APPLE) # macOS
     PRIVATE "-framework AudioToolbox")
 
 elseif(UNIX AND NOT APPLE) # Linux
+  set_property(TARGET portaudio PROPERTY POSITION_INDEPENDENT_CODE ON)
+  set_property(TARGET pcre PROPERTY POSITION_INDEPENDENT_CODE ON)
   set_property(TARGET extempore PROPERTY POSITION_INDEPENDENT_CODE ON)
   # target_link_libraries(extempore PRIVATE --export-dynamic)
   target_link_libraries(extempore PRIVATE dl)
@@ -704,6 +709,7 @@ if(UNIX)
     -DBUILD_SHARED_LIBS=ON
     -DBUILD_PROGRAMS=OFF
     -DBUILD_EXAMPLES=OFF
+	-DENABLE_EXTERNAL_LIBS=OFF
     -DBUILD_TESTING=OFF
     -DENABLE_CPACK=OFF
     -DENABLE_PACKAGE_CONFIG=OFF)
@@ -873,6 +879,8 @@ if(WIN32)
       -DBUILD_SHARED_LIBS=ON
       -DBUILD_PROGRAMS=OFF
       -DBUILD_EXAMPLES=OFF
+	  -DENABLE_EXTERNAL_LIBS=OFF
+	  -DENABLE_STATIC_RUNTIME=OFF
       -DBUILD_TESTING=OFF
       -DENABLE_CPACK=OFF
       -DENABLE_PACKAGE_CONFIG=OFF)

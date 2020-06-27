@@ -1325,6 +1325,7 @@
     ("exit" . #((213 -1 4) "" ())) ;; libc
     ("expm1" . #((213 0 0) "" ())) ;; libm
     ("expm1f" . #((213 1 1) "" ())) ;; libm
+    ("extempore_init" . #((213 4 4 208))) ;; libextempore
     ("extitoa" . #((213 108 2) "" ())) ;; xtlang (for kinect only?)
     ("fclose" . #((213 4 108) "" ())) ;; libc
     ("fdim" . #((213 0 0 0) "" ())) ;; libm
@@ -2666,6 +2667,7 @@
 (define *impc:aot:current-lib-name* "xtmdylib")
 (define *impc:aot:win-link-libraries* '(".\\libs\\platform-shlibs\\extempore.lib"))
 (define *impc:aot:win-link-libraries-exe* '(".\\libs\\builds\\extempore.lib"))
+(define *impc:aot:unix-link-libraries-exe* '("-lextempore -lm"))
 
 (define *impc:aot:func-defs-in-mod* '())
 ;; should be a cons pair e.g. '(libGLU .
@@ -2913,18 +2915,18 @@
              (asm-path (string-append tmp-dir module-name (unix-or-Windows ".o" ".obj"))) ; could skip .o (straight to .so)
              (output-dir (sanitize-platform-path (string-append (sys:share-dir) "/libs/builds/")))
              (output-exe-path (string-append output-dir module-name
-                                               (cond ((string=? platform "Linux") "")
+                                               (cond ((string=? platform "Linux") (if asdll? ".so" ""))
                                                      ((string=? platform "OSX") "")
                                                      ((string=? platform "Windows") (if asdll? ".dll" ".exe")))))
              (link-libs (if (string=? platform "Windows")
                             *impc:aot:win-link-libraries-exe*
-                            '()))
+                            *impc:aot:unix-link-libraries-exe*))
              (optimize-compiles? #t)
              (llc-command
               (unix-or-Windows (string-append
                                 llc-path
                                 (if optimize-compiles? " -O3 -tailcallopt" "-O0")
-                                " -filetype=obj "
+                                " -relocation-model=pic -filetype=obj "
                                 (if (and (string=? (sys:platform) "OSX")
                                          (sys:cmdarg "mcpu")
                                          (not (string=? (sys:cmdarg "mcpu") "")))
@@ -2941,15 +2943,16 @@
              (link-command
               (unix-or-Windows (string-append
                                 (cond ((string=? platform "Linux")
-                                       (string-append "gcc "
-                                                      (if optimize-compiles? "-O3 -g" "-g -O0")
+                                       (string-append "gcc -Llibs/platform-shlibs "
+                                                      (if asdll? "-shared -fPIC " "")
+                                                      (if optimize-compiles? "-O3 -g " "-g -O0 ")
                                                       ""))
                                       ((string=? platform "OSX")
                                        (string-append "clang "
                                                       (if optimize-compiles? "-O3" "-g -O0")
                                                       "")))
                                 asm-path
-                                " -o " output-exe-path)
+                                " -o " output-exe-path " " (string-join link-libs " "))
                                (string-append
                                 "call link"
                                 (if asdll? " /DLL" "")
@@ -3985,7 +3988,7 @@
                   (let ((,resname ,(if (= (length ast) 3) (caddr ast) (cadddr ast)))
                         (,zonename (pop_zone))
                         (,newzname (llvm_peek_zone_stack)))
-                    ;; this extra let seems reduentant! BUT is needed
+                    ;; this extra let seems redundant! BUT is needed
                     ;; because rescopyname should go in newzone not zonename
                     ;; i.e. needs to go into a *new* let after pop_zone is called
                     (let ((,rescopyname (zcopy ,resname ,zonename ,newzname)))
@@ -4969,7 +4972,7 @@ Continue executing `body' forms until `test-expression' returns #f"
                                 ;; concrete type?? (at least for printing reasons)
                                 ;; because impc:ti:compile-type-dataconstructors needs to be called from
                                 ;; the top level, we should call use callback to add to queue
-                                (callback (now) 'impc:ti:compile-type-dataconstructors (string->symbol newname) newtype1 #f #t #t)
+                                (callback (now) 'impc:ti:compile-type-dataconstructors (string->symbol newname) newtype1 #f #t #t #t)
                                 'done)
                               (impc:compiler:print-compiler-failed-error))))
                     (let ((rettype (impc:ir:pointer++ (string-append "%" newname) ptrdepth)))
@@ -10825,7 +10828,7 @@ xtlang's `let' syntax is the same as Scheme"
       (impc:ti:gather-all-gvars-helper gtype)))))
 
 (define impc:ti:compile-type-dataconstructors
-  (lambda (name type generic printer? constructor?)
+  (lambda (name type generic printer? copy? constructor?)
     (if (or (not (string? type)) ;; if not already a pretty type
             (regex:match? type "^\\s*{"))
         (set! type (impc:ir:pretty-print-type type)))
@@ -10991,19 +10994,21 @@ xtlang's `let' syntax is the same as Scheme"
                           (tfill! obj ,@argslist)
                           (pref obj 0))))
                    (interaction-environment))
-             (eval `(bind-func ,(string->symbol (string-append "hcopy:[" namestr "*," namestr "*]*"))
+             (if copy? 
+                 (begin
+                   (eval `(bind-func ,(string->symbol (string-append "hcopy:[" namestr "*," namestr "*]*"))
                       (lambda (,(string->symbol (string-append "x:" namestr "*")))
                         (let ((obj (halloc)))
                           ,@hcopy_body
                           obj)))
                    (interaction-environment))
-             (eval `(bind-func ,(string->symbol (string-append "hfree:[void," namestr "*]*"))
+                  (eval `(bind-func ,(string->symbol (string-append "hfree:[void," namestr "*]*"))
                       (lambda (,(string->symbol (string-append "x:" namestr "*")))
                         ,@hfree_body
                         (free x)
                         void))
                    (interaction-environment))
-             (eval `(bind-func ,(string->symbol (string-append "zcopy:[" namestr "*," namestr "*,mzone*,mzone*]*"))
+                 (eval `(bind-func ,(string->symbol (string-append "zcopy:[" namestr "*," namestr "*,mzone*,mzone*]*"))
                       (lambda (,(string->symbol (string-append "x:" namestr "*")) fromz toz)
                         (if (llvm_ptr_in_zone fromz (cast x i8*))
                             (begin (push_zone toz)
@@ -11012,7 +11017,8 @@ xtlang's `let' syntax is the same as Scheme"
                                  (pop_zone)
                                  obj))
                             x)))
-                   (interaction-environment)))))
+                   (interaction-environment))))
+             )))
       ;; (println 'dc-out: name)
       #t)))
 
@@ -11037,6 +11043,9 @@ xtlang's `let' syntax is the same as Scheme"
          (extras (cl:remove #f (map (lambda (x) (if (pair? x) x #f)) args)))
          (printer? (if (assoc-strcmp 'printer? extras)
                        (cdr (assoc-strcmp 'printer? extras))
+                       #t))
+         (copy? (if (assoc-strcmp 'copy? extras)
+                       (cdr (assoc-strcmp 'copy? extras))
                        #t))
          (constructor? (if (assoc-strcmp 'constructor? extras)
                            (cdr (assoc-strcmp 'constructor? extras))
@@ -11090,6 +11099,7 @@ xtlang's `let' syntax is the same as Scheme"
             (impc:ir:pretty-print-type (impc:ti:get-namedtype-type ,(symbol->string symbol))))
         (if (impc:ti:get-generictype-candidate-types ',symbol) #t #f)
         ,printer?
+        ,copy?
         ,constructor?))))
 
 (impc:ti:register-new-builtin
@@ -11796,7 +11806,7 @@ e.g.
                  (set! t (cadr (regex:type-split t ":"))))
              (let ((newname (string-append sym "_poly_" (cname-encode t))))
                (if (llvm:compile-ir (string-append "%" newname " = type " (impc:ir:get-type-str (impc:ir:get-type-from-pretty-str t))))
-                   (impc:ti:compile-type-dataconstructors (string->symbol newname) t #f #t #t)
+                   (impc:ti:compile-type-dataconstructors (string->symbol newname) t #f #t #t #t)
                    (impc:compiler:print-compiler-error "failed to compile IR in impc:ti:specialize-generictype" sym))))
            types)
           (set! *impc:ti:print-code-specialization-compiles* printspec)

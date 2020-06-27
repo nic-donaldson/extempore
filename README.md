@@ -1,10 +1,6 @@
-# Extempore
+# Extempore ![Build & test](https://github.com/digego/extempore/workflows/Build%20&%20run%20tests/badge.svg?branch=master) ![Release](https://github.com/digego/extempore/workflows/Release/badge.svg)
 
-![`master` branch: build & test](https://github.com/digego/extempore/workflows/Build%20&%20run%20tests/badge.svg?branch=master)
-
-![Latest release](https://github.com/digego/extempore/workflows/Release/badge.svg)
-
-A programming environment for cyberphysical programming.
+A programming environment for cyberphysical programming (Linux/macOS/Windows).
 
 ## Getting started
 
@@ -13,11 +9,16 @@ A programming environment for cyberphysical programming.
 Download [VSCode](https://code.visualstudio.com/), install the Extempore
 extension and then use the _Extempore: Download binary_ command to do the rest.
 
+**Note**: Extempore's binary releases are [built
+automatically](https://github.com/digego/extempore/actions?query=workflow%3ARelease)
+for Windows, macOS and Linux (Linux release are built on Ubuntu, on other
+distros YMMV).
+
 For more details, head to the [Quickstart
 page](https://extemporelang.github.io/docs/overview/quickstart/) in Extempore's
 online docs.
 
-### The slightly harder way (for those who don't want to use VSCode)
+### The _slightly_ harder way (for those who don't want to use VSCode)
 
 Download the latest [binary
 release](https://github.com/digego/extempore/releases) for your platform, unzip
@@ -30,35 +31,26 @@ you go.
 
 ### Build from source
 
-This will download and build all the dependencies you need (including LLVM). So,
-if you've got a C++ compiler (for `gcc`, version 4.9 or later is required), git
-and CMake, here are some one-liner build commands:
+**For more information**, check out [BUILDING.md](./BUILDING.md).
+
+Extempore's CMake build process downloads and build all the dependencies you
+need (including LLVM). So, if you've got a C++ compiler, git and CMake, here are
+some one-liner build commands:
 
 On **Linux/macOS**:
 
-    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake .. && make && sudo make install
+    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake -DASSETS=ON .. && make && sudo make install
     
-On **Windows** (if you're using VS2017---adjust as necessary for your VS
+On **Windows** (if you're using VS2019---adjust as necessary for your VS
 version):
 
-    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake -G "Visual Studio 15 2017" -A x64 .. && cmake --build . --target INSTALL --config Release
+    git clone https://github.com/digego/extempore && mkdir extempore/build && cd extempore/build && cmake -G "Visual Studio 16 2019" -A x64 -DASSETS=ON .. && cmake --build . --target INSTALL --config Release
 
-#### Other build-from-source notes
-
-- the Extempore build is [automatically
-  tested](https://github.com/digego/extempore/actions?query=workflow%3A%22Build+%26+run+tests%22)
-  on Ubuntu (LTS versions back to 16.04), macOS (latest only) and Windows
-  (Server 2016 & 2019), so if you're on one of those platforms (or similar)
-  these steps should just work---if you're on a different distro/version then
-  things will still proabaly work, but you might have to modify some of the
-  steps
-
-- if you want to download the Extempore binary assets as well (required for some
-  of the examples, but a ~300MB downloaded) then add the `-DASSETS=ON` CMake
-  option to the above build commands
-
-- the `install` target will build both the `extempore` binary executable and
-  AOT-compile the standard library (for faster startup)
+_Note:_ in the above one-liners the `ASSETS` build-time option (boolean, default
+`OFF`) is set to `ON`. This will download the Extempore binary assets---required
+for many of the examples, but adds a ~300MB download to build process. If you'd
+rather not do that, and are happy with some of the examples not working, then
+set `-DASSETS=OFF` instead.
 
 ## See Extempore in action
 
@@ -71,6 +63,13 @@ Check out these videos:
 - [An *old* Graphics Demo](https://vimeo.com/37293927)
 - [A Programmer's Guide to Western Music](https://www.youtube.com/watch?v=xpSYWd_aIiI)
 - [Ben's livecoding gig videos](https://benswift.me/livecoding/)
+
+## Contributors
+
+The Extempore core team is [Andrew Sorensen](https://github.com/digego) & [Ben
+Swift](https://github.com/benswift), although many others have made
+contributions as well ([see the full
+list](https://github.com/digego/extempore/graphs/contributors)).
 
 ## Docs & Community
 
