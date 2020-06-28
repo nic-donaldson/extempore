@@ -36,7 +36,7 @@ namespace extemp {
     llvm::GlobalVariable* FindGlobalVariableNamed(const std::string&);
     void* getPointerToFunction(llvm::Function* function);
 
-    bool setOptimize(const bool);
+    void setOptimize(const bool);
     std::vector<llvm::Module*>& getModules(); // TODO: probably shouldn't expose this
 
     // pass through some functions to the first module

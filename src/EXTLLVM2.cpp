@@ -1,9 +1,4 @@
 // If EXTLLVM was so good why didn't they make an EXTLLVM2?
-#include <EXTLLVM2.h>
-#include <EXTMutex.h>
-#include <EXTLLVMGlobalMap.h>
-#include <UNIV.h>
-
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
@@ -20,6 +15,11 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
 
+#include <EXTLLVM2.h>
+#include <EXTMutex.h>
+#include <EXTLLVMGlobalMap.h>
+#include <UNIV.h>
+
 #include <vector>
 #include <iostream>
 
@@ -35,7 +35,7 @@ namespace EXTLLVM2 {
     // TODO: make this static once it's fully moved over
     llvm::SectionMemoryManager* MM = nullptr;
 
-    bool setOptimize(const bool b) {
+    void setOptimize(const bool b) {
         OPTIMIZE_COMPILES = b;
     }
 

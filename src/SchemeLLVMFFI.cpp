@@ -1,10 +1,3 @@
-#include <EXTLLVM2.h>
-#include <LLVMIRCompilation.h>
-#include <EXTLLVMGlobalMap.h>
-#include <Scheme.h>
-#include <SchemeLLVMFFI.h>
-#include <SchemePrivate.h>
-
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/AsmParser/Parser.h"
 #include "llvm/Bitcode/ReaderWriter.h"
@@ -15,6 +8,13 @@
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
+
+#include <EXTLLVM2.h>
+#include <LLVMIRCompilation.h>
+#include <EXTLLVMGlobalMap.h>
+#include <Scheme.h>
+#include <SchemeLLVMFFI.h>
+#include <SchemePrivate.h>
 
 #include <fstream>
 #include <sstream>
