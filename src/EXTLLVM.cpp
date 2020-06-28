@@ -97,8 +97,7 @@
 
 #include "SchemeProcess.h"
 
-#define DEBUG_ZONE_STACK 0
-#define DEBUG_ZONE_ALLOC 0
+struct closure_address_table;
 
 EXPORT void* malloc16(size_t Size)
 {
@@ -121,7 +120,6 @@ EXPORT void free16(void* Ptr) {
 #endif
 }
 
-// LLVM RUNTIME ERROR
 EXPORT void llvm_runtime_error(int error, void* arg)
 {
   ascii_error();
@@ -134,54 +132,6 @@ EXPORT void llvm_runtime_error(int error, void* arg)
   }
   ascii_normal();
   return;
-}
-
-THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack = 0;
-THREAD_LOCAL uint64_t tls_llvm_zone_stacksize = 0;
-
-EXPORT void llvm_zone_print(llvm_zone_t* zone)
-{
-    auto tmp(zone);
-    auto total_size(zone->size);
-    int64_t segments(1);
-    while (tmp->memories) {
-        tmp = tmp->memories;
-        total_size += tmp->size;
-        segments++;
-    }
-    printf("<MemZone(%p) size(%" PRId64 ") free(%" PRId64 ") segs(%" PRId64 ")>", zone, total_size, (zone->size - zone->offset), segments);
-    return;
-}
-
-EXPORT uint64_t llvm_zone_ptr_size(void* ptr) // could be inline version in llvm (as well)
-{
-    return *(reinterpret_cast<uint64_t*>(ptr) - 1);
-}
-
-EXPORT bool llvm_zone_copy_ptr(void* ptr1, void* ptr2)
-{
-    uint64_t size1 = llvm_zone_ptr_size(ptr1);
-    uint64_t size2 = llvm_zone_ptr_size(ptr2);
-
-    if (unlikely(size1 != size2)) {
-        // printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n", ptr1, size1, ptr2, size2);
-        return 1;
-    }
-    if (unlikely(!size1)) {
-        // printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n", ptr1, size1, ptr2, size2);
-        return 1;
-    }
-    // printf("zone_copy_ptr: %p,%p,%lld,%lld\n", ptr2, ptr1, size1, size2);
-    std::memcpy(ptr2, ptr1, size1);
-    return 0;
-}
-
-EXPORT bool llvm_ptr_in_zone(llvm_zone_t* zone, void* ptr)
-{
-    while (unlikely(zone && (ptr < zone->memory || ptr >= reinterpret_cast<char*>(zone->memory) + zone->size))) {
-      zone = zone->memories;
-    }
-    return zone;
 }
 
 EXPORT void llvm_schedule_callback(long long time, void* dat)
@@ -665,48 +615,6 @@ EXPORT void free_after_delay(char* Data, double Delay)
 
 
 
-
-EXPORT void* llvm_zone_malloc_from_current_zone(uint64_t size)
-{
-  return llvm_zone_malloc(llvm_peek_zone_stack(), size);
-}
-
-EXPORT bool llvm_ptr_in_current_zone(void* ptr)
-{
-    return llvm_ptr_in_zone(llvm_peek_zone_stack(), ptr);
-}
-
-EXPORT llvm_zone_t* llvm_peek_zone_stack_extern()
-{
-    return extemp::EXTLLVM::llvm_peek_zone_stack();
-}
-
-EXPORT void llvm_push_zone_stack_extern(llvm_zone_t* Zone)
-{
-    extemp::EXTLLVM::llvm_push_zone_stack(Zone);
-}
-
-EXPORT llvm_zone_t* llvm_zone_create_extern(uint64_t Size)
-{
-    return extemp::EXTLLVM::llvm_zone_create(Size);
-}
-
-static THREAD_LOCAL llvm_zone_t* tls_llvm_callback_zone = 0;
-
-static inline llvm_zone_t* llvm_threads_get_callback_zone()
-{
-    if (unlikely(!tls_llvm_callback_zone)) {
-        tls_llvm_callback_zone = llvm_zone_create(1024 * 1024); // default callback zone 1M
-    }
-    return tls_llvm_callback_zone;
-}
-
-EXPORT llvm_zone_t* llvm_zone_callback_setup()
-{
-    auto zone(llvm_threads_get_callback_zone());
-    llvm_push_zone_stack(zone);
-    return llvm_zone_reset(zone);
-}
 
 EXPORT void ascii_text_color_extern(int32_t Bold, int32_t Foreground, int32_t Background)
 {

@@ -31,7 +31,7 @@ struct llvm_zone_stack
     llvm_zone_stack* tail;
 };
 
-struct closure_address_table;
+
 
 extern THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack;
 extern THREAD_LOCAL uint64_t tls_llvm_zone_stacksize;
@@ -52,9 +52,24 @@ llvm_zone_t* llvm_peek_zone_stack();
 
 EXPORT llvm_zone_t* llvm_pop_zone_stack();
 
-inline void llvm_threads_inc_zone_stacksize();
-inline void llvm_threads_dec_zone_stacksize();
-inline uint64_t llvm_threads_get_zone_stacksize();
+void llvm_threads_inc_zone_stacksize();
+void llvm_threads_dec_zone_stacksize();
+uint64_t llvm_threads_get_zone_stacksize();
+
+// things that were not in the header before:
+// or in the namespace
+EXPORT void llvm_zone_print(llvm_zone_t* zone);
+EXPORT uint64_t llvm_zone_ptr_size(void* ptr);
+EXPORT bool llvm_zone_copy_ptr(void* ptr1, void* ptr2);
+EXPORT bool llvm_ptr_in_zone(llvm_zone_t* zone, void* ptr);
+
+EXPORT void* llvm_zone_malloc_from_current_zone(uint64_t size);
+EXPORT bool llvm_ptr_in_current_zone(void* ptr);
+EXPORT llvm_zone_t* llvm_peek_zone_stack_extern();
+EXPORT void llvm_push_zone_stack_extern(llvm_zone_t* Zone);
+EXPORT llvm_zone_t* llvm_zone_create_extern(uint64_t Size);
+
+EXPORT llvm_zone_t* llvm_zone_callback_setup();
  
 }
 }

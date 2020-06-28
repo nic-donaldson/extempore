@@ -46,8 +46,6 @@ struct _llvm_callback_struct_ {
     llvm_zone_t* zone;
 };
 
-
-
 extern "C"
 {
     void llvm_destroy_zone_after_delay(llvm_zone_t* zone, uint64_t delay);
@@ -62,17 +60,11 @@ extern "C"
     EXPORT int64_t imp_rand1_i64(int64_t a);
 }
 
-// this added for dodgy continuations support
-
 namespace extemp {
 namespace EXTLLVM {
 
-
-
 void initLLVM();
-
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 
-}
-
-}
+} // namespace EXTLLVM
+} // namespace extemp
