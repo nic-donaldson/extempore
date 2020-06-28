@@ -9,6 +9,7 @@
 #include <regex>
 #include <string>
 #include <iterator>
+#include <sstream>
 
 /*
 // this typechecks could be basis for fakes?
