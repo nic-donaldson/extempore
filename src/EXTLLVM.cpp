@@ -48,16 +48,18 @@
 
 #include <random>
 #include "stdarg.h"
-#include "EXTLLVM.h"
-#include "EXTLLVM2.h"
-#include "EXTThread.h"
-#include "UNIV.h"
-#include "TaskScheduler.h"
-#include "Scheme.h"
-#include "OSC.h"
+
+#include <EXTLLVM.h>
+#include <EXTClosureAddressTable.h>
+#include <EXTLLVM2.h>
+#include <EXTThread.h>
+#include <UNIV.h>
+#include <TaskScheduler.h>
+#include <Scheme.h>
+#include <OSC.h>
+#include <BranchPrediction.h>
+#include <EXTLLVMGlobalMap.h>
 #include "math.h"
-#include "BranchPrediction.h"
-#include "EXTLLVMGlobalMap.h"
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -97,7 +99,6 @@
 
 #include "SchemeProcess.h"
 
-struct closure_address_table;
 
 EXPORT void* malloc16(size_t Size)
 {
@@ -337,82 +338,18 @@ EXPORT float imp_rand2_f(float Start, float Limit)
     return imp_randf() * (Limit - Start) + Start;
 }
 
-///////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////
-// This here for Extempore Compiler Runtime.
-// This is temporary and needs to replaced with something sensible!
-struct closure_address_table
-{
-    uint64_t id;
-    char* name;
-    uint32_t offset;
-    char* type;
-    struct closure_address_table* next;
-};
 
-EXPORT closure_address_table* get_address_table(const char* name, closure_address_table* table)
-{
-  while(table)
-    {
-      if(strcmp(table->name,name)) return table;
-      table = table->next;
-    }
-  printf("Unable to locate %s in closure environment a\n",name);
-  return 0;
-}
 
-EXPORT uint32_t get_address_offset(uint64_t id, closure_address_table* table)
-{
-    while(table)
-    {
-      // printf("%p name: %s\ntablename: %s\n\n", name, name, table->name);
-      if(table->id == id) {
-        // printf("in %s returning offset %d from %s\n",table->name,table->offset,name);
-        return table->offset;
-      }
-      table = table->next;
-    }
-    printf("Unable to locate %" PRIu64 " in closure environment b\n",id);
-    return 0;
-}
 
-EXPORT bool check_address_exists(uint64_t id, closure_address_table* table)
-{
-    do {
-        if (table->id == id) {
-            return true;
-        }
-        table = table->next;
-    } while (table);
-    return false;
-}
 
-EXPORT bool check_address_type(uint64_t id, closure_address_table* table, const char* type)
+EXPORT extemp::ClosureAddressTable::closure_address_table* add_address_table(llvm_zone_t* zone, char* name, uint32_t offset, char* type, int alloctype, struct extemp::ClosureAddressTable::closure_address_table* table)
 {
-  while(table)
-    {
-      if(table->id == id) {
-        if((strcmp(table->type,type)!=0) && (strcmp("{i8*, i8*, void (i8*, i8*)*}**",type)!=0)) {
-          printf("Runtime Type Error: bad type %s for %s. Should be %s\n",type,table->name,table->type);
-          return 0;
-        }else{
-          return 1;
-        }
-      }
-      table = table->next;
-    }
-  printf("Unable to locate id in closure environment type: %s d\n",type);
-  return 0;
-}
-
-EXPORT closure_address_table* add_address_table(llvm_zone_t* zone, char* name, uint32_t offset, char* type, int alloctype, struct closure_address_table* table)
-{
-    struct closure_address_table* t = NULL;
+    struct extemp::ClosureAddressTable::closure_address_table* t = NULL;
     if (alloctype == 1) {
-        t = reinterpret_cast<closure_address_table*>(malloc(sizeof(struct closure_address_table)));
+        t = reinterpret_cast<extemp::ClosureAddressTable::closure_address_table*>(malloc(sizeof(struct extemp::ClosureAddressTable::closure_address_table)));
     } else {
-        t = (struct closure_address_table*) extemp::EXTZONES::llvm_zone_malloc(zone,sizeof(struct closure_address_table));
+        t = (struct extemp::ClosureAddressTable::closure_address_table*) extemp::EXTZONES::llvm_zone_malloc(zone,sizeof(struct extemp::ClosureAddressTable::closure_address_table));
     }
     t->id = string_hash(name);
     t->name = name;
@@ -450,7 +387,7 @@ uint64_t string_hash(const char* str)
     return result;
 }
 
-static char* get_address_type(uint64_t id, closure_address_table* table)
+static char* get_address_type(uint64_t id, extemp::ClosureAddressTable::closure_address_table* table)
 {
     while (table)
     {
@@ -501,7 +438,7 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
   size_t*** closur = (size_t***) p();
   size_t** closure = *closur;
   //uint32_t** closure = (uint32_t**) cptr_value(pair_car(args));
-  closure_address_table* addy_table = (closure_address_table*) *(closure+0);
+  extemp::ClosureAddressTable::closure_address_table* addy_table = (extemp::ClosureAddressTable::closure_address_table*) *(closure+0);
   // check address exists
   if(!check_address_exists(id, addy_table)) {
     ascii_error();
@@ -517,7 +454,7 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
   }
   char* eptr = (char*) *(closure+1);
   char* type = get_address_type(id,addy_table);
-  uint32_t offset = get_address_offset(id,addy_table);
+  uint32_t offset = extemp::ClosureAddressTable::get_address_offset(id,addy_table);
 
   //printf("type: %s  offset: %d\n",type, offset);
 
@@ -740,7 +677,7 @@ void initLLVM()
     extemp::EXTLLVM2::addGlobalMapping("llvm_zone_destroy",
                                        uintptr_t(&extemp::EXTZONES::llvm_zone_destroy));
     extemp::EXTLLVM2::addGlobalMapping("get_address_offset",
-                                       (uint64_t)&get_address_offset);
+                                       (uint64_t)&extemp::ClosureAddressTable::get_address_offset);
     extemp::EXTLLVM2::addGlobalMapping("string_hash", (uint64_t)&string_hash);
     extemp::EXTLLVM2::addGlobalMapping("swap64i", (uint64_t)&swap64i);
     extemp::EXTLLVM2::addGlobalMapping("swap64f", (uint64_t)&swap64f);
