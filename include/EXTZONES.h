@@ -31,13 +31,11 @@ struct llvm_zone_stack
     llvm_zone_stack* tail;
 };
 
-
-
 extern THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack;
 extern THREAD_LOCAL uint64_t tls_llvm_zone_stacksize;
 
 namespace extemp {
-namespace EXTLLVM {
+namespace EXTZONES {
 const unsigned LLVM_ZONE_ALIGN = 32; // MUST BE POWER OF 2!
 const unsigned LLVM_ZONE_ALIGNPAD = LLVM_ZONE_ALIGN - 1;
 

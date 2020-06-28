@@ -7,7 +7,7 @@ THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack = 0;
 THREAD_LOCAL uint64_t tls_llvm_zone_stacksize = 0;
 
 namespace extemp {
-namespace EXTLLVM {
+namespace EXTZONES {
 
 llvm_zone_t* llvm_zone_create(uint64_t size)
 {

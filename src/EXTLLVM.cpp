@@ -412,7 +412,7 @@ EXPORT closure_address_table* add_address_table(llvm_zone_t* zone, char* name, u
     if (alloctype == 1) {
         t = reinterpret_cast<closure_address_table*>(malloc(sizeof(struct closure_address_table)));
     } else {
-        t = (struct closure_address_table*) extemp::EXTLLVM::llvm_zone_malloc(zone,sizeof(struct closure_address_table));
+        t = (struct closure_address_table*) extemp::EXTZONES::llvm_zone_malloc(zone,sizeof(struct closure_address_table));
     }
     t->id = string_hash(name);
     t->name = name;
@@ -592,7 +592,7 @@ EXPORT const char* llvm_disassemble(const unsigned char* Code, int syntax)
 
 static extemp::CMG DestroyMallocZoneWithDelayCM(
         [](extemp::TaskI* Task)->void {
-            llvm_zone_destroy(static_cast<extemp::Task<llvm_zone_t*>*>(Task)->getArg());
+            extemp::EXTZONES::llvm_zone_destroy(static_cast<extemp::Task<llvm_zone_t*>*>(Task)->getArg());
         });
 
 EXPORT void llvm_destroy_zone_after_delay(llvm_zone_t* Zone, uint64_t Delay)
@@ -738,7 +738,7 @@ void initLLVM()
 
     // tell LLVM about some built-in functions
     extemp::EXTLLVM2::addGlobalMapping("llvm_zone_destroy",
-                                       uintptr_t(&llvm_zone_destroy));
+                                       uintptr_t(&extemp::EXTZONES::llvm_zone_destroy));
     extemp::EXTLLVM2::addGlobalMapping("get_address_offset",
                                        (uint64_t)&get_address_offset);
     extemp::EXTLLVM2::addGlobalMapping("string_hash", (uint64_t)&string_hash);
