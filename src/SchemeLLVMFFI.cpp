@@ -19,7 +19,10 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
 
 #define pair_cadr(p) pair_car(pair_cdr(p))
 
