@@ -32,9 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#ifndef _EXTLLVM_H
-#define _EXTLLVM_H
+#pragma once
 
 #include "Scheme.h"
 #include "BranchPrediction.h"
@@ -61,7 +59,7 @@ struct llvm_zone_t {
 };
 
 struct _llvm_callback_struct_ {
-    void(*fptr)(void*,llvm_zone_t*);
+    void (*fptr)(void*, llvm_zone_t*);
     void* dat;
     llvm_zone_t* zone;
 };
@@ -206,5 +204,3 @@ EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 }
 
 }
-
-#endif

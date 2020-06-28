@@ -143,16 +143,16 @@ THREAD_LOCAL uint64_t tls_llvm_zone_stacksize = 0;
 
 EXPORT void llvm_zone_print(llvm_zone_t* zone)
 {
-  auto tmp(zone);
-  auto total_size(zone->size);
-  int64_t segments(1);
-  while (tmp->memories) {
-    tmp = tmp->memories;
-    total_size += tmp->size;
-    segments++;
-  }
-  printf("<MemZone(%p) size(%" PRId64 ") free(%" PRId64 ") segs(%" PRId64 ")>",zone,total_size,(zone->size - zone->offset),segments);
-  return;
+    auto tmp(zone);
+    auto total_size(zone->size);
+    int64_t segments(1);
+    while (tmp->memories) {
+        tmp = tmp->memories;
+        total_size += tmp->size;
+        segments++;
+    }
+    printf("<MemZone(%p) size(%" PRId64 ") free(%" PRId64 ") segs(%" PRId64 ")>", zone, total_size, (zone->size - zone->offset), segments);
+    return;
 }
 
 EXPORT uint64_t llvm_zone_ptr_size(void* ptr) // could be inline version in llvm (as well)
@@ -166,14 +166,14 @@ EXPORT bool llvm_zone_copy_ptr(void* ptr1, void* ptr2)
     uint64_t size2 = llvm_zone_ptr_size(ptr2);
 
     if (unlikely(size1 != size2)) {
-  //printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n",ptr1,size1,ptr2,size2);
-      return 1;
+        // printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n", ptr1, size1, ptr2, size2);
+        return 1;
     }
     if (unlikely(!size1)) {
-  //printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n",ptr1,size1,ptr2,size2);
-      return 1;
+        // printf("Bad LLVM ptr copy - size mismatch setting %p:%lld -> %p:%lld\n", ptr1, size1, ptr2, size2);
+        return 1;
     }
-    //printf("zone_copy_ptr: %p,%p,%lld,%lld\n",ptr2,ptr1,size1,size2);
+    // printf("zone_copy_ptr: %p,%p,%lld,%lld\n", ptr2, ptr1, size1, size2);
     std::memcpy(ptr2, ptr1, size1);
     return 0;
 }
@@ -188,8 +188,9 @@ EXPORT bool llvm_ptr_in_zone(llvm_zone_t* zone, void* ptr)
 
 EXPORT void llvm_schedule_callback(long long time, void* dat)
 {
-  //printf("scheduled callback %lld\n",time);
-  extemp::SchemeProcess* proc = extemp::SchemeProcess::I(); //extemp::SchemeProcess::I()->extemporeCallback(time,dat);
+  // printf("scheduled callback %lld\n",time);
+  // extemp::SchemeProcess::I()->extemporeCallback(time,dat);
+  extemp::SchemeProcess* proc = extemp::SchemeProcess::I();
 
   uint64_t current_time = time; //task->getStartTime();
   uint64_t duration = 1000000000; //task->getDuration();
@@ -279,9 +280,6 @@ EXPORT void llvm_send_udp(char* host, int port, void* message, int message_lengt
 
   return;
 }
-
-
-
 
 /////////////////////////////////////////////////
 // This added for dodgy continuations support
@@ -631,7 +629,6 @@ pointer llvm_scheme_env_set(scheme* _sc, char* sym)
 
 
 namespace extemp {
-
 namespace EXTLLVM {
 
 // TODO: seems like we could remove the indirection
