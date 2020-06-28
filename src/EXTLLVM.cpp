@@ -340,25 +340,6 @@ EXPORT float imp_rand2_f(float Start, float Limit)
 
 
 
-
-
-
-EXPORT extemp::ClosureAddressTable::closure_address_table* add_address_table(llvm_zone_t* zone, char* name, uint32_t offset, char* type, int alloctype, struct extemp::ClosureAddressTable::closure_address_table* table)
-{
-    struct extemp::ClosureAddressTable::closure_address_table* t = NULL;
-    if (alloctype == 1) {
-        t = reinterpret_cast<extemp::ClosureAddressTable::closure_address_table*>(malloc(sizeof(struct extemp::ClosureAddressTable::closure_address_table)));
-    } else {
-        t = (struct extemp::ClosureAddressTable::closure_address_table*) extemp::EXTZONES::llvm_zone_malloc(zone,sizeof(struct extemp::ClosureAddressTable::closure_address_table));
-    }
-    t->id = string_hash(name);
-    t->name = name;
-    t->offset = offset;
-    t->type = type;
-    t->next = table;
-    return t;
-}
-
 bool llvm_check_valid_dot_symbol(scheme* sc, char* symbol) {
   char c[1024];
   auto pos(strchr(symbol, '.'));

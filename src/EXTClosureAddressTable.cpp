@@ -1,4 +1,5 @@
 #include <EXTClosureAddressTable.h>
+#include <EXTZONES.h>
 
 #include <cstring>
 
@@ -59,6 +60,32 @@ EXPORT bool check_address_type(uint64_t id, closure_address_table* table, const 
     return 0;
 }
 
-    
+// TODO: don't duplicate this, put it somewhere
+static uint64_t string_hash(const char* str)
+{
+    uint64_t result(0);
+    unsigned char c;
+    while((c = *(str++))) {
+        result = result * 33 + uint8_t(c);
+    }
+    return result;
+}
+
+EXPORT closure_address_table* add_address_table(llvm_zone_t* zone, char* name, uint32_t offset, char* type, int alloctype, struct closure_address_table* table)
+{
+    struct closure_address_table* t = NULL;
+    if (alloctype == 1) {
+        t = reinterpret_cast<closure_address_table*>(malloc(sizeof(struct closure_address_table)));
+    } else {
+        t = (struct closure_address_table*) extemp::EXTZONES::llvm_zone_malloc(zone,sizeof(struct closure_address_table));
+    }
+    t->id = string_hash(name);
+    t->name = name;
+    t->offset = offset;
+    t->type = type;
+    t->next = table;
+    return t;
+}
+
 } // namespace ClosureAddressTable
 } // namespace extemp
