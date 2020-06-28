@@ -374,8 +374,8 @@ endforeach()
 if (DYLIB)
   add_library(extempore SHARED src/Extempore.cpp
     src/AudioDevice.cpp
-    src/EXTLLVM.cpp
     src/EXTZONES.cpp
+    src/EXTLLVM.cpp
     src/EXTLLVM2.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
@@ -393,8 +393,8 @@ if (DYLIB)
 else()
   add_executable(extempore src/Extempore.cpp
     src/AudioDevice.cpp
-    src/EXTLLVM.cpp
     src/EXTZONES.cpp
+    src/EXTLLVM.cpp
     src/EXTLLVM2.cpp
     src/LLVMIRCompilation.cpp
     src/EXTThread.cpp

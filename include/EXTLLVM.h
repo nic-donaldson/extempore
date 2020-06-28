@@ -37,26 +37,8 @@
 #include "Scheme.h"
 #include "BranchPrediction.h"
 
+#include <EXTZONES.h>
 #include <EXTLLVM2.h>
-
-struct zone_hooks_t {
-  uint64_t space; // here just so we don't get <i8*,i8*>
-  void* hook; // xtlang closure of type [void]*
-  zone_hooks_t* hooks;
-};
-
-// WARNING WARNING WARNING - HERE BE DRAGONS
-// THIS STRUCTURE IS REFERENCED FROM GENERATED CODE
-// DO NOT ALTER IT!!!
-
-struct llvm_zone_t {
-  void* memory;
-  uint64_t offset;
-  uint64_t mark;
-  uint64_t size;
-  zone_hooks_t* cleanup_hooks;
-  llvm_zone_t* memories;
-};
 
 struct _llvm_callback_struct_ {
     void (*fptr)(void*, llvm_zone_t*);
@@ -64,31 +46,20 @@ struct _llvm_callback_struct_ {
     llvm_zone_t* zone;
 };
 
-struct llvm_zone_stack
-{
-    llvm_zone_t* head;
-    llvm_zone_stack* tail;
-};
 
-struct closure_address_table;
-
-extern THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack;
-extern THREAD_LOCAL uint64_t tls_llvm_zone_stacksize;
 
 extern "C"
 {
+    void llvm_destroy_zone_after_delay(llvm_zone_t* zone, uint64_t delay);
 
-void llvm_destroy_zone_after_delay(llvm_zone_t* zone, uint64_t delay);
+    pointer llvm_scheme_env_set(scheme* _sc, char* sym);
+    bool llvm_check_valid_dot_symbol(scheme* sc, char* symbol);
+    bool regex_split(char* str, char** a, char** b);
 
-pointer llvm_scheme_env_set(scheme* _sc, char* sym);
-bool llvm_check_valid_dot_symbol(scheme* sc, char* symbol);
-bool regex_split(char* str, char** a, char** b);
+    inline uint64_t string_hash(const char* str);
 
-inline uint64_t string_hash(const char* str);
-
-EXPORT double imp_randd();
-EXPORT int64_t imp_rand1_i64(int64_t a);
-
+    EXPORT double imp_randd();
+    EXPORT int64_t imp_rand1_i64(int64_t a);
 }
 
 // this added for dodgy continuations support
