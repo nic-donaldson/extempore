@@ -664,29 +664,7 @@ EXPORT void free_after_delay(char* Data, double Delay)
 
 
 
-EXPORT llvm_zone_t* llvm_pop_zone_stack()
-{
-    auto stack(llvm_threads_get_zone_stack());
-    if (unlikely(!stack)) {
-#if DEBUG_ZONE_STACK
-        printf("TRYING TO POP A ZONE FROM AN EMPTY ZONE STACK\n");
-#endif
-        return nullptr;
-    }
-    llvm_zone_t* head = stack->head;
-    llvm_zone_stack* tail = stack->tail;
-#if DEBUG_ZONE_STACK
-    llvm_threads_dec_zone_stacksize();
-    if (!tail) {
-        printf("%p: popping zone %p:%lld from stack with no tail\n",stack,head,head->size);
-    } else {
-        printf("%p: popping new zone %p:%lld back to old zone %p:%lld\n",stack,head,head->size,tail->head,tail->head->size);
-    }
-#endif
-    free(stack);
-    llvm_threads_set_zone_stack(tail);
-    return head;
-}
+
 
 EXPORT void* llvm_zone_malloc_from_current_zone(uint64_t size)
 {
