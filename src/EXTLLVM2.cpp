@@ -15,6 +15,11 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
 
+// if you remove this it segfaults for some reason?
+// if you look at the header it does some kind of magic so
+// maybe that's not unexpected
+#include "llvm/ExecutionEngine/MCJIT.h"
+
 #include <EXTLLVM2.h>
 #include <EXTMutex.h>
 #include <EXTLLVMGlobalMap.h>

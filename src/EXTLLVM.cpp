@@ -33,19 +33,7 @@
  *
  */
 
-///////////////////
-// LLVM includes //
-///////////////////
-
-// must be included before anything which pulls in <Windows.h>
-#include "llvm/AsmParser/Parser.h"
-#include "llvm/Config/llvm-config.h" // for LLVM_VERSION_STRING
-
-// if you remove this it segfaults for some reason?
-// if you look at the header it does some kind of magic so
-// maybe that's not unexpected
-#include "llvm/ExecutionEngine/MCJIT.h"
-
+#include <cstring>
 #include <random>
 #include "stdarg.h"
 
@@ -58,7 +46,6 @@
 #include <Scheme.h>
 #include <OSC.h>
 #include <BranchPrediction.h>
-#include <EXTLLVMGlobalMap.h>
 #include "math.h"
 
 #ifdef _WIN32
@@ -98,7 +85,6 @@
 #endif
 
 #include "SchemeProcess.h"
-
 
 EXPORT void* malloc16(size_t Size)
 {
