@@ -1,4 +1,3 @@
-#include "llvm/AsmParser/Parser.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/IR/LLVMContext.h"
@@ -203,7 +202,7 @@ pointer get_struct_size(scheme* Scheme, pointer Args)
     sprintf(assm, "%%%s = type %s", name, struct_type_str);
 
     llvm::SMDiagnostic pa;
-    auto newM(llvm::parseAssemblyString(assm, pa, llvm::getGlobalContext()));
+    auto newM(extemp::EXTLLVM2::parseAssemblyString2(assm, pa));
     if (!newM) {
         return Scheme->F;
     }
