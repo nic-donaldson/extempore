@@ -421,5 +421,17 @@ namespace EXTLLVM2 {
         delete _mg;
     }
 
+    std::string sanitizeType(llvm::Type *Type) {
+        std::string type;
+        llvm::raw_string_ostream typeStream(type);
+        Type->print(typeStream);
+        auto str(typeStream.str());
+        std::string::size_type pos(str.find('='));
+        if (pos != std::string::npos) {
+            str.erase(pos - 1);
+        }
+        return str;
+    }
+
 } // namespace EXTLLVM2
 } // namespace extemp

@@ -1,5 +1,6 @@
 #include <LLVMIRCompilation.h>
 #include <EXTLLVMGlobalMap.h>
+#include <EXTLLVM2.h>
 
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Type.h"
@@ -11,24 +12,6 @@
 #include <iterator>
 #include <sstream>
 
-/*
-// this typechecks could be basis for fakes?
-namespace llvm {
-    class Argument {
-    public:
-        Type* getType() const;
-    };
-    typedef std::list<Argument> ArgumentListType;
-    class Function {
-    public:
-        Type* getReturnType() const;
-        bool isVarArg() const;
-        const ArgumentListType &ist() const;
-    };
-    class Type;
-}
-*/
-
 namespace extemp {
 
   // LLVMIRCompile captures all the LLVM stuff we need to take a string
@@ -37,8 +20,15 @@ namespace extemp {
   LLVMIRCompilation::LLVMIRCompilation() {
   }
 
-  const std::regex LLVMIRCompilation::globalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize); 
-  const std::regex LLVMIRCompilation::defineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
+  // match @symbols @like @this_123
+  const std::regex LLVMIRCompilation::globalSymRegex(
+    "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+    std::regex::optimize);
+
+  // match "define @sym"
+  const std::regex LLVMIRCompilation::defineSymRegex(
+    "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+    std::regex::optimize | std::regex::ECMAScript);
 
   void LLVMIRCompilation::insertMatchingSymbols(const std::string& code, const std::regex& regex, std::unordered_set<std::string>& containingSet)
   {
@@ -73,7 +63,11 @@ namespace extemp {
 
         const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-            dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
+            dstream << "declare "
+                    << extemp::EXTLLVM2::sanitizeType(func->getReturnType())
+                    << " @"
+                    << sym
+                    << " (";
 
             bool first(true);
             for (const auto& arg : func->getArgumentList()) {
@@ -82,7 +76,7 @@ namespace extemp {
                 } else {
                     first = false;
                 }
-                dstream << SanitizeType(arg.getType());
+                dstream << extemp::EXTLLVM2::sanitizeType(arg.getType());
             }
 
             if (func->isVarArg()) {
@@ -90,23 +84,12 @@ namespace extemp {
             }
             dstream << ")\n";
         } else {
-            auto str(LLVMIRCompilation::SanitizeType(gv->getType()));
+            auto str(extemp::EXTLLVM2::sanitizeType(gv->getType()));
             dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
         }
     }
     return dstream.str();
   }
 
-  std::string LLVMIRCompilation::SanitizeType(llvm::Type* Type)
-{
-    std::string type;
-    llvm::raw_string_ostream typeStream(type);
-    Type->print(typeStream);
-    auto str(typeStream.str());
-    std::string::size_type pos(str.find('='));
-    if (pos != std::string::npos) {
-        str.erase(pos - 1);
-    }
-    return str;
-}
+
 }

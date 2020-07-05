@@ -15,6 +15,7 @@ namespace llvm {
   class GenericValue;
   class SMDiagnostic;
   class MutexGuard;
+  class Type;
 }
 
 namespace extemp {
@@ -73,6 +74,8 @@ namespace extemp {
     private:
       llvm::MutexGuard* _mg;
     };
+
+    std::string sanitizeType(llvm::Type *Type);
 
   } // EXTLLVM2
 } // extemp

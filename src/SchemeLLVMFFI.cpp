@@ -37,12 +37,9 @@ static std::string fileToString(const std::string &fileName) {
 
 static LLVMIRCompilation IRCompiler;
 
-static void
-loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
+static void loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
                              std::unordered_set<std::string> &sInlineSyms,
                              std::string &sInlineBitcode) {
-  llvm::SMDiagnostic pa;
-
   sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
   const std::string bitcodeDotLLString =
       fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");

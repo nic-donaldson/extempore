@@ -21,7 +21,6 @@ public:
   insertMatchingSymbols(const std::string &code, const std::regex &regex,
                         std::unordered_set<std::string> &containingSet);
 
-  static std::string SanitizeType(llvm::Type *Type);
   static const std::regex globalSymRegex;
   static const std::regex defineSymRegex;
 
