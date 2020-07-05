@@ -13,6 +13,7 @@
 #include "llvm/MC/MCInstPrinter.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
+#include "llvm/Support/Mutex.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
@@ -32,6 +33,7 @@
 
 #include <vector>
 #include <iostream>
+#include <memory>
 
 namespace extemp {
 namespace EXTLLVM2 {
@@ -412,6 +414,8 @@ namespace EXTLLVM2 {
         return llvm::verifyModule(M);
     }
 
+    MutexGuard::MutexGuard()
+        : _mg(new llvm::MutexGuard(ExecEngine->lock)) {}
 
 } // namespace EXTLLVM2
 } // namespace extemp

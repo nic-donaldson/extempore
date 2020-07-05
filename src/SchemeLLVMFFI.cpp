@@ -372,7 +372,7 @@ pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 pointer call_compiled(scheme* Scheme, pointer Args)
 {
 #ifdef LLVM_EE_LOCK
-    llvm::MutexGuard locked(EXTLLVM2::getEEMutex());
+    extemp::EXTLLVM2::MutexGuard locked;
 #endif
     auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
     if (unlikely(!func)) {

@@ -16,6 +16,7 @@ namespace llvm {
   class GlobalVariable;
   class GenericValue;
   class SMDiagnostic;
+  class MutexGuard;
 }
 
 namespace extemp {
@@ -48,7 +49,7 @@ namespace extemp {
 
     // pass through but to ExecEngine
     llvm::TargetMachine* getTargetMachine();
-    llvm::sys::Mutex& getEEMutex(); // this is annoying I hope we can lose it
+    // llvm::sys::Mutex& getEEMutex(); // this is annoying I hope we can lose it
     llvm::GenericValue runFunction(llvm::Function*, std::vector<llvm::GenericValue>);
 
     // this doesn't feel like it belongs here too much
@@ -65,5 +66,15 @@ namespace extemp {
     void writeBitcodeToFile(llvm::Module* M, std::string& bitcode);
     bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename);
     bool verifyModule(llvm::Module& M);
+
+    class MutexGuard {
+    public:
+      MutexGuard();
+      ~MutexGuard() = default;
+
+    private:
+      std::unique_ptr<llvm::MutexGuard> _mg;
+    };
+
   } // EXTLLVM2
 } // extemp
