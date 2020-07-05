@@ -15,6 +15,7 @@ namespace llvm {
   class Function;
   class GlobalVariable;
   class GenericValue;
+  class SMDiagnostic;
 }
 
 namespace extemp {
@@ -58,5 +59,8 @@ namespace extemp {
     const std::string double_utohexstr(const std::string&);
 
     std::unique_ptr<llvm::Module> parseAssemblyString(const std::string&);
+    std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa);
+    std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode);
+    bool parseAssemblyInto(const std::string& asmcode, llvm::Module &M, llvm::SMDiagnostic &pa);
   } // EXTLLVM2
 } // extemp

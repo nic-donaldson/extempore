@@ -89,42 +89,52 @@ static llvm::Module *jitCompile(std::string asmcode) {
   // << std::endl;
 
   std::unique_ptr<llvm::Module> newModule = nullptr;
-  llvm::SMDiagnostic pa;
 
   if (!isThisInitDotLL) {
-    // module from bitcode.ll
-    auto module(parseBitcodeFile(
-        llvm::MemoryBufferRef(sInlineBitcode, "<string>"), llvm::getGlobalContext()));
+    std::unique_ptr<llvm::Module> inNewModule = nullptr;
+    llvm::SMDiagnostic pa;
 
-    if (likely(module)) {
-      newModule = std::move(module.get());
-      // so every module but init.ll gets prepended with bitcode.ll, inline.ll,
-      // and any global declarations?
-      asmcode = sInlineDotLLString + declarations + asmcode;
-      if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"),
-                            *newModule, pa)) {
-        std::cout << "**** DECL ****\n"
-                  << declarations << "**** ENDDECL ****\n"
-                  << std::endl;
-        newModule.reset();
+    if (!isThisInitDotLL) {
+      // module from bitcode.ll
+      auto module(extemp::EXTLLVM2::parseBitcodeFile(sInlineBitcode));
+
+      if (likely(module)) {
+        inNewModule = std::move(module);
+        // so every module but init.ll gets prepended with bitcode.ll,
+        // inline.ll, and any global declarations?
+        asmcode = sInlineDotLLString + declarations + asmcode;
+        if (extemp::EXTLLVM2::parseAssemblyInto(asmcode,
+                              *inNewModule, pa)) {
+          std::cout << "**** DECL ****\n"
+                    << declarations
+                    << "**** ENDDECL ****\n"
+                    << std::endl;
+          inNewModule.reset();
+        }
       }
     }
+
+    if (unlikely(!inNewModule)) {
+      pa.print("LLVM IR", llvm::outs());
+      return nullptr;
+    }
+
+    newModule = std::move(inNewModule);
   }
 
   if (isThisInitDotLL) {
-    newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
-  }
+    llvm::SMDiagnostic pa;
+    std::unique_ptr<llvm::Module> inNewModule(extemp::EXTLLVM2::parseAssemblyString2(asmcode, pa));
 
-  if (unlikely(!newModule)) {
-    // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
-    // std::endl; std::cout << pa.getMessage().str() << std::endl <<
-    // pa.getLineNo() << std::endl;
+    if (unlikely(!inNewModule)) {
+      // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
+      // std::endl; std::cout << pa.getMessage().str() << std::endl <<
+      // pa.getLineNo() << std::endl;
+      pa.print("LLVM IR", llvm::outs());
+      return nullptr;
+    }
 
-    std::string errstr;
-    llvm::raw_string_ostream ss(errstr);
-    pa.print("LLVM IR", ss);
-    printf("%s\n", ss.str().c_str());
-    return nullptr;
+    newModule = std::move(inNewModule);
   }
 
   if (verifyModule(*newModule)) { // i can't believe this function returns true

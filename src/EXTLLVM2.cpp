@@ -1,5 +1,6 @@
 // If EXTLLVM was so good why didn't they make an EXTLLVM2?
 #include "llvm/AsmParser/Parser.h"
+#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
@@ -371,6 +372,25 @@ namespace EXTLLVM2 {
         }
         return mod;
     }
+
+    std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa) {
+        return llvm::parseAssemblyString(s, pa, llvm::getGlobalContext());
+    }
+
+    std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode) {
+        llvm::ErrorOr<std::unique_ptr<llvm::Module>> maybe(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"),
+                                          llvm::getGlobalContext()));
+        if (maybe) {
+            return std::move(maybe.get());
+        } else {
+            return nullptr;
+        }
+    }
+
+    bool parseAssemblyInto(const std::string& asmcode, llvm::Module& M, llvm::SMDiagnostic& pa) {
+        return llvm::parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), M, pa);
+    }
+
 
 } // namespace EXTLLVM2
 } // namespace extemp
