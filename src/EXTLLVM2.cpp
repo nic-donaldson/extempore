@@ -1,4 +1,5 @@
 // If EXTLLVM was so good why didn't they make an EXTLLVM2?
+#include "llvm/AsmParser/Parser.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/SectionMemoryManager.h"
@@ -11,9 +12,11 @@
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Support/MutexGuard.h"
+#include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringExtras.h"
 
 // if you remove this it segfaults for some reason?
 // if you look at the header it does some kind of magic so
@@ -344,6 +347,29 @@ namespace EXTLLVM2 {
             }
         }
         return strdup(OS.str().c_str());
+    }
+
+    // shims
+    const std::string float_utohexstr(const std::string& floatin) {
+        llvm::APFloat apf(llvm::APFloat::IEEEsingle, llvm::StringRef(floatin));
+        auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
+        return std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true);
+    }
+    const std::string double_utohexstr(const std::string& floatin) {
+        llvm::APFloat apf(llvm::APFloat::IEEEdouble, llvm::StringRef(floatin));
+        // TODO: if necessary, checks for inf/nan can be done here
+        auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
+        return std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true);
+    }
+
+    std::unique_ptr<llvm::Module> parseAssemblyString(const std::string& s) {
+        llvm::SMDiagnostic pa;
+        std::unique_ptr<llvm::Module> mod(llvm::parseAssemblyString(s, pa, llvm::getGlobalContext()));
+        if (!mod) {
+            std::cout << pa.getMessage().str() << std::endl;
+            abort();
+        }
+        return mod;
     }
 
 } // namespace EXTLLVM2

@@ -1,4 +1,3 @@
-#include "llvm/ADT/StringExtras.h"
 #include "llvm/AsmParser/Parser.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
@@ -60,12 +59,8 @@ loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
       sInlineSyms);
 
   // put bitcode.ll -> sInlineBitcode
-  auto newModule(llvm::parseAssemblyString(bitcodeDotLLString, pa, llvm::getGlobalContext()));
-
-  if (!newModule) {
-    std::cout << pa.getMessage().str() << std::endl;
-    abort();
-  }
+  // will print error and abort on failure
+  auto newModule(extemp::EXTLLVM2::parseAssemblyString(bitcodeDotLLString));
 
   llvm::raw_string_ostream bitstream(sInlineBitcode);
   llvm::WriteBitcodeToFile(newModule.get(), bitstream);
@@ -86,24 +81,6 @@ static llvm::Module *jitCompile(std::string asmcode) {
                                  sInlineBitcode);
     sLoadedInitialBitcodeAndSymbols = true;
   }
-
-  /*
-e.g. new_address_table is the first definition in inline.ll it appears as
-@new_address_table which matches the globalsymregex we're using from llvm 3.8.0
-docs: "LLVM identifiers come in two basic types: global and local. Global
-identifiers (functions, global variables) begin with the '@' character."
-
-so basically all the global syms, "@thing", appear in sInlineSyms
-
-this is pretty rudimentary won't handle LLVM comments or linkage types e.g.
-"private". should replace this with Module introspection/reflection
-
-"LLVM programs are composed of Module‘s, each of which is a translation unit of
-the input programs. Each module consists of functions, global variables, and
-symbol table entries. Modules may be combined together with the LLVM linker,
-which merges function (and global variable) definitions, resolves forward
-declarations, and merges symbol table entries."
-  */
 
   const std::string declarations =
       IRCompiler.necessaryGlobalDeclarations(asmcode, sInlineSyms);
@@ -469,10 +446,7 @@ pointer llvm_convert_float_constant(scheme* Scheme, pointer Args)
     if (floatin[1] == 'x') {
         return pair_car(Args);
     }
-    llvm::APFloat apf(llvm::APFloat::IEEEsingle, llvm::StringRef(floatin));
-    // TODO: if necessary, checks for inf/nan can be done here
-    auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
-    return mk_string(Scheme, (std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true)).c_str());
+    return mk_string(Scheme, extemp::EXTLLVM2::float_utohexstr(floatin).c_str());
 }
 
 pointer llvm_convert_double_constant(scheme* Scheme, pointer Args)
@@ -482,10 +456,7 @@ pointer llvm_convert_double_constant(scheme* Scheme, pointer Args)
     if (floatin[1] == 'x') {
         return pair_car(Args);
     }
-    llvm::APFloat apf(llvm::APFloat::IEEEdouble, llvm::StringRef(floatin));
-    // TODO: if necessary, checks for inf/nan can be done here
-    auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
-    return mk_string(Scheme, (std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true)).c_str());
+    return mk_string(Scheme, extemp::EXTLLVM2::double_utohexstr(floatin).c_str());
 }
 
 int64_t LLVM_COUNT = 0;

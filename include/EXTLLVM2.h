@@ -52,5 +52,11 @@ namespace extemp {
 
     // this doesn't feel like it belongs here too much
     const char* llvm_disassemble(const unsigned char*, int);
+
+    // shims
+    const std::string float_utohexstr(const std::string&);
+    const std::string double_utohexstr(const std::string&);
+
+    std::unique_ptr<llvm::Module> parseAssemblyString(const std::string&);
   } // EXTLLVM2
 } // extemp
