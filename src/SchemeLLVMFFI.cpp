@@ -1,6 +1,5 @@
 #include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/Support/MutexGuard.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 

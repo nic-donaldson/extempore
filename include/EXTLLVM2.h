@@ -1,7 +1,5 @@
 #pragma once
 
-#include "llvm/Support/Mutex.h"
-
 #include <vector>
 #include <cstdint>
 #include <string>
@@ -70,10 +68,10 @@ namespace extemp {
     class MutexGuard {
     public:
       MutexGuard();
-      ~MutexGuard() = default;
+      ~MutexGuard();
 
     private:
-      std::unique_ptr<llvm::MutexGuard> _mg;
+      llvm::MutexGuard* _mg;
     };
 
   } // EXTLLVM2

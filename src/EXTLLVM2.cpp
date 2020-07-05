@@ -417,5 +417,9 @@ namespace EXTLLVM2 {
     MutexGuard::MutexGuard()
         : _mg(new llvm::MutexGuard(ExecEngine->lock)) {}
 
+    MutexGuard::~MutexGuard() {
+        delete _mg;
+    }
+
 } // namespace EXTLLVM2
 } // namespace extemp
