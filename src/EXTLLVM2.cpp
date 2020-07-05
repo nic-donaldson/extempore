@@ -7,6 +7,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCDisassembler.h"
 #include "llvm/MC/MCInstPrinter.h"
@@ -389,6 +390,26 @@ namespace EXTLLVM2 {
 
     bool parseAssemblyInto(const std::string& asmcode, llvm::Module& M, llvm::SMDiagnostic& pa) {
         return llvm::parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), M, pa);
+    }
+
+    void writeBitcodeToFile(llvm::Module* M, std::string& bitcode) {
+        llvm::raw_string_ostream bitstream(bitcode);
+        llvm::WriteBitcodeToFile(M, bitstream);
+    }
+
+    bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename) {
+        std::error_code errcode;
+        llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
+        if (errcode) {
+            std::cout << errcode.message() << std::endl;
+            return false;
+        }
+        llvm::WriteBitcodeToFile(M, ss);
+        return true;
+    }
+
+    bool verifyModule(llvm::Module& M) {
+        return llvm::verifyModule(M);
     }
 
 

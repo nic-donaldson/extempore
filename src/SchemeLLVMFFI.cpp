@@ -1,8 +1,5 @@
-#include "llvm/Bitcode/ReaderWriter.h"
+#include "llvm/IR/Module.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MutexGuard.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
@@ -61,8 +58,7 @@ loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
   // will print error and abort on failure
   auto newModule(extemp::EXTLLVM2::parseAssemblyString(bitcodeDotLLString));
 
-  llvm::raw_string_ostream bitstream(sInlineBitcode);
-  llvm::WriteBitcodeToFile(newModule.get(), bitstream);
+  extemp::EXTLLVM2::writeBitcodeToFile(newModule.get(), sInlineBitcode);
 }
 
 static llvm::Module *jitCompile(std::string asmcode) {
@@ -136,8 +132,7 @@ static llvm::Module *jitCompile(std::string asmcode) {
     newModule = std::move(inNewModule);
   }
 
-  if (verifyModule(*newModule)) { // i can't believe this function returns true
-                                  // on an error
+  if (extemp::EXTLLVM2::verifyModule(*newModule)) {
     std::cout << "\nInvalid LLVM IR\n";
     return nullptr;
   }
@@ -647,19 +642,15 @@ pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
     newStr = std::string(" call ");
     pos = 0;
     while ((pos = irStr.find(oldStr, pos)) != std::string::npos) {
-        irStr.replace(pos, oldStr.length(), newStr);
-        pos += newStr.length();
+      irStr.replace(pos, oldStr.length(), newStr);
+      pos += newStr.length();
     }
-    fout << irStr; //ss.str();
+    fout << irStr; // ss.str();
     fout.close();
 #else
-    std::error_code errcode;
-    llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
-    if (errcode) {
-      std::cout << errcode.message() << std::endl;
-      return Scheme->F;
+    if (!extemp::EXTLLVM2::writeBitcodeToFile2(m, filename)) {
+         return Scheme->F;
     }
-    llvm::WriteBitcodeToFile(m,ss);
 #endif
     return Scheme->T;
 }

@@ -62,5 +62,8 @@ namespace extemp {
     std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa);
     std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode);
     bool parseAssemblyInto(const std::string& asmcode, llvm::Module &M, llvm::SMDiagnostic &pa);
+    void writeBitcodeToFile(llvm::Module* M, std::string& bitcode);
+    bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename);
+    bool verifyModule(llvm::Module& M);
   } // EXTLLVM2
 } // extemp
