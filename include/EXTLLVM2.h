@@ -106,5 +106,7 @@ namespace extemp {
       const std::string &asmcode,
       const std::unordered_set<std::string> &sInlineSyms);
 
+    llvm::Module* jitCompile(const std::string&);
+
   } // EXTLLVM2
 } // extemp

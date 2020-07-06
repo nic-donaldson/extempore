@@ -592,6 +592,31 @@ namespace EXTLLVM2 {
         // somewhere
         return globalDecls(symbols, ignoreSymbols);
     }
+
+    llvm::Module* jitCompile(const std::string& asmcode) {
+        llvm::SMDiagnostic pa;
+        std::unique_ptr<llvm::Module> newModule(parseAssemblyString2(asmcode, pa));
+
+        if (unlikely(!newModule)) {
+            // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
+            // std::endl; std::cout << pa.getMessage().str() << std::endl <<
+            // pa.getLineNo() << std::endl;
+            pa.print("LLVM IR", llvm::outs());
+            return nullptr;
+        }
+
+        if (verifyModule(*newModule)) {
+            std::cout << "Invalid LLVM IR" << std::endl;
+            return nullptr;
+        }
+
+        if (unlikely(!extemp::UNIV::ARCH.empty())) {
+            newModule->setTargetTriple(extemp::UNIV::ARCH);
+        }
+
+        llvm::Module* modulePtr = addModule(std::move(newModule));
+        return modulePtr;
+    }
     
 
 } // namespace EXTLLVM2

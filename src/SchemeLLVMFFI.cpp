@@ -90,33 +90,6 @@ static const std::unordered_set<std::string> inlineSyms()
   return syms;
 }
 
-static llvm::Module *jitCompileInitDotLL(std::string asmcode) {
-  const std::string declarations =
-    extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
-
-  llvm::SMDiagnostic pa;
-  std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseAssemblyString2(asmcode, pa));
-  if (unlikely(!newModule)) {
-    // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
-    // std::endl; std::cout << pa.getMessage().str() << std::endl <<
-    // pa.getLineNo() << std::endl;
-    pa.print("LLVM IR", llvm::outs());
-    return nullptr;
-  }
-
-  if (extemp::EXTLLVM2::verifyModule(*newModule)) {
-    std::cout << "Invalid LLVM IR" << std::endl;
-    return nullptr;
-  }
-
-  if (unlikely(!extemp::UNIV::ARCH.empty())) {
-    newModule->setTargetTriple(extemp::UNIV::ARCH);
-  }
-
-  llvm::Module* modulePtr = extemp::EXTLLVM2::addModule(std::move(newModule));
-  return modulePtr;
-}
-
 static llvm::Module *jitCompile(std::string asmcode) {
   const std::string declarations =
     extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
@@ -164,7 +137,7 @@ pointer jitCompileIRString(scheme *Scheme, pointer Args) {
 
   llvm::Module* modulePtr = nullptr;
   if (isThisInitDotLL) {
-    modulePtr = jitCompileInitDotLL(string_value(pair_car(Args)));
+    modulePtr = extemp::EXTLLVM2::jitCompile(string_value(pair_car(Args)));
     isThisInitDotLL = false;
   } else {
     modulePtr = jitCompile(string_value(pair_car(Args)));
