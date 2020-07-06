@@ -380,7 +380,6 @@ if (DYLIB)
     src/EXTLLVM2.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
-    src/LLVMIRCompilation.cpp
     src/OSC.cpp
     src/Scheme.cpp
     src/SchemeLLVMFFI.cpp
@@ -398,7 +397,6 @@ else()
     src/EXTClosureAddressTable.cpp
     src/EXTLLVM.cpp
     src/EXTLLVM2.cpp
-    src/LLVMIRCompilation.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
     src/OSC.cpp

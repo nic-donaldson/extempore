@@ -34,6 +34,9 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <regex>
+#include <unordered_set>
+#include <sstream>
 
 namespace extemp {
 namespace EXTLLVM2 {
@@ -158,9 +161,9 @@ namespace EXTLLVM2 {
             }
             tm = factory.selectTarget(triple, "", cpu, lattrs);
         }
-        extemp::EXTLLVM2::ExecEngine = factory.create(tm);
+        ExecEngine = factory.create(tm);
 
-        extemp::EXTLLVM2::ExecEngine->DisableLazyCompilation(true);
+        ExecEngine->DisableLazyCompilation(true);
         ascii_normal();
         std::cout << "ARCH           : " << std::flush;
         ascii_info();
@@ -305,7 +308,7 @@ namespace EXTLLVM2 {
     const char* llvm_disassemble(const unsigned char* Code, int syntax) {
         size_t code_size = 1024 * 100;
         std::string Error;
-        llvm::TargetMachine *TM = extemp::EXTLLVM2::getTargetMachine();
+        llvm::TargetMachine *TM = getTargetMachine();
         llvm::Triple Triple = TM->getTargetTriple();
         const llvm::Target TheTarget = TM->getTarget();
         std::string TripleName = Triple.getTriple();
@@ -431,6 +434,89 @@ namespace EXTLLVM2 {
             str.erase(pos - 1);
         }
         return str;
+    }
+
+    // match @symbols @like @this_123
+    const std::regex globalSymRegex(
+      "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+      std::regex::optimize);
+
+    // match "define @sym"
+    const std::regex defineSymRegex(
+      "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+      std::regex::optimize | std::regex::ECMAScript);
+
+    void insertMatchingSymbols(
+        const std::string &code, const std::regex &regex,
+        std::unordered_set<std::string> &containingSet) {
+      std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
+                std::sregex_token_iterator(),
+                std::inserter(containingSet, containingSet.begin()));
+    }
+
+    std::unordered_set<std::string> globalSyms(const std::string& code)
+    {
+        std::unordered_set<std::string> syms;
+        insertMatchingSymbols(code, globalSymRegex, syms);
+        return syms;
+    }
+
+    std::string necessaryGlobalDeclarations(
+        const std::string &asmcode,
+        const std::unordered_set<std::string> &sInlineSyms) {
+      std::unordered_set<std::string> symbols;
+      insertMatchingSymbols(
+          asmcode, globalSymRegex, symbols);
+
+      std::unordered_set<std::string> definedSyms;
+      insertMatchingSymbols(
+          asmcode, defineSymRegex, definedSyms);
+
+      std::stringstream dstream;
+      for (const auto &sym : symbols) {
+        // if the symbol from asmcode is present in inline.ll/bitcode.ll
+        // don't redeclare it as they'll be included in the module
+        if (sInlineSyms.count(sym) == 1) {
+          continue;
+        }
+
+        if (definedSyms.count(sym) == 1) {
+          continue;
+        }
+
+        const llvm::Value *gv =
+            extemp::EXTLLVM::GlobalMap::getGlobalValue(sym.c_str());
+        if (!gv) {
+          continue;
+        }
+
+        const llvm::Function *func(llvm::dyn_cast<llvm::Function>(gv));
+        if (func) {
+          dstream << "declare "
+                  << sanitizeType(func->getReturnType())
+                  << " @" << sym << " (";
+
+          bool first(true);
+          for (const auto &arg : func->getArgumentList()) {
+            if (!first) {
+              dstream << ", ";
+            } else {
+              first = false;
+            }
+            dstream << sanitizeType(arg.getType());
+          }
+
+          if (func->isVarArg()) {
+            dstream << ", ...";
+          }
+          dstream << ")\n";
+        } else {
+          auto str(sanitizeType(gv->getType()));
+          dstream << '@' << sym << " = external global "
+                  << str.substr(0, str.length() - 1) << '\n';
+        }
+      }
+      return dstream.str();
     }
 
 } // namespace EXTLLVM2

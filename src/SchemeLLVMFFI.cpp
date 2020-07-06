@@ -4,7 +4,6 @@
 #include "llvm/Support/SourceMgr.h"
 
 #include <EXTLLVM2.h>
-#include <LLVMIRCompilation.h>
 #include <EXTLLVMGlobalMap.h>
 #include <Scheme.h>
 #include <SchemeLLVMFFI.h>
@@ -35,101 +34,118 @@ static std::string fileToString(const std::string &fileName) {
   return inString.str();
 }
 
-static LLVMIRCompilation IRCompiler;
+static const std::string inlineDotLLString() {
+  static const std::string sInlineDotLLString(
+    fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll"));
 
-static void loadInitialBitcodeAndSymbols(std::string &sInlineDotLLString,
-                             std::unordered_set<std::string> &sInlineSyms,
-                             std::string &sInlineBitcode) {
-  sInlineDotLLString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
-  const std::string bitcodeDotLLString =
-      fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-  LLVMIRCompilation::insertMatchingSymbols(
-      bitcodeDotLLString, extemp::LLVMIRCompilation::globalSymRegex,
-      sInlineSyms);
-  LLVMIRCompilation::insertMatchingSymbols(
-      sInlineDotLLString, extemp::LLVMIRCompilation::globalSymRegex,
-      sInlineSyms);
-
-  // put bitcode.ll -> sInlineBitcode
-  // will print error and abort on failure
-  auto newModule(extemp::EXTLLVM2::parseAssemblyString(bitcodeDotLLString));
-
-  extemp::EXTLLVM2::writeBitcodeToFile(newModule.get(), sInlineBitcode);
+  return sInlineDotLLString;
 }
 
-static llvm::Module *jitCompile(std::string asmcode) {
-  // the first time we call jitCompile it's init.ll which requires
-  // special behaviour
-  static bool isThisInitDotLL(true);
+static const std::string bitcodeDotLLString(){
+  static const std::string sBitcodeDotLLString(
+    fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll"));
 
-  static bool sLoadedInitialBitcodeAndSymbols(false);
-  static std::string sInlineDotLLString;
-  static std::string sInlineBitcode; // contains compiled bitcode from bitcode.ll
-  static std::unordered_set<std::string> sInlineSyms;
+  return sBitcodeDotLLString;
+}
 
-  if (sLoadedInitialBitcodeAndSymbols == false) {
-    loadInitialBitcodeAndSymbols(sInlineDotLLString, sInlineSyms,
-                                 sInlineBitcode);
-    sLoadedInitialBitcodeAndSymbols = true;
-  }
+static std::string loadBitcode()
+{
+  std::string bitcode;
+  // will print and abort on failure
+  auto mod(extemp::EXTLLVM2::parseAssemblyString(bitcodeDotLLString()));
+  extemp::EXTLLVM2::writeBitcodeToFile(mod.get(), bitcode);
+  return bitcode;
+}
 
+static const std::string bitcode()
+{
+  static std::string sInlineBitcode(loadBitcode());
+  return sInlineBitcode;
+}
+
+static std::unordered_set<std::string> loadInlineSyms()
+{
+  std::unordered_set<std::string> bitcodeLLGSyms =
+    extemp::EXTLLVM2::globalSyms(bitcodeDotLLString());
+
+  std::unordered_set<std::string> inlineLLGSyms =
+    extemp::EXTLLVM2::globalSyms(inlineDotLLString());
+
+  // std::unordered_set<>::merge is C++17 so this will
+  // do for now
+  std::unordered_set<std::string> sInlineSyms;
+  std::copy(bitcodeLLGSyms.begin(),
+            bitcodeLLGSyms.end(),
+            std::inserter(sInlineSyms, sInlineSyms.begin()));
+  // TODO: does this work? can I use .begin() twice like this?
+  std::copy(inlineLLGSyms.begin(),
+            inlineLLGSyms.end(),
+            std::inserter(sInlineSyms, sInlineSyms.begin()));
+
+  return sInlineSyms;
+}
+
+static const std::unordered_set<std::string> inlineSyms()
+{
+  static const std::unordered_set<std::string> syms(loadInlineSyms());
+  return syms;
+}
+
+static llvm::Module *jitCompileInitDotLL(std::string asmcode) {
   const std::string declarations =
-      IRCompiler.necessaryGlobalDeclarations(asmcode, sInlineSyms);
+    extemp::EXTLLVM2::necessaryGlobalDeclarations(asmcode, inlineSyms());
 
-  // std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n"
-  // << std::endl;
-
-  std::unique_ptr<llvm::Module> newModule = nullptr;
-
-  if (!isThisInitDotLL) {
-    std::unique_ptr<llvm::Module> inNewModule = nullptr;
-    llvm::SMDiagnostic pa;
-
-    if (!isThisInitDotLL) {
-      // module from bitcode.ll
-      auto module(extemp::EXTLLVM2::parseBitcodeFile(sInlineBitcode));
-
-      if (likely(module)) {
-        inNewModule = std::move(module);
-        // so every module but init.ll gets prepended with bitcode.ll,
-        // inline.ll, and any global declarations?
-        asmcode = sInlineDotLLString + declarations + asmcode;
-        if (extemp::EXTLLVM2::parseAssemblyInto(asmcode,
-                              *inNewModule, pa)) {
-          std::cout << "**** DECL ****\n"
-                    << declarations
-                    << "**** ENDDECL ****\n"
-                    << std::endl;
-          inNewModule.reset();
-        }
-      }
-    }
-
-    if (unlikely(!inNewModule)) {
-      pa.print("LLVM IR", llvm::outs());
-      return nullptr;
-    }
-
-    newModule = std::move(inNewModule);
-  }
-
-  if (isThisInitDotLL) {
-    llvm::SMDiagnostic pa;
-    std::unique_ptr<llvm::Module> inNewModule(extemp::EXTLLVM2::parseAssemblyString2(asmcode, pa));
-
-    if (unlikely(!inNewModule)) {
-      // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
-      // std::endl; std::cout << pa.getMessage().str() << std::endl <<
-      // pa.getLineNo() << std::endl;
-      pa.print("LLVM IR", llvm::outs());
-      return nullptr;
-    }
-
-    newModule = std::move(inNewModule);
+  llvm::SMDiagnostic pa;
+  std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseAssemblyString2(asmcode, pa));
+  if (unlikely(!newModule)) {
+    // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
+    // std::endl; std::cout << pa.getMessage().str() << std::endl <<
+    // pa.getLineNo() << std::endl;
+    pa.print("LLVM IR", llvm::outs());
+    return nullptr;
   }
 
   if (extemp::EXTLLVM2::verifyModule(*newModule)) {
-    std::cout << "\nInvalid LLVM IR\n";
+    std::cout << "Invalid LLVM IR" << std::endl;
+    return nullptr;
+  }
+
+  if (unlikely(!extemp::UNIV::ARCH.empty())) {
+    newModule->setTargetTriple(extemp::UNIV::ARCH);
+  }
+
+  llvm::Module* modulePtr = extemp::EXTLLVM2::addModule(std::move(newModule));
+  return modulePtr;
+}
+
+static llvm::Module *jitCompile(std::string asmcode) {
+  const std::string declarations =
+    extemp::EXTLLVM2::necessaryGlobalDeclarations(asmcode, inlineSyms());
+
+  std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseBitcodeFile(bitcode()));
+  llvm::SMDiagnostic pa;
+
+  if (likely(newModule)) {
+    // so every module but init.ll gets prepended with bitcode.ll,
+    // inline.ll, and any global declarations?
+    asmcode = inlineDotLLString() + declarations + asmcode;
+    if (extemp::EXTLLVM2::parseAssemblyInto(asmcode, *newModule, pa)) {
+      std::cout << "**** DECL ****"
+                << std::endl
+                << declarations
+                << "**** ENDDECL ****"
+                << std::endl;
+      newModule.reset();
+    }
+  }
+
+  if (unlikely(!newModule)) {
+    pa.print("LLVM IR", llvm::outs());
+    return nullptr;
+  }
+
+  if (extemp::EXTLLVM2::verifyModule(*newModule)) {
+    std::cout << "Invalid LLVM IR" << std::endl;
     return nullptr;
   }
 
@@ -141,13 +157,20 @@ static llvm::Module *jitCompile(std::string asmcode) {
   // but we can think about that another time
   llvm::Module *modulePtr = extemp::EXTLLVM2::addModule(std::move(newModule));
 
-  isThisInitDotLL = false;
-
   return modulePtr;
 }
 
 pointer jitCompileIRString(scheme *Scheme, pointer Args) {
-  auto modulePtr(jitCompile(string_value(pair_car(Args))));
+  static bool isThisInitDotLL(true);
+
+  llvm::Module* modulePtr = nullptr;
+  if (isThisInitDotLL) {
+    modulePtr = jitCompileInitDotLL(string_value(pair_car(Args)));
+    isThisInitDotLL = false;
+  } else {
+    modulePtr = jitCompile(string_value(pair_car(Args)));
+  }
+
   if (!modulePtr) {
     return Scheme->F;
   }

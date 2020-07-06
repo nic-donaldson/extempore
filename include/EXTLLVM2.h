@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 #include <memory>
+#include <regex>
+#include <unordered_set>
 
 namespace llvm {
   class ExecutionEngine;
@@ -76,6 +78,19 @@ namespace extemp {
     };
 
     std::string sanitizeType(llvm::Type *Type);
+
+    extern const std::regex globalSymRegex;
+    extern const std::regex defineSymRegex;
+
+    void insertMatchingSymbols(
+      const std::string &code, const std::regex &regex,
+      std::unordered_set<std::string> &containingSet);
+
+    std::unordered_set<std::string> globalSyms(const std::string& code);
+
+    std::string necessaryGlobalDeclarations(
+      const std::string &asmcode,
+      const std::unordered_set<std::string> &sInlineSyms);
 
   } // EXTLLVM2
 } // extemp
