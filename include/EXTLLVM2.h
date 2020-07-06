@@ -112,6 +112,7 @@ namespace extemp {
 
     const std::vector<std::string> getFunctionArgs(const std::string& fname);
     const std::string getFunctionType(const std::string& name);
+    long long getFunctionCallingConv(const std::string& name);
 
   } // EXTLLVM2
 } // extemp

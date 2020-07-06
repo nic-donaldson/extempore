@@ -231,14 +231,17 @@ pointer get_function_type(scheme* Scheme, pointer Args)
     }
     return mk_string(Scheme, type.c_str());
 }
+
 pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
-    if (!func) {
+    const std::string fname(string_value(pair_car(Args)));
+    const long long cc = extemp::EXTLLVM2::getFunctionCallingConv(fname);
+    if (cc == -1) {
         return Scheme->F;
     }
-    return mk_integer(Scheme, func->getCallingConv());
+    return mk_integer(Scheme, extemp::EXTLLVM2::getFunctionCallingConv(fname));
 }
+
 pointer get_global_variable_type(scheme* Scheme, pointer Args)
 {
     auto var(extemp::EXTLLVM2::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));

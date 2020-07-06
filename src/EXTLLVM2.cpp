@@ -710,6 +710,15 @@ namespace EXTLLVM2 {
         func->getFunctionType()->print(ss);
         return typestr;
     }
+
+    // just assuming that -1 is not a valid calling convention :|
+    long long getFunctionCallingConv(const std::string& name) {
+        auto func(GlobalMap::getFunction(name.c_str()));
+        if (!func) {
+            return -1;
+        }
+        return func->getCallingConv();
+    }
     
 
 } // namespace EXTLLVM2
