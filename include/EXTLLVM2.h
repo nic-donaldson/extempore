@@ -111,6 +111,7 @@ namespace extemp {
     llvm::Module* jitCompile(const std::string&);
 
     const std::vector<std::string> getFunctionArgs(const std::string& fname);
+    const std::string getFunctionType(const std::string& name);
 
   } // EXTLLVM2
 } // extemp

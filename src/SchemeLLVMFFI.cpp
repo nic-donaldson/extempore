@@ -212,8 +212,7 @@ pointer get_function_args(scheme* Scheme, pointer Args)
     return reverse_in_place(Scheme, Scheme->NIL, p);
 }
 
-static char tmp_str_a[1024];
-static char tmp_str_b[4096];
+
 
 pointer get_function_varargs(scheme* Scheme, pointer Args)
 {
@@ -224,14 +223,13 @@ pointer get_function_varargs(scheme* Scheme, pointer Args)
 
 pointer get_function_type(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
-    if (!func) {
+    const std::string fname(string_value(pair_car(Args)));
+    const std::string type = extemp::EXTLLVM2::getFunctionType(fname);
+
+    if (type.compare("") == 0) {
         return Scheme->F;
     }
-    std::string typestr;
-    llvm::raw_string_ostream ss(typestr);
-    func->getFunctionType()->print(ss);
-    return mk_string(Scheme, ss.str().c_str());
+    return mk_string(Scheme, type.c_str());
 }
 pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 {
@@ -547,6 +545,8 @@ pointer update_mapping(scheme* Scheme, pointer Args)
     return mk_cptr(Scheme, reinterpret_cast<void*>(oldval));
 }
 
+static char tmp_str_a[1024];
+static char tmp_str_b[4096];
 pointer get_named_type(scheme* Scheme, pointer Args)
 {
     const char* name = string_value(pair_car(Args));

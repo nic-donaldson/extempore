@@ -697,6 +697,19 @@ namespace EXTLLVM2 {
         return res;
 
     }
+
+    // no std::optional :( we'll use empty string as falsey
+    const std::string getFunctionType(const std::string& name) {
+        auto func(GlobalMap::getFunction(name.c_str()));
+        if (!func) {
+            return "";
+        }
+
+        std::string typestr;
+        llvm::raw_string_ostream ss(typestr);
+        func->getFunctionType()->print(ss);
+        return typestr;
+    }
     
 
 } // namespace EXTLLVM2
