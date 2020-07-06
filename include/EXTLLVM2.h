@@ -14,10 +14,24 @@ namespace llvm {
   class TargetMachine;
   class Function;
   class GlobalVariable;
+  class GlobalValue;
   class GenericValue;
   class SMDiagnostic;
   class MutexGuard;
   class Type;
+}
+
+namespace extemp {
+namespace EXTLLVM2 {
+  namespace GlobalMap {
+    bool haveGlobalValue(const char* Name);
+    const llvm::GlobalValue* getGlobalValue(const char* Name);
+    const llvm::GlobalVariable* getGlobalVariable(const char* Name);
+    const llvm::Function* getFunction(const char* Name);
+    void addFunction(const llvm::Function& function);
+    void addGlobal(const llvm::GlobalVariable& global);
+  }
+}
 }
 
 namespace extemp {
@@ -88,7 +102,7 @@ namespace extemp {
 
     std::unordered_set<std::string> globalSyms(const std::string& code);
 
-    std::string necessaryGlobalDeclarations(
+    std::string globalDecls(
       const std::string &asmcode,
       const std::unordered_set<std::string> &sInlineSyms);
 

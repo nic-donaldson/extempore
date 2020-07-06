@@ -28,7 +28,6 @@
 
 #include <EXTLLVM2.h>
 #include <EXTMutex.h>
-#include <EXTLLVMGlobalMap.h>
 #include <UNIV.h>
 
 #include <vector>
@@ -37,6 +36,62 @@
 #include <regex>
 #include <unordered_set>
 #include <sstream>
+
+static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
+
+namespace extemp {
+namespace EXTLLVM2 {
+namespace GlobalMap {
+bool haveGlobalValue(const char *Name) { return sGlobalMap.count(Name) > 0; }
+
+void addFunction(const llvm::Function &function) {
+    std::string str;
+    llvm::raw_string_ostream stream(str);
+    function.printAsOperand(stream, false);
+    auto result(
+                sGlobalMap.insert(std::make_pair(stream.str().substr(1), &function)));
+    if (!result.second) {
+        result.first->second = &function;
+    }
+}
+
+void addGlobal(const llvm::GlobalVariable &global) {
+    std::string str;
+    llvm::raw_string_ostream stream(str);
+    global.printAsOperand(stream, false);
+    auto result(
+                sGlobalMap.insert(std::make_pair(stream.str().substr(1), &global)));
+    if (!result.second) {
+        result.first->second = &global;
+    }
+}
+
+const llvm::GlobalValue *getGlobalValue(const char *Name) {
+    auto iter(sGlobalMap.find(Name));
+    if (iter != sGlobalMap.end()) {
+        return iter->second;
+    }
+    return nullptr;
+}
+
+const llvm::GlobalVariable *getGlobalVariable(const char *Name) {
+    auto val(getGlobalValue(Name));
+    if (likely(val)) {
+        return llvm::dyn_cast<llvm::GlobalVariable>(val);
+    }
+    return nullptr;
+}
+
+const llvm::Function *getFunction(const char *Name) {
+    auto val(getGlobalValue(Name));
+    if (likely(val)) {
+        return llvm::dyn_cast<llvm::Function>(val);
+    }
+    return nullptr;
+}
+} // namespace GlobalMap
+} // namespace EXTLLVM2
+} // namespace extemp
 
 namespace extemp {
 namespace EXTLLVM2 {
@@ -234,10 +289,10 @@ namespace EXTLLVM2 {
 
     void onetwothree(llvm::Module* Module) {
         for (const auto& function : Module -> getFunctionList()) {
-            EXTLLVM::GlobalMap::addFunction(function);
+            GlobalMap::addFunction(function);
         }
         for (const auto& global : Module->getGlobalList()) {
-            EXTLLVM::GlobalMap::addGlobal(global);
+            GlobalMap::addGlobal(global);
         }
         Modules.push_back(Module);
     }
@@ -461,63 +516,83 @@ namespace EXTLLVM2 {
         return syms;
     }
 
-    std::string necessaryGlobalDeclarations(
-        const std::string &asmcode,
-        const std::unordered_set<std::string> &sInlineSyms) {
-      std::unordered_set<std::string> symbols;
-      insertMatchingSymbols(
-          asmcode, globalSymRegex, symbols);
+    std::string globalDeclaration(const std::string& sym) {
+        const llvm::Value* gv =
+            GlobalMap::getGlobalValue(sym.c_str());
 
-      std::unordered_set<std::string> definedSyms;
-      insertMatchingSymbols(
-          asmcode, defineSymRegex, definedSyms);
-
-      std::stringstream dstream;
-      for (const auto &sym : symbols) {
-        // if the symbol from asmcode is present in inline.ll/bitcode.ll
-        // don't redeclare it as they'll be included in the module
-        if (sInlineSyms.count(sym) == 1) {
-          continue;
-        }
-
-        if (definedSyms.count(sym) == 1) {
-          continue;
-        }
-
-        const llvm::Value *gv =
-            extemp::EXTLLVM::GlobalMap::getGlobalValue(sym.c_str());
         if (!gv) {
-          continue;
+            return "";
         }
 
-        const llvm::Function *func(llvm::dyn_cast<llvm::Function>(gv));
+        std::stringstream ss;
+        const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-          dstream << "declare "
-                  << sanitizeType(func->getReturnType())
-                  << " @" << sym << " (";
+            ss << "declare "
+               << sanitizeType(func->getReturnType())
+               << " @" << sym << " (";
 
-          bool first(true);
-          for (const auto &arg : func->getArgumentList()) {
-            if (!first) {
-              dstream << ", ";
-            } else {
-              first = false;
+            bool first(true);
+            for (const auto& arg : func->getArgumentList()) {
+                if (!first) {
+                    ss << ", ";
+                } else {
+                    first = false;
+                }
+                ss << sanitizeType(arg.getType());
             }
-            dstream << sanitizeType(arg.getType());
-          }
 
-          if (func->isVarArg()) {
-            dstream << ", ...";
-          }
-          dstream << ")\n";
+            if (func->isVarArg()) {
+                ss << ", ...";
+            }
+            ss << ")\n";
         } else {
           auto str(sanitizeType(gv->getType()));
-          dstream << '@' << sym << " = external global "
-                  << str.substr(0, str.length() - 1) << '\n';
+          ss << '@'
+             << sym
+             << " = external global "
+             << str.substr(0, str.length() - 1)
+             << "\n";
         }
-      }
-      return dstream.str();
+        return ss.str();
     }
+    
+    std::string globalDecls(
+        const std::unordered_set<std::string>& syms,
+        const std::unordered_set<std::string>& ignoreSyms)
+    {
+        std::stringstream dstream;
+        for (const auto& sym : syms) {
+            if (ignoreSyms.count(sym) == 1) {
+                continue;
+            }
+            dstream << globalDeclaration(sym);
+        }
+        return dstream.str();
+    }
+
+    std::string globalDecls(
+        const std::string &asmcode,
+        const std::unordered_set<std::string> &sInlineSyms) {
+
+        // find all symbols
+        std::unordered_set<std::string> symbols;
+        insertMatchingSymbols(asmcode, globalSymRegex, symbols);
+
+        // ignore any that were defined
+        // and any that are in sInlineSyms
+        std::unordered_set<std::string> ignoreSymbols;
+        insertMatchingSymbols(asmcode, defineSymRegex, ignoreSymbols);
+        std::copy(sInlineSyms.begin(),
+                  sInlineSyms.end(),
+                  std::inserter(ignoreSymbols, ignoreSymbols.begin()));
+
+        // and return a string declaring all of them
+        // the idea is that any symbols that weren't defined
+        // need to be declared and we assume they exist
+        // somewhere
+        return globalDecls(symbols, ignoreSymbols);
+    }
+    
 
 } // namespace EXTLLVM2
 } // namespace extemp

@@ -384,7 +384,6 @@ if (DYLIB)
     src/Scheme.cpp
     src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
-    src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
     src/TaskScheduler.cpp
@@ -403,7 +402,6 @@ else()
     src/Scheme.cpp
     src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
-    src/EXTLLVMGlobalMap.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
     src/TaskScheduler.cpp

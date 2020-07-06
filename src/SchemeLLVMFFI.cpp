@@ -4,7 +4,6 @@
 #include "llvm/Support/SourceMgr.h"
 
 #include <EXTLLVM2.h>
-#include <EXTLLVMGlobalMap.h>
 #include <Scheme.h>
 #include <SchemeLLVMFFI.h>
 #include <SchemePrivate.h>
@@ -93,7 +92,7 @@ static const std::unordered_set<std::string> inlineSyms()
 
 static llvm::Module *jitCompileInitDotLL(std::string asmcode) {
   const std::string declarations =
-    extemp::EXTLLVM2::necessaryGlobalDeclarations(asmcode, inlineSyms());
+    extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
 
   llvm::SMDiagnostic pa;
   std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseAssemblyString2(asmcode, pa));
@@ -120,7 +119,7 @@ static llvm::Module *jitCompileInitDotLL(std::string asmcode) {
 
 static llvm::Module *jitCompile(std::string asmcode) {
   const std::string declarations =
-    extemp::EXTLLVM2::necessaryGlobalDeclarations(asmcode, inlineSyms());
+    extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
 
   std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseBitcodeFile(bitcode()));
   llvm::SMDiagnostic pa;
@@ -179,7 +178,7 @@ pointer jitCompileIRString(scheme *Scheme, pointer Args) {
 
 pointer get_function(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -188,7 +187,7 @@ pointer get_function(scheme* Scheme, pointer Args)
 
 pointer get_globalvar(scheme* Scheme, pointer Args)
 {
-    auto var(extemp::EXTLLVM::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
+    auto var(extemp::EXTLLVM2::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -244,7 +243,7 @@ static char tmp_str_b[4096];
 
 pointer get_function_args(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -279,14 +278,14 @@ pointer get_function_args(scheme* Scheme, pointer Args)
 
 pointer get_function_varargs(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     return (func && func->isVarArg()) ? Scheme->T : Scheme->F;
 }
 
 
 pointer get_function_type(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -297,7 +296,7 @@ pointer get_function_type(scheme* Scheme, pointer Args)
 }
 pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
         return Scheme->F;
     }
@@ -305,7 +304,7 @@ pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 }
 pointer get_global_variable_type(scheme* Scheme, pointer Args)
 {
-    auto var(extemp::EXTLLVM::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
+    auto var(extemp::EXTLLVM2::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
     if (!var) {
         return Scheme->F;
     }
@@ -520,7 +519,7 @@ pointer llvm_print_all_modules(scheme* Scheme, pointer) // TODO
 
 pointer printLLVMFunction(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM::GlobalMap::getFunction(string_value(pair_car(Args))));
+    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     std::string str;
     llvm::raw_string_ostream ss(str);
     ss << *func;
