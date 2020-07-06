@@ -337,8 +337,8 @@ namespace EXTLLVM2 {
         return Modules;
     }
 
-    llvm::StructType* getTypeByName(const char* name) {
-        return FirstModule->getTypeByName(name);
+    llvm::StructType* getTypeByName(const std::string& name) {
+        return FirstModule->getTypeByName(name.c_str());
     }
 
     long getNamedStructSize(llvm::StructType* type) {
@@ -346,6 +346,14 @@ namespace EXTLLVM2 {
         long size = layout->getStructLayout(type)->getSizeInBytes();
         delete layout;
         return size;
+    }
+
+    long getNamedStructSize(const std::string& name) {
+        auto type(getTypeByName(name));
+        if (!type) {
+            return -1;
+        }
+        return getNamedStructSize(name);
     }
 
     llvm::TargetMachine* getTargetMachine() {
@@ -437,6 +445,39 @@ namespace EXTLLVM2 {
     std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa) {
         return llvm::parseAssemblyString(s, pa, llvm::getGlobalContext());
     }
+
+    static uint64_t string_hash(const char *str) {
+      uint64_t result(0);
+      unsigned char c;
+      while ((c = *(str++))) {
+        result = result * 33 + uint8_t(c);
+      }
+      return result;
+    }
+
+    long getStructSize(const std::string& struct_type_str) {
+        unsigned long long hash = string_hash(struct_type_str.c_str());
+        char name[128];
+        sprintf(name, "_xtmT%lld", hash);
+        char assm[1024];
+        sprintf(assm, "%%%s = type %s", name, struct_type_str.c_str());
+
+        llvm::SMDiagnostic pa;
+        auto newM(llvm::parseAssemblyString(assm, pa, llvm::getGlobalContext()));
+        if (!newM) {
+            return -1;
+        }
+        auto type(newM->getTypeByName(name));
+        if (!type) {
+            return -1;
+        }
+        auto layout(new llvm::DataLayout(newM.get()));
+        long size = layout->getStructLayout(type)->getSizeInBytes();
+        delete layout;
+        return size;
+    }
+
+
 
     std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode) {
         llvm::ErrorOr<std::unique_ptr<llvm::Module>> maybe(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"),
@@ -595,7 +636,7 @@ namespace EXTLLVM2 {
 
     llvm::Module* jitCompile(const std::string& asmcode) {
         llvm::SMDiagnostic pa;
-        std::unique_ptr<llvm::Module> newModule(parseAssemblyString2(asmcode, pa));
+        std::unique_ptr<llvm::Module> newModule(llvm::parseAssemblyString(asmcode, pa, llvm::getGlobalContext()));
 
         if (unlikely(!newModule)) {
             // std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" <<
@@ -616,6 +657,45 @@ namespace EXTLLVM2 {
 
         llvm::Module* modulePtr = addModule(std::move(newModule));
         return modulePtr;
+    }
+
+    static char tmp_str_a[1024];
+    static char tmp_str_b[4096];
+    const std::vector<std::string> getFunctionArgs(const std::string& fname) {
+        std::vector<std::string> res;
+
+        auto func(GlobalMap::getFunction(fname.c_str()));
+        if (!func) {
+            return res;
+        }
+
+        std::string typestr;
+        llvm::raw_string_ostream ss(typestr);
+
+        func->getReturnType()->print(ss);
+        const char* tmp_name = ss.str().c_str();
+        const char* eq_type_string = " = type ";
+
+        if (func->getReturnType()->isStructTy()) {
+            rsplit(eq_type_string, tmp_name, tmp_str_a, tmp_str_b);
+            tmp_name = tmp_str_a;
+        }
+        res.push_back(tmp_name);
+
+        for (const auto& arg : func->getArgumentList()) {
+            std::string typestr2;
+            llvm::raw_string_ostream ss2(typestr2);
+            arg.getType()->print(ss2);
+            tmp_name = ss2.str().c_str();
+            if (arg.getType()->isStructTy()) {
+                rsplit(eq_type_string, tmp_name, tmp_str_a, tmp_str_b);
+                tmp_name = tmp_str_a;
+            }
+            res.push_back(tmp_name);
+        }
+
+        return res;
+
     }
     
 

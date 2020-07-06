@@ -167,87 +167,53 @@ pointer get_globalvar(scheme* Scheme, pointer Args)
     return mk_cptr(Scheme, const_cast<llvm::GlobalVariable*>(var));
 }
 
-static uint64_t string_hash(const char* str)
-{
-    uint64_t result(0);
-    unsigned char c;
-    while((c = *(str++))) {
-        result = result * 33 + uint8_t(c);
-    }
-    return result;
-}
-
-
 pointer get_struct_size(scheme* Scheme, pointer Args)
 {
-    char* struct_type_str = string_value(pair_car(Args));
-    unsigned long long hash = string_hash(struct_type_str);
-    char name[128];
-    sprintf(name, "_xtmT%lld", hash);
-    char assm[1024];
-    sprintf(assm, "%%%s = type %s", name, struct_type_str);
+    const std::string struct_type_str(string_value(pair_car(Args)));
+    long size = extemp::EXTLLVM2::getStructSize(struct_type_str);
+    if (size == -1) {
+      return Scheme->F;
+    }
 
-    llvm::SMDiagnostic pa;
-    auto newM(extemp::EXTLLVM2::parseAssemblyString2(assm, pa));
-    if (!newM) {
-        return Scheme->F;
-    }
-    auto type(newM->getTypeByName(name));
-    if (!type) {
-        return Scheme->F;
-    }
-    auto layout(new llvm::DataLayout(newM.get()));
-    long size = layout->getStructLayout(type)->getSizeInBytes();
-    delete layout;
     return mk_integer(Scheme, size);
 }
 
 pointer get_named_struct_size(scheme* Scheme, pointer Args)
 {
-    auto type(EXTLLVM2::getTypeByName(string_value(pair_car(Args))));
-    if (!type) {
+    const std::string name(string_value(pair_car(Args)));
+    long size = extemp::EXTLLVM2::getNamedStructSize(name);
+    if (size == -1) {
         return Scheme->F;
     }
-    return mk_integer(Scheme, EXTLLVM2::getNamedStructSize(type));
+
+    return mk_integer(Scheme, size);
+}
+
+pointer get_function_args(scheme* Scheme, pointer Args)
+{
+    const std::string fname(string_value(pair_car(Args)));
+    const std::vector<std::string> args(extemp::EXTLLVM2::getFunctionArgs(fname));
+
+    if (args.empty()) {
+        return Scheme->F;
+    }
+
+    pointer str = mk_string(Scheme, args[0].c_str());
+    pointer p = cons(Scheme, str, Scheme->NIL);
+    for (auto iter = ++args.begin(); iter != args.end(); ++iter) {
+        const auto& arg = *iter;
+        {
+            EnvInjector injector(Scheme, p);
+            str = mk_string(Scheme, arg.c_str());
+        }
+        p = cons(Scheme, str, p);
+    }
+
+    return reverse_in_place(Scheme, Scheme->NIL, p);
 }
 
 static char tmp_str_a[1024];
 static char tmp_str_b[4096];
-
-pointer get_function_args(scheme* Scheme, pointer Args)
-{
-    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
-    if (!func) {
-        return Scheme->F;
-    }
-    std::string typestr;
-    llvm::raw_string_ostream ss(typestr);
-    func->getReturnType()->print(ss);
-    const char* tmp_name = ss.str().c_str();
-    const char* eq_type_string = " = type ";
-    if (func->getReturnType()->isStructTy()) {
-        rsplit(eq_type_string, tmp_name, tmp_str_a, tmp_str_b);
-        tmp_name = tmp_str_a;
-    }
-    pointer str = mk_string(Scheme, tmp_name);
-    pointer p = cons(Scheme, str, Scheme->NIL);
-    for (const auto& arg : func->getArgumentList()) {
-        {
-            EnvInjector injector(Scheme, p);
-            std::string typestr2;
-            llvm::raw_string_ostream ss2(typestr2);
-            arg.getType()->print(ss2);
-            tmp_name = ss2.str().c_str();
-            if (arg.getType()->isStructTy()) {
-                rsplit(eq_type_string, tmp_name, tmp_str_a, tmp_str_b);
-                tmp_name = tmp_str_a;
-            }
-            str = mk_string(Scheme, tmp_name);
-        }
-        p = cons(Scheme, str, p);
-    }
-    return reverse_in_place(Scheme, Scheme->NIL, p);
-}
 
 pointer get_function_varargs(scheme* Scheme, pointer Args)
 {
@@ -592,7 +558,7 @@ pointer get_named_type(scheme* Scheme, pointer Args)
     while (len >= 0 && name[len--] == '*') {
         ++ptrDepth;
     }
-    auto tt(EXTLLVM2::getTypeByName(std::string(name, len).c_str()));
+    auto tt(extemp::EXTLLVM2::getTypeByName(std::string(name, len)));
     if (tt) {
         std::string typestr;
         llvm::raw_string_ostream ss(typestr);

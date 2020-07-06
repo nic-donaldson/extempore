@@ -59,8 +59,9 @@ namespace extemp {
     // pass through some functions to the first module
     // don't know if these should go here but I don't want
     // to expose the whole module
-    llvm::StructType* getTypeByName(const char*);
-    long getNamedStructSize(llvm::StructType*);
+    llvm::StructType* getTypeByName(const std::string&);
+    long getNamedStructSize(const std::string& name);
+    long getStructSize(const std::string& struct_type_str);
 
     // pass through but to ExecEngine
     llvm::TargetMachine* getTargetMachine();
@@ -76,6 +77,7 @@ namespace extemp {
 
     std::unique_ptr<llvm::Module> parseAssemblyString(const std::string&);
     std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa);
+
     std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode);
     bool parseAssemblyInto(const std::string& asmcode, llvm::Module &M, llvm::SMDiagnostic &pa);
     void writeBitcodeToFile(llvm::Module* M, std::string& bitcode);
@@ -107,6 +109,8 @@ namespace extemp {
       const std::unordered_set<std::string> &sInlineSyms);
 
     llvm::Module* jitCompile(const std::string&);
+
+    const std::vector<std::string> getFunctionArgs(const std::string& fname);
 
   } // EXTLLVM2
 } // extemp
