@@ -244,14 +244,13 @@ pointer get_function_calling_conv(scheme* Scheme, pointer Args)
 
 pointer get_global_variable_type(scheme* Scheme, pointer Args)
 {
-    auto var(extemp::EXTLLVM2::GlobalMap::getGlobalVariable(string_value(pair_car(Args))));
-    if (!var) {
+    const std::string vname(string_value(pair_car(Args)));
+    const std::string type = extemp::EXTLLVM2::getGlobalVariableType(vname);
+    if (type == "") {
         return Scheme->F;
     }
-    std::string typestr;
-    llvm::raw_string_ostream ss(typestr);
-    var->getType()->print(ss);
-    return mk_string(Scheme, ss.str().c_str());
+
+    return mk_string(Scheme, type.c_str());
 }
 
 pointer get_function_pointer(scheme* Scheme, pointer Args)
@@ -269,28 +268,22 @@ pointer get_function_pointer(scheme* Scheme, pointer Args)
 
 pointer remove_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
-    if (!func) {
+    const std::string fname(string_value(pair_car(Args)));
+    bool res = EXTLLVM2::removeFunctionByName(fname);
+    if (!res) {
         return Scheme->F;
-    }
-    if (func->mayBeOverridden()) {
-        func->dropAllReferences();
-        func->removeFromParent();
+    } else {
         return Scheme->T;
     }
-    printf("Cannot remove function with dependencies\n");
-    return Scheme->F;
 }
 
 pointer remove_global_var(scheme* Scheme, pointer Args)
 {
-    auto var(EXTLLVM2::FindGlobalVariableNamed(string_value(pair_car(Args))));
-    if (!var) {
-        return Scheme->F;
+    const std::string vname(string_value(pair_car(Args)));
+    if (EXTLLVM2::removeGlobalVarByName(vname)) {
+        return Scheme->T;
     }
-    var->dropAllReferences();
-    var->removeFromParent();
-    return Scheme->T;
+    return Scheme->F;
 }
 
 pointer erase_function(scheme* Scheme, pointer Args)

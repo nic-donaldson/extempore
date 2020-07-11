@@ -719,6 +719,42 @@ namespace EXTLLVM2 {
         }
         return func->getCallingConv();
     }
+
+    const std::string getGlobalVariableType(const std::string& name) {
+        std::string res;
+        auto var(GlobalMap::getGlobalVariable(name.c_str()));
+        if (!var) {
+            return res;
+        }
+
+        llvm::raw_string_ostream ss(res);
+        var->getType()->print(ss);
+        return ss.str();
+    }
+
+    bool removeFunctionByName(const std::string& name) {
+        auto func(FindFunctionNamed(name));
+        if (!func) {
+            return false;
+        }
+        if (func->mayBeOverridden()) {
+            func->dropAllReferences();
+            func->removeFromParent();
+            return true;
+        }
+        printf("Cannot remove function with dependencies\n");
+        return false;
+    }
+
+    bool removeGlobalVarByName(const std::string& name) {
+        auto var(EXTLLVM2::FindGlobalVariableNamed(name));
+        if (!var) {
+            return false;
+        }
+        var->dropAllReferences();
+        var->removeFromParent();
+        return true;
+    }
     
 
 } // namespace EXTLLVM2
