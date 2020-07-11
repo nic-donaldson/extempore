@@ -770,12 +770,103 @@ namespace EXTLLVM2 {
 
     // TODO fix up return type, callers can just cast
     //      for the moment
-    void * findVoidFunctionByName(const std::string& name) {
+    void* findVoidFunctionByName(const std::string& name) {
         auto func(FindFunctionNamed(name));
         if (!func) {
             return 0;
         }
         return getPointerToFunction(func);
+    }
+
+
+    // TODO: reverse args when calling this!!
+    //       but I'm pretty sure it will never have more than one arg
+    // TODO: check no closures at call site!
+    Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args) {
+        auto func(reinterpret_cast<llvm::Function *>(func_ptr));
+        if (unlikely(!func)) {
+            printf("No such function\n");
+            return {ResultType::BAD, {}};
+        }
+
+        if (unlikely(lgth != func->getArgumentList().size())) {
+            printf("Wrong number of arguments for function!\n");
+            return {ResultType::BAD, {}};
+        }
+
+        // this code seems to be broken??
+        // i is never incremented.
+        // seems also lgth is never ever greater than 0 so
+        // maybe we're all g here
+
+        int i = 0;
+        std::vector<llvm::GenericValue> fargs;
+        fargs.reserve(lgth);
+
+        for (const auto &arg : func->getArgumentList()) {
+            EARG p = args.back();
+            args.pop_back();
+
+            if (p.tag == ArgType::INT) {
+                if (unlikely(arg.getType()->getTypeID() != llvm::Type::IntegerTyID)) {
+                    printf("Bad argument type %i\n", i);
+                    return {ResultType::BAD, {}};
+                }
+                int width = arg.getType()->getPrimitiveSizeInBits();
+                fargs[i].IntVal = llvm::APInt(width, p.int_val);
+            } else if (p.tag == ArgType::DOUBLE) {
+                if (arg.getType()->getTypeID() == llvm::Type::FloatTyID) {
+                    fargs[i].FloatVal = p.double_val;
+                } else if (arg.getType()->getTypeID() == llvm::Type::DoubleTyID) {
+                    fargs[i].DoubleVal = p.double_val;
+                } else {
+                    printf("Bad argument type %i\n", i);
+                    return {ResultType::BAD, {}};
+                }
+            } else if (p.tag == ArgType::STRING) {
+                if (unlikely(arg.getType()->getTypeID() != llvm::Type::PointerTyID)) {
+                    printf("Bad argument type %i\n", i);
+                    return {ResultType::BAD, {}};
+                }
+                fargs[i].PointerVal = p.string;
+            } else if (p.tag == ArgType::PTR) {
+                if (unlikely(arg.getType()->getTypeID() != llvm::Type::PointerTyID)) {
+                    printf("Bad argument type %i\n", i);
+                    return {ResultType::BAD, {}};
+                }
+                fargs[i].PointerVal = p.ptr;
+            } else {
+                printf("Bad argement at index %in\n", i);
+                return {ResultType::BAD, {}};
+            }
+        }
+
+        llvm::GenericValue gv = runFunction(func, fargs);
+        EARG res;
+        switch (func->getReturnType()->getTypeID()) {
+        case llvm::Type::FloatTyID:
+            res.tag = ArgType::DOUBLE;
+            res.double_val = gv.FloatVal;
+            break;
+        case llvm::Type::DoubleTyID:
+            res.tag = ArgType::DOUBLE;
+            res.double_val = gv.DoubleVal;
+            break;
+        case llvm::Type::IntegerTyID:
+            res.tag = ArgType::INT;
+            res.int_val = gv.IntVal.getZExtValue();
+            break;
+        case llvm::Type::PointerTyID:
+            res.tag = ArgType::PTR;
+            res.ptr = gv.PointerVal;
+            break;
+        case llvm::Type::VoidTyID:
+            res.tag = ArgType::VOID;
+            break;
+        default:
+            return {ResultType::BAD, {}};
+        }
+        return {ResultType::GOOD, res};
     }
 
 } // namespace EXTLLVM2

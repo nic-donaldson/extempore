@@ -311,6 +311,64 @@ pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 // also extremely SLOW !
 #define LLVM_EE_LOCK
 
+pointer call_compiled2(scheme* Scheme, pointer Args)
+{
+#ifdef LLVM_EE_LOCK
+    extemp::EXTLLVM2::MutexGuard locked;
+#endif
+    void* func_ptr = cptr_value(pair_car(Args));
+    Args = pair_cdr(Args);
+    unsigned lgth = list_length(Scheme, Args);
+
+    int i = 0;
+    std::vector<EXTLLVM2::EARG> args;
+    args.reserve(lgth);
+
+    while (Args != Scheme->NIL) {
+        EXTLLVM2::EARG arg;
+        pointer p = car(Args);
+        Args = cdr(Args);
+        if (is_integer(p)) {
+            arg.tag = EXTLLVM2::ArgType::INT;
+            arg.int_val = ivalue(p);
+        } else if (is_real(p)) {
+            arg.tag = EXTLLVM2::ArgType::DOUBLE;
+            arg.double_val = rvalue(p);
+        } else if (is_string(p)) {
+            arg.tag = EXTLLVM2::ArgType::STRING;
+            arg.string = string_value(p);
+        } else if (is_cptr(p)) {
+            arg.tag = EXTLLVM2::ArgType::PTR;
+            arg.ptr = cptr_value(p);
+        } else if (unlikely(is_closure(p))) {
+            printf("Bad argument at index %i you can't pass in a scheme closure.\n", i);
+            return Scheme->F;
+        } else {
+            printf("Bad argument at index %i\n", i);
+            return Scheme->F;
+        }
+    }
+
+    std::reverse(args.begin(), args.end());
+    EXTLLVM2::Result res(EXTLLVM2::callCompiled(func_ptr, lgth, args));
+    if (res.tag == EXTLLVM2::ResultType::BAD) {
+        return Scheme->F;
+    } else {
+        switch(res.val.tag) {
+        case EXTLLVM2::ArgType::DOUBLE:
+            return mk_real(Scheme, res.val.double_val);
+        case EXTLLVM2::ArgType::INT:
+            return mk_integer(Scheme, res.val.int_val);
+        case EXTLLVM2::ArgType::PTR:
+            return mk_cptr(Scheme, res.val.ptr);
+        case EXTLLVM2::ArgType::VOID:
+            return Scheme->T;
+        default:
+            return Scheme->F;
+        }
+    }
+}
+
 pointer call_compiled(scheme* Scheme, pointer Args)
 {
 #ifdef LLVM_EE_LOCK
@@ -321,16 +379,19 @@ pointer call_compiled(scheme* Scheme, pointer Args)
         printf("No such function\n");
         return Scheme->F;
     }
-    func->getArgumentList();
+
     Args = pair_cdr(Args);
     unsigned lgth = list_length(Scheme, Args);
     if (unlikely(lgth != func->getArgumentList().size())) {
         printf("Wrong number of arguments for function!\n");
         return Scheme->F;
     }
+
     int i = 0;
     std::vector<llvm::GenericValue> fargs;
     fargs.reserve(lgth);
+
+
     for (const auto& arg : func->getArgumentList()) {
         pointer p = car(Args);
         Args = cdr(Args);

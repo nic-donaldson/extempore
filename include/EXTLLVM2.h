@@ -119,5 +119,33 @@ namespace extemp {
     bool eraseFunctionByName(const std::string& name);
     void * findVoidFunctionByName(const std::string& name);
 
+    enum class ArgType {
+      INT = 0,
+      DOUBLE = 1,
+      STRING = 2,
+      PTR = 3,
+      VOID = 4
+    };
+    struct EARG {
+      ArgType tag;
+      union {
+          int64_t int_val;
+          double double_val;
+          char* string;
+          void* ptr;
+      };
+    };
+
+    enum class ResultType {
+      BAD = 0,
+      GOOD = 1
+    };
+    struct Result {
+      ResultType tag;
+      EARG val;
+    };
+
+    Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args);
+
   } // EXTLLVM2
 } // extemp
