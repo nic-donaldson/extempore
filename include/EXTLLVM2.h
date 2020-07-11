@@ -116,6 +116,8 @@ namespace extemp {
     const std::string getGlobalVariableType(const std::string& name);
     bool removeFunctionByName(const std::string& name);
     bool removeGlobalVarByName(const std::string& name);
+    bool eraseFunctionByName(const std::string& name);
+    void * findVoidFunctionByName(const std::string& name);
 
   } // EXTLLVM2
 } // extemp

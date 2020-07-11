@@ -755,7 +755,28 @@ namespace EXTLLVM2 {
         var->removeFromParent();
         return true;
     }
-    
+
+    bool eraseFunctionByName(const std::string& name) {
+        auto func(FindFunctionNamed(name));
+        if (!func) {
+            return false;
+        }
+        func->dropAllReferences();
+        func->removeFromParent();
+        //func->deleteBody();
+        //func->eraseFromParent();
+        return true;
+    }
+
+    // TODO fix up return type, callers can just cast
+    //      for the moment
+    void * findVoidFunctionByName(const std::string& name) {
+        auto func(FindFunctionNamed(name));
+        if (!func) {
+            return 0;
+        }
+        return getPointerToFunction(func);
+    }
 
 } // namespace EXTLLVM2
 } // namespace extemp

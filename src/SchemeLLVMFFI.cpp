@@ -288,27 +288,18 @@ pointer remove_global_var(scheme* Scheme, pointer Args)
 
 pointer erase_function(scheme* Scheme, pointer Args)
 {
-    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
-    if (!func) {
-        return Scheme->F;
+    const std::string fname(string_value(pair_car(Args)));
+    if (EXTLLVM2::eraseFunctionByName(fname)) {
+        return Scheme->T;
     }
-    func->dropAllReferences();
-    func->removeFromParent();
-    //func->deleteBody();
-    //func->eraseFromParent();
-    return Scheme->T;
+    return Scheme->F;
 }
 
 pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 {
-    char name[1024];
-    strcpy(name, string_value(pair_car(Args)));
-    strcat(name, "_native");
-    auto func(EXTLLVM2::FindFunctionNamed(string_value(pair_car(Args))));
-    if (!func) {
-        return Scheme->F;
-    }
-    void* p = EXTLLVM2::getPointerToFunction(func);
+    const std::string fname(string_value(pair_car(Args)));
+
+    void* p = EXTLLVM2::findVoidFunctionByName(fname);
     if (!p) {
         return Scheme->F;
     }
