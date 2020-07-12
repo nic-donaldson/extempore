@@ -141,10 +141,6 @@ namespace EXTLLVM2 {
         PM->add(llvm::createTailCallEliminationPass());
     }
 
-    // just a name we give this for the moment
-    // this function probably shouldn't exist
-    void onetwothree(llvm::Module* Module);
-
     bool initLLVM() {
         if (ExecEngine) {
             return false;
@@ -157,7 +153,15 @@ namespace EXTLLVM2 {
         auto& context(llvm::getGlobalContext());
         auto module(llvm::make_unique<llvm::Module>("xtmmodule_0", context));
         FirstModule = module.get();
-        onetwothree(FirstModule);
+
+        for (const auto& function : FirstModule->getFunctionList()) {
+            GlobalMap::addFunction(function);
+        }
+        for (const auto& global : FirstModule->getGlobalList()) {
+            GlobalMap::addGlobal(global);
+        }
+        Modules.push_back(FirstModule);
+
         if (!extemp::UNIV::ARCH.empty()) {
             FirstModule->setTargetTriple(extemp::UNIV::ARCH);
         }
@@ -292,23 +296,19 @@ namespace EXTLLVM2 {
         }
     }
 
-    void onetwothree(llvm::Module* Module) {
-        for (const auto& function : Module -> getFunctionList()) {
-            GlobalMap::addFunction(function);
-        }
-        for (const auto& global : Module->getGlobalList()) {
-            GlobalMap::addGlobal(global);
-        }
-        Modules.push_back(Module);
-    }
-
     static llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
         llvm::Module *modulePtr = Module.get();
         runPassManager(modulePtr);
         ExecEngine->addModule(std::move(Module));
         ExecEngine->finalizeObject();
         if (modulePtr) {
-            onetwothree(modulePtr);
+            for (const auto& function : modulePtr->getFunctionList()) {
+                GlobalMap::addFunction(function);
+            }
+            for (const auto& global : modulePtr->getGlobalList()) {
+                GlobalMap::addGlobal(global);
+            }
+            Modules.push_back(modulePtr);
         }
         return modulePtr;
     }
