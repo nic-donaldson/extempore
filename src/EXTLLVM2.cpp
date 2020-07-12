@@ -37,6 +37,10 @@
 #include <unordered_set>
 #include <sstream>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
 
 namespace extemp {
@@ -927,6 +931,24 @@ namespace EXTLLVM2 {
             }
         }
         return last_name;
+    }
+
+    bool bindSymbol(const std::string& sym, void* library) {
+        #ifdef _WIN32
+        auto ptr(reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(library), sym.c_str())));
+        #else
+        auto ptr(dlsym(library, sym.c_str()));
+        #endif
+        if (likely(ptr)) {
+            addGlobalMappingUnderEELock(sym.c_str(), reinterpret_cast<uint64_t>(ptr));
+            return true;
+        }
+        return false;
+    }
+
+    void* updateMapping(const std::string& sym, void* ptr) {
+        auto oldval(addGlobalMappingUnderEELock(sym.c_str(), reinterpret_cast<uintptr_t>(ptr)));
+        return reinterpret_cast<void*>(oldval);
     }
 
 

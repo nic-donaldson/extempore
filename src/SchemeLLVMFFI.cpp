@@ -12,9 +12,6 @@
 #include <sstream>
 #include <iostream>
 
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 #define pair_cadr(p) pair_car(pair_cdr(p))
 
@@ -459,29 +456,24 @@ pointer llvm_closure_last_name(scheme* Scheme, pointer Args)
     }
     return Scheme->F;
 }
+
 pointer bind_symbol(scheme* Scheme, pointer Args)
 {
     auto library(cptr_value(pair_car(Args)));
-    auto sym(string_value(pair_cadr(Args)));
-
-#ifdef _WIN32
-    auto ptr(reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(library), sym)));
-#else
-    auto ptr(dlsym(library, sym));
-#endif
-    if (likely(ptr)) {
-        extemp::EXTLLVM2::addGlobalMappingUnderEELock(sym, reinterpret_cast<uint64_t>(ptr));
+    const std::string sym(string_value(pair_cadr(Args)));
+    if(EXTLLVM2::bindSymbol(sym, library)) {
         return Scheme->T;
     }
     return Scheme->F;
 }
+
+
 pointer update_mapping(scheme* Scheme, pointer Args)
 {
-    auto sym(string_value(pair_car(Args)));
+    const std::string sym(string_value(pair_car(Args)));
     auto ptr(cptr_value(pair_cadr(Args)));
 
-    auto oldval(EXTLLVM2::addGlobalMappingUnderEELock(sym, reinterpret_cast<uintptr_t>(ptr)));
-    return mk_cptr(Scheme, reinterpret_cast<void*>(oldval));
+    return mk_cptr(Scheme, EXTLLVM2::updateMapping(sym, ptr));
 }
 
 static char tmp_str_a[1024];

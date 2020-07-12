@@ -151,6 +151,8 @@ namespace extemp {
     void printAllClosures(const std::string& rgx);
     void printClosure(const std::string& fname);
     const char* closureLastName(const std::string& rgx);
+    bool bindSymbol(const std::string& sym, void* library);
+    void* updateMapping(const std::string& sym, void* ptr);
 
   } // EXTLLVM2
 } // extemp
