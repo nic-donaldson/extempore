@@ -146,6 +146,8 @@ namespace extemp {
     };
 
     Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args);
+    void printAllModules();
+    void printLLVMFunction(const std::string& fname);
 
   } // EXTLLVM2
 } // extemp

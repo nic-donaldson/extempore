@@ -869,5 +869,26 @@ namespace EXTLLVM2 {
         return {ResultType::GOOD, res};
     }
 
+    void printAllModules() {
+        for (auto module : getModules()) {
+            std::string str;
+            llvm::raw_string_ostream ss(str);
+            ss << *module;
+            printf("\n---------------------------------------------------\n%s", ss.str().c_str());
+        }
+    }
+
+    void printLLVMFunction(const std::string& fname) {
+        auto func(GlobalMap::getFunction(fname.c_str()));
+        if (!func) {
+            return;
+        }
+        std::string str;
+        llvm::raw_string_ostream ss(str);
+        ss << *func;
+        puts(ss.str().c_str());
+    }
+
+
 } // namespace EXTLLVM2
 } // namespace extemp

@@ -311,7 +311,7 @@ pointer llvm_call_void_native(scheme* Scheme, pointer Args)
 // also extremely SLOW !
 #define LLVM_EE_LOCK
 
-pointer call_compiled2(scheme* Scheme, pointer Args)
+pointer call_compiled(scheme* Scheme, pointer Args)
 {
 #ifdef LLVM_EE_LOCK
     extemp::EXTLLVM2::MutexGuard locked;
@@ -347,6 +347,7 @@ pointer call_compiled2(scheme* Scheme, pointer Args)
             printf("Bad argument at index %i\n", i);
             return Scheme->F;
         }
+        args.push_back(arg);
     }
 
     std::reverse(args.begin(), args.end());
@@ -369,84 +370,6 @@ pointer call_compiled2(scheme* Scheme, pointer Args)
     }
 }
 
-pointer call_compiled(scheme* Scheme, pointer Args)
-{
-#ifdef LLVM_EE_LOCK
-    extemp::EXTLLVM2::MutexGuard locked;
-#endif
-    auto func(reinterpret_cast<llvm::Function*>(cptr_value(pair_car(Args))));
-    if (unlikely(!func)) {
-        printf("No such function\n");
-        return Scheme->F;
-    }
-
-    Args = pair_cdr(Args);
-    unsigned lgth = list_length(Scheme, Args);
-    if (unlikely(lgth != func->getArgumentList().size())) {
-        printf("Wrong number of arguments for function!\n");
-        return Scheme->F;
-    }
-
-    int i = 0;
-    std::vector<llvm::GenericValue> fargs;
-    fargs.reserve(lgth);
-
-
-    for (const auto& arg : func->getArgumentList()) {
-        pointer p = car(Args);
-        Args = cdr(Args);
-        if (is_integer(p)) {
-            if (unlikely(arg.getType()->getTypeID() != llvm::Type::IntegerTyID)) {
-                printf("Bad argument type %i\n",i);
-                return Scheme->F;
-            }
-            int width = arg.getType()->getPrimitiveSizeInBits();
-            fargs[i].IntVal = llvm::APInt(width, ivalue(p));
-        } else if (is_real(p)) {
-            if (arg.getType()->getTypeID() == llvm::Type::FloatTyID) {
-                fargs[i].FloatVal = rvalue(p);
-            } else if (arg.getType()->getTypeID() == llvm::Type::DoubleTyID) {
-                fargs[i].DoubleVal = rvalue(p);
-            } else {
-                printf("Bad argument type %i\n",i);
-                return Scheme->F;
-            }
-        } else if (is_string(p)) {
-            if (unlikely(arg.getType()->getTypeID() != llvm::Type::PointerTyID)) {
-                printf("Bad argument type %i\n",i);
-                return Scheme->F;
-            }
-            fargs[i].PointerVal = string_value(p);
-        } else if (is_cptr(p)) {
-            if (unlikely(arg.getType()->getTypeID() != llvm::Type::PointerTyID)) {
-                printf("Bad argument type %i\n",i);
-                return Scheme->F;
-            }
-            fargs[i].PointerVal = cptr_value(p);
-        } else if (unlikely(is_closure(p))) {
-            printf("Bad argument at index %i you can't pass in a scheme closure.\n",i);
-            return Scheme->F;
-        } else {
-            printf("Bad argument at index %i\n",i);
-            return Scheme->F;
-        }
-    }
-    llvm::GenericValue gv = EXTLLVM2::runFunction(func, fargs);
-    switch(func->getReturnType()->getTypeID()) {
-    case llvm::Type::FloatTyID:
-        return mk_real(Scheme, gv.FloatVal);
-    case llvm::Type::DoubleTyID:
-        return mk_real(Scheme, gv.DoubleVal);
-    case llvm::Type::IntegerTyID:
-        return mk_integer(Scheme, gv.IntVal.getZExtValue()); //  getRawData());
-    case llvm::Type::PointerTyID:
-        return mk_cptr(Scheme, gv.PointerVal);
-    case llvm::Type::VoidTyID:
-        return Scheme->T;
-    default:
-        return Scheme->F;
-    }
-}
 pointer llvm_convert_float_constant(scheme* Scheme, pointer Args)
 {
     char* floatin = string_value(pair_car(Args));
@@ -493,22 +416,14 @@ pointer callClosure(scheme* Scheme, pointer Args)
 
 pointer llvm_print_all_modules(scheme* Scheme, pointer) // TODO
 {
-    for (auto module : EXTLLVM2::getModules()) {
-        std::string str;
-        llvm::raw_string_ostream ss(str);
-        ss << *module;
-        printf("\n---------------------------------------------------\n%s", ss.str().c_str());
-    }
+    EXTLLVM2::printAllModules();
     return Scheme->T;
 }
 
 pointer printLLVMFunction(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
-    std::string str;
-    llvm::raw_string_ostream ss(str);
-    ss << *func;
-    puts(ss.str().c_str());
+    auto fname(string_value(pair_car(Args)));
+    EXTLLVM2::printLLVMFunction(fname);
     return Scheme->T;
 }
 
