@@ -459,6 +459,13 @@ namespace EXTLLVM2 {
       return result;
     }
 
+    std::string IRToBitcode(const std::string& ir) {
+        std::string bitcode;
+        auto mod(parseAssemblyString(ir));
+        writeBitcodeToFile(mod.get(), bitcode);
+        return bitcode;
+    }
+
     long getStructSize(const std::string& struct_type_str) {
         unsigned long long hash = string_hash(struct_type_str.c_str());
         char name[128];
@@ -500,6 +507,45 @@ namespace EXTLLVM2 {
     void writeBitcodeToFile(llvm::Module* M, std::string& bitcode) {
         llvm::raw_string_ostream bitstream(bitcode);
         llvm::WriteBitcodeToFile(M, bitstream);
+    }
+
+    // TODO: idk what to do with this function
+    //       I'll think about it. it's like this just so
+    //       we can have the LLVM code here and not in
+    //       SchemeLLVMFFI
+    llvm::Module* doTheThing(
+        const std::string& declarations,
+        const std::string& bitcode,
+        const std::string& in_asmcode,
+        const std::string& inlineDotLL)
+    {
+        std::string asmcode(in_asmcode);
+        std::unique_ptr<llvm::Module> newModule(parseBitcodeFile(bitcode));
+        llvm::SMDiagnostic pa;
+
+        if (likely(newModule)) {
+            asmcode = inlineDotLL + declarations + asmcode;
+            if (parseAssemblyInto(asmcode, *newModule, pa)) {
+                std::cout << "**** DECL ****"
+                          << std::endl
+                          << declarations
+                          << "**** ENDDECL ****"
+                          << std::endl;
+                newModule.reset();
+            }
+        }
+
+        if (unlikely(!newModule)) {
+            pa.print("LLVM IR", llvm::outs());
+            return nullptr;
+        }
+
+        if (unlikely(!extemp::UNIV::ARCH.empty())) {
+            newModule->setTargetTriple(extemp::UNIV::ARCH);
+        }
+
+        llvm::Module *modulePtr = addModule(std::move(newModule));
+        return modulePtr;
     }
 
     bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename) {
@@ -970,6 +1016,43 @@ namespace EXTLLVM2 {
             return (std::string(tmp_str_b) + std::string(ptrDepth, '*')).c_str();
         }
         return "";
+    }
+
+    bool exportLLVMModuleBitcode(void* module, const std::string& filename) {
+        auto m(reinterpret_cast<llvm::Module*>(module));
+        if (!m) {
+            return false;
+        }
+        #ifdef _WIN32
+        std::string str;
+        std::ofstream fout(filename);
+        llvm::raw_string_ostream ss(str);
+        ss << *m;
+        std::string irStr = ss.str();
+        // add dllimport (otherwise global variables won't work)
+        std::string oldStr(" external global ");
+        std::string newStr(" external dllimport global ");
+        size_t pos = 0;
+        while ((pos = irStr.find(oldStr, pos)) != std::string::npos) {
+            irStr.replace(pos, oldStr.length(), newStr);
+            pos += newStr.length();
+        }
+        // LLVM can't handle guaranteed tail call under win64 yet
+        oldStr = std::string(" tail call ");
+        newStr = std::string(" call ");
+        pos = 0;
+        while ((pos = irStr.find(oldStr, pos)) != std::string::npos) {
+          irStr.replace(pos, oldStr.length(), newStr);
+          pos += newStr.length();
+        }
+        fout << irStr; // ss.str();
+        fout.close();
+        #else
+        if (!writeBitcodeToFile2(m, filename)) {
+            return false;
+        }
+        #endif
+        return true;
     }
 
 

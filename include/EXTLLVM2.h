@@ -77,6 +77,12 @@ namespace extemp {
 
     std::unique_ptr<llvm::Module> parseAssemblyString(const std::string&);
     std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa);
+    std::string IRToBitcode(const std::string& ir);
+    llvm::Module* doTheThing(
+        const std::string& declarations,
+        const std::string& bitcode,
+        const std::string& in_asmcode,
+        const std::string& inlineDotLL);
 
     std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode);
     bool parseAssemblyInto(const std::string& asmcode, llvm::Module &M, llvm::SMDiagnostic &pa);
@@ -154,6 +160,7 @@ namespace extemp {
     bool bindSymbol(const std::string& sym, void* library);
     void* updateMapping(const std::string& sym, void* ptr);
     const std::string getNamedType(const std::string& name);
+    bool exportLLVMModuleBitcode(void* module, const std::string& filename);
 
   } // EXTLLVM2
 } // extemp

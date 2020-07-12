@@ -1,5 +1,8 @@
+namespace llvm {
+    class Module;
+}
+
 #include "llvm/IR/Module.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 
@@ -11,7 +14,6 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-
 
 #define pair_cadr(p) pair_car(pair_cdr(p))
 
@@ -46,11 +48,8 @@ static const std::string bitcodeDotLLString(){
 
 static std::string loadBitcode()
 {
-  std::string bitcode;
   // will print and abort on failure
-  auto mod(extemp::EXTLLVM2::parseAssemblyString(bitcodeDotLLString()));
-  extemp::EXTLLVM2::writeBitcodeToFile(mod.get(), bitcode);
-  return bitcode;
+  return EXTLLVM2::IRToBitcode(bitcodeDotLLString());
 }
 
 static const std::string bitcode()
@@ -88,6 +87,12 @@ static const std::unordered_set<std::string> inlineSyms()
 }
 
 static llvm::Module *jitCompile(std::string asmcode) {
+    const std::string declarations =
+        extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
+    return EXTLLVM2::doTheThing(declarations, asmcode, bitcode(), inlineDotLLString());
+}
+
+static llvm::Module *jitCompile2(std::string asmcode) {
   const std::string declarations =
     extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
 
@@ -494,41 +499,12 @@ pointer get_named_type(scheme* Scheme, pointer Args)
 
 pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
 {
-    auto m(reinterpret_cast<llvm::Module*>(cptr_value(pair_car(Args))));
-    if (!m) {
-        return Scheme->F;
+    void* module(cptr_value(pair_car(Args)));
+    const std::string filename(string_value(pair_cadr(Args)));
+    if (EXTLLVM2::exportLLVMModuleBitcode(module, filename)) {
+        return Scheme->T;
     }
-    auto filename(string_value(pair_cadr(Args)));
-#ifdef _WIN32
-    std::string str;
-    std::ofstream fout(filename);
-    llvm::raw_string_ostream ss(str);
-    ss << *m;
-    std::string irStr = ss.str();
-    // add dllimport (otherwise global variables won't work)
-    std::string oldStr(" external global ");
-    std::string newStr(" external dllimport global ");
-    size_t pos = 0;
-    while ((pos = irStr.find(oldStr, pos)) != std::string::npos) {
-        irStr.replace(pos, oldStr.length(), newStr);
-        pos += newStr.length();
-    }
-    // LLVM can't handle guaranteed tail call under win64 yet
-    oldStr = std::string(" tail call ");
-    newStr = std::string(" call ");
-    pos = 0;
-    while ((pos = irStr.find(oldStr, pos)) != std::string::npos) {
-      irStr.replace(pos, oldStr.length(), newStr);
-      pos += newStr.length();
-    }
-    fout << irStr; // ss.str();
-    fout.close();
-#else
-    if (!extemp::EXTLLVM2::writeBitcodeToFile2(m, filename)) {
-         return Scheme->F;
-    }
-#endif
-    return Scheme->T;
+    return Scheme->F;
 }
 
 pointer llvm_disasm(scheme* Scheme, pointer Args)
