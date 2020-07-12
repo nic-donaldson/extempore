@@ -153,6 +153,7 @@ namespace extemp {
     const char* closureLastName(const std::string& rgx);
     bool bindSymbol(const std::string& sym, void* library);
     void* updateMapping(const std::string& sym, void* ptr);
+    const std::string getNamedType(const std::string& name);
 
   } // EXTLLVM2
 } // extemp

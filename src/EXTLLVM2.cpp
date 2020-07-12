@@ -951,6 +951,27 @@ namespace EXTLLVM2 {
         return reinterpret_cast<void*>(oldval);
     }
 
+    const std::string getNamedType(const std::string& name) {
+        int ptrDepth = 0;
+        int len(name.length() - 1);
+        while (len >= 0 && name[len--] == '*') {
+            ++ptrDepth;
+        }
+        auto tt(getTypeByName(std::string(name, len)));
+        if (tt) {
+            std::string typestr;
+            llvm::raw_string_ostream ss(typestr);
+            tt->print(ss);
+            auto tmp_name = ss.str().c_str();
+            if (tt->isStructTy()) {
+                rsplit(" = type ", tmp_name, tmp_str_a, tmp_str_b);
+                tmp_name = tmp_str_b;
+            }
+            return (std::string(tmp_str_b) + std::string(ptrDepth, '*')).c_str();
+        }
+        return "";
+    }
+
 
 } // namespace EXTLLVM2
 } // namespace extemp

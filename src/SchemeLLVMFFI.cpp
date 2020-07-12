@@ -476,32 +476,20 @@ pointer update_mapping(scheme* Scheme, pointer Args)
     return mk_cptr(Scheme, EXTLLVM2::updateMapping(sym, ptr));
 }
 
-static char tmp_str_a[1024];
-static char tmp_str_b[4096];
 pointer get_named_type(scheme* Scheme, pointer Args)
 {
     const char* name = string_value(pair_car(Args));
     if (name[0] == '%') {
         ++name;
     }
-    int ptrDepth = 0;
-    int len(strlen(name) - 1);
-    while (len >= 0 && name[len--] == '*') {
-        ++ptrDepth;
+
+    const std::string name2(name);
+    const std::string res(EXTLLVM2::getNamedType(name2));
+    if (res == "") {
+        return Scheme->NIL;
+    } else {
+        return mk_string(Scheme, res.c_str());
     }
-    auto tt(extemp::EXTLLVM2::getTypeByName(std::string(name, len)));
-    if (tt) {
-        std::string typestr;
-        llvm::raw_string_ostream ss(typestr);
-        tt->print(ss);
-        auto tmp_name = ss.str().c_str();
-        if (tt->isStructTy()) {
-            rsplit(" = type ", tmp_name, tmp_str_a, tmp_str_b);
-            tmp_name = tmp_str_b;
-        }
-        return mk_string(Scheme, (std::string(tmp_str_b) + std::string(ptrDepth, '*')).c_str());
-    }
-    return Scheme->NIL;
 }
 
 pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
