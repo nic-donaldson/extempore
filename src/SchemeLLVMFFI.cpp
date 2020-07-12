@@ -433,34 +433,15 @@ pointer llvm_print_all_closures(scheme* Scheme, pointer Args) // TODO
     char rgx[1024];
     strcpy(rgx, x);
     strcat(rgx, "_.*");
-    for (auto module : EXTLLVM2::getModules()) {
-        for (const auto& func : module->getFunctionList()) {
-            if (func.hasName() && rmatch(rgx, func.getName().data())) {
-                std::string str;
-                llvm::raw_string_ostream ss(str);
-                ss << func;
-                printf("\n---------------------------------------------------\n%s", ss.str().c_str());
-            }
-        }
-    }
+    const std::string rgx_s(rgx);
+    EXTLLVM2::printAllClosures(rgx_s);
     return Scheme->T;
 }
 
 pointer llvm_print_closure(scheme* Scheme, pointer Args) // TODO
 {
-    auto fname(string_value(pair_car(Args)));
-    for (auto module : EXTLLVM2::getModules()) {
-        for (const auto& func : module->getFunctionList()) {
-            if (func.hasName() && !strcmp(func.getName().data(), fname)) {
-                std::string str;
-                llvm::raw_string_ostream ss(str);
-                ss << func;
-                if (ss.str().find_first_of("{") != std::string::npos) {
-                    std::cout << str << std::endl;
-                }
-            }
-        }
-    }
+    const std::string fname(string_value(pair_car(Args)));
+    EXTLLVM2::printClosure(fname);
     return Scheme->T;
 }
 

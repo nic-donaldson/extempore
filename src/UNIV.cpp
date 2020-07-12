@@ -271,12 +271,12 @@ EXPORT unsigned char* base64_decode(const char *data, size_t input_length, size_
     return decoded_data;
 }
 
-EXPORT bool rmatch(char* regex, const char* str)
+EXPORT bool rmatch(const char* regex, const char* str)
 {
   //  char* data = char* strstring_value(pair_car(args));
   // char* pattern = string_value(pair_cadr(args));
   const char* data = str;
-  char* pattern = regex;
+  const char* pattern = regex;
 
   pcre *re;
   const char *error;

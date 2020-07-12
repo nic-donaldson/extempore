@@ -889,6 +889,34 @@ namespace EXTLLVM2 {
         puts(ss.str().c_str());
     }
 
+    void printAllClosures(const std::string& rgx) {
+        for (auto module : getModules()) {
+            for (const auto& func : module->getFunctionList()) {
+                if (func.hasName() && rmatch(rgx.c_str(), func.getName().data())) {
+                    std::string str;
+                    llvm::raw_string_ostream ss(str);
+                    ss << func;
+                    printf("\n---------------------------------------------------\n%s", ss.str().c_str());
+                }
+            }
+        }
+    }
+
+    void printClosure(const std::string& fname) {
+        for (auto module : getModules()) {
+            for (const auto& func : module->getFunctionList()) {
+                if (func.hasName() && !strcmp(func.getName().data(), fname.c_str())) {
+                    std::string str;
+                    llvm::raw_string_ostream ss(str);
+                    ss << func;
+                    if (ss.str().find_first_of("{") != std::string::npos) {
+                        std::cout << str << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
 
 } // namespace EXTLLVM2
 } // namespace extemp

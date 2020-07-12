@@ -92,7 +92,7 @@ typedef struct cell* pointer;
 
 extern "C" {
 
-EXPORT bool rmatch(char* regex, const char* str);
+EXPORT bool rmatch(const char* regex, const char* str);
 EXPORT int64_t rmatches(char* regex, char* str, char** results,int64_t maxnum); //struct regex_matched_buffer* result);
 EXPORT bool rsplit(const char* regex, const char* str, char* a, char* b);
 EXPORT char* rreplace(char* regex, char* str, char* replacement, char* result);
