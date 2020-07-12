@@ -540,6 +540,11 @@ namespace EXTLLVM2 {
             return nullptr;
         }
 
+        if (verifyModule(*newModule)) {
+            std::cout << "Invalid LLVM IR" << std::endl;
+            return nullptr;
+        }
+
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
             newModule->setTargetTriple(extemp::UNIV::ARCH);
         }

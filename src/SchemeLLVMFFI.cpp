@@ -89,49 +89,7 @@ static const std::unordered_set<std::string> inlineSyms()
 static llvm::Module *jitCompile(std::string asmcode) {
     const std::string declarations =
         extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
-    return EXTLLVM2::doTheThing(declarations, asmcode, bitcode(), inlineDotLLString());
-}
-
-static llvm::Module *jitCompile2(std::string asmcode) {
-  const std::string declarations =
-    extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
-
-  std::unique_ptr<llvm::Module> newModule(extemp::EXTLLVM2::parseBitcodeFile(bitcode()));
-  llvm::SMDiagnostic pa;
-
-  if (likely(newModule)) {
-    // so every module but init.ll gets prepended with bitcode.ll,
-    // inline.ll, and any global declarations?
-    asmcode = inlineDotLLString() + declarations + asmcode;
-    if (extemp::EXTLLVM2::parseAssemblyInto(asmcode, *newModule, pa)) {
-      std::cout << "**** DECL ****"
-                << std::endl
-                << declarations
-                << "**** ENDDECL ****"
-                << std::endl;
-      newModule.reset();
-    }
-  }
-
-  if (unlikely(!newModule)) {
-    pa.print("LLVM IR", llvm::outs());
-    return nullptr;
-  }
-
-  if (extemp::EXTLLVM2::verifyModule(*newModule)) {
-    std::cout << "Invalid LLVM IR" << std::endl;
-    return nullptr;
-  }
-
-  if (unlikely(!extemp::UNIV::ARCH.empty())) {
-    newModule->setTargetTriple(extemp::UNIV::ARCH);
-  }
-
-  // Probably shouldn't be unwrapping a unique_ptr here
-  // but we can think about that another time
-  llvm::Module *modulePtr = extemp::EXTLLVM2::addModule(std::move(newModule));
-
-  return modulePtr;
+    return EXTLLVM2::doTheThing(declarations, bitcode(), asmcode, inlineDotLLString());
 }
 
 pointer jitCompileIRString(scheme *Scheme, pointer Args) {
