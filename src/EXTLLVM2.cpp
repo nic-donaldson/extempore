@@ -48,7 +48,7 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
 bool haveGlobalValue(const char *Name) { return sGlobalMap.count(Name) > 0; }
 
-void addFunction(const llvm::Function &function) {
+static void addFunction(const llvm::Function &function) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     function.printAsOperand(stream, false);
@@ -59,7 +59,7 @@ void addFunction(const llvm::Function &function) {
     }
 }
 
-void addGlobal(const llvm::GlobalVariable &global) {
+static void addGlobal(const llvm::GlobalVariable &global) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     global.printAsOperand(stream, false);
@@ -270,7 +270,7 @@ namespace EXTLLVM2 {
         ExecEngine->updateGlobalMapping(name, address);
     }
 
-    uint64_t addGlobalMappingUnderEELock(const char* name, uintptr_t address) {
+    static uint64_t addGlobalMappingUnderEELock(const char* name, uintptr_t address) {
         llvm::MutexGuard locked(ExecEngine->lock);
         // returns previous value of the mapping, or NULL if not set
         return ExecEngine->updateGlobalMapping(name, address);
@@ -280,7 +280,7 @@ namespace EXTLLVM2 {
         ExecEngine->finalizeObject();
     }
 
-    void runPassManager(llvm::Module *m) {
+    static void runPassManager(llvm::Module *m) {
         assert(PM);
         assert(PM_NO);
 
@@ -301,7 +301,7 @@ namespace EXTLLVM2 {
         Modules.push_back(Module);
     }
 
-    llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
+    static llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
         llvm::Module *modulePtr = Module.get();
         runPassManager(modulePtr);
         ExecEngine->addModule(std::move(Module));
@@ -324,24 +324,24 @@ namespace EXTLLVM2 {
         return ExecEngine->getPointerToGlobalIfAvailable(name);
     }
 
-    llvm::Function* FindFunctionNamed(const std::string& name) {
+    static llvm::Function* FindFunctionNamed(const std::string& name) {
         return ExecEngine->FindFunctionNamed(name.c_str());
     }
 
-    llvm::GlobalVariable* FindGlobalVariableNamed(const std::string& name) {
+    static llvm::GlobalVariable* FindGlobalVariableNamed(const std::string& name) {
         return ExecEngine->FindGlobalVariableNamed(name.c_str());
     }
 
-    void* getPointerToFunction(llvm::Function* function) {
+    static void* getPointerToFunction(llvm::Function* function) {
 
         return ExecEngine->getPointerToFunction(function);
     }
 
-    std::vector<llvm::Module*>& getModules() {
+    static std::vector<llvm::Module*>& getModules() {
         return Modules;
     }
 
-    llvm::StructType* getTypeByName(const std::string& name) {
+    static llvm::StructType* getTypeByName(const std::string& name) {
         return FirstModule->getTypeByName(name.c_str());
     }
 
@@ -360,15 +360,11 @@ namespace EXTLLVM2 {
         return getNamedStructSize(name);
     }
 
-    llvm::TargetMachine* getTargetMachine() {
+    static llvm::TargetMachine* getTargetMachine() {
         return ExecEngine->getTargetMachine();
     }
 
-    llvm::sys::Mutex& getEEMutex() {
-        return ExecEngine->lock;
-    }
-
-    llvm::GenericValue runFunction(llvm::Function* func, std::vector<llvm::GenericValue> fargs) {
+    static llvm::GenericValue runFunction(llvm::Function* func, std::vector<llvm::GenericValue> fargs) {
         return ExecEngine->runFunction(func, fargs);
     }
 
@@ -436,7 +432,7 @@ namespace EXTLLVM2 {
         return std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true);
     }
 
-    std::unique_ptr<llvm::Module> parseAssemblyString(const std::string& s) {
+    static std::unique_ptr<llvm::Module> parseAssemblyString(const std::string& s) {
         llvm::SMDiagnostic pa;
         std::unique_ptr<llvm::Module> mod(llvm::parseAssemblyString(s, pa, llvm::getGlobalContext()));
         if (!mod) {
@@ -446,10 +442,6 @@ namespace EXTLLVM2 {
         return mod;
     }
 
-    std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa) {
-        return llvm::parseAssemblyString(s, pa, llvm::getGlobalContext());
-    }
-
     static uint64_t string_hash(const char *str) {
       uint64_t result(0);
       unsigned char c;
@@ -457,6 +449,11 @@ namespace EXTLLVM2 {
         result = result * 33 + uint8_t(c);
       }
       return result;
+    }
+
+    static void writeBitcodeToFile(llvm::Module* M, std::string& bitcode) {
+        llvm::raw_string_ostream bitstream(bitcode);
+        llvm::WriteBitcodeToFile(M, bitstream);
     }
 
     std::string IRToBitcode(const std::string& ir) {
@@ -490,7 +487,7 @@ namespace EXTLLVM2 {
 
 
 
-    std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode) {
+    static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode) {
         llvm::ErrorOr<std::unique_ptr<llvm::Module>> maybe(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"),
                                           llvm::getGlobalContext()));
         if (maybe) {
@@ -500,14 +497,11 @@ namespace EXTLLVM2 {
         }
     }
 
-    bool parseAssemblyInto(const std::string& asmcode, llvm::Module& M, llvm::SMDiagnostic& pa) {
+    static bool parseAssemblyInto(const std::string& asmcode, llvm::Module& M, llvm::SMDiagnostic& pa) {
         return llvm::parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), M, pa);
     }
 
-    void writeBitcodeToFile(llvm::Module* M, std::string& bitcode) {
-        llvm::raw_string_ostream bitstream(bitcode);
-        llvm::WriteBitcodeToFile(M, bitstream);
-    }
+
 
     // TODO: idk what to do with this function
     //       I'll think about it. it's like this just so
@@ -553,7 +547,7 @@ namespace EXTLLVM2 {
         return modulePtr;
     }
 
-    bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename) {
+    static bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename) {
         std::error_code errcode;
         llvm::raw_fd_ostream ss(filename, errcode, llvm::sys::fs::F_RW);
         if (errcode) {
@@ -564,7 +558,7 @@ namespace EXTLLVM2 {
         return true;
     }
 
-    bool verifyModule(llvm::Module& M) {
+    static bool verifyModule(llvm::Module& M) {
         return llvm::verifyModule(M);
     }
 
@@ -575,7 +569,7 @@ namespace EXTLLVM2 {
         delete _mg;
     }
 
-    std::string sanitizeType(llvm::Type *Type) {
+    static std::string sanitizeType(llvm::Type *Type) {
         std::string type;
         llvm::raw_string_ostream typeStream(type);
         Type->print(typeStream);
@@ -588,16 +582,16 @@ namespace EXTLLVM2 {
     }
 
     // match @symbols @like @this_123
-    const std::regex globalSymRegex(
+    static const std::regex globalSymRegex(
       "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
       std::regex::optimize);
 
     // match "define @sym"
-    const std::regex defineSymRegex(
+    static const std::regex defineSymRegex(
       "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
       std::regex::optimize | std::regex::ECMAScript);
 
-    void insertMatchingSymbols(
+    static void insertMatchingSymbols(
         const std::string &code, const std::regex &regex,
         std::unordered_set<std::string> &containingSet) {
       std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),

@@ -8,10 +8,7 @@
 #include <unordered_set>
 
 namespace llvm {
-  class ExecutionEngine;
   class Module;
-  class StructType;
-  class TargetMachine;
   class Function;
   class GlobalVariable;
   class GlobalValue;
@@ -28,8 +25,6 @@ namespace EXTLLVM2 {
     const llvm::GlobalValue* getGlobalValue(const char* Name);
     const llvm::GlobalVariable* getGlobalVariable(const char* Name);
     const llvm::Function* getFunction(const char* Name);
-    void addFunction(const llvm::Function& function);
-    void addGlobal(const llvm::GlobalVariable& global);
   }
 }
 }
@@ -40,33 +35,19 @@ namespace extemp {
     // success. call this more than once and it should return false.
     bool initLLVM();
     void addGlobalMapping(const char*, uintptr_t);
-    uint64_t addGlobalMappingUnderEELock(const char*, uintptr_t);
     void finalize();
-
-    void runPassManager(llvm::Module* m);
-    llvm::Module* addModule(std::unique_ptr<llvm::Module> Module);
 
     uintptr_t getSymbolAddress(const std::string&);
     uintptr_t getFunctionAddress(const std::string&);
     void* getPointerToGlobalIfAvailable(const std::string&);
-    llvm::Function* FindFunctionNamed(const std::string&);
-    llvm::GlobalVariable* FindGlobalVariableNamed(const std::string&);
-    void* getPointerToFunction(llvm::Function* function);
 
     void setOptimize(const bool);
-    std::vector<llvm::Module*>& getModules(); // TODO: probably shouldn't expose this
 
     // pass through some functions to the first module
     // don't know if these should go here but I don't want
     // to expose the whole module
-    llvm::StructType* getTypeByName(const std::string&);
     long getNamedStructSize(const std::string& name);
     long getStructSize(const std::string& struct_type_str);
-
-    // pass through but to ExecEngine
-    llvm::TargetMachine* getTargetMachine();
-    // llvm::sys::Mutex& getEEMutex(); // this is annoying I hope we can lose it
-    llvm::GenericValue runFunction(llvm::Function*, std::vector<llvm::GenericValue>);
 
     // this doesn't feel like it belongs here too much
     const char* llvm_disassemble(const unsigned char*, int);
@@ -75,20 +56,12 @@ namespace extemp {
     const std::string float_utohexstr(const std::string&);
     const std::string double_utohexstr(const std::string&);
 
-    std::unique_ptr<llvm::Module> parseAssemblyString(const std::string&);
-    std::unique_ptr<llvm::Module> parseAssemblyString2(const std::string& s, llvm::SMDiagnostic& pa);
     std::string IRToBitcode(const std::string& ir);
     llvm::Module* doTheThing(
         const std::string& declarations,
         const std::string& bitcode,
         const std::string& in_asmcode,
         const std::string& inlineDotLL);
-
-    std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode);
-    bool parseAssemblyInto(const std::string& asmcode, llvm::Module &M, llvm::SMDiagnostic &pa);
-    void writeBitcodeToFile(llvm::Module* M, std::string& bitcode);
-    bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename);
-    bool verifyModule(llvm::Module& M);
 
     class MutexGuard {
     public:
@@ -98,15 +71,6 @@ namespace extemp {
     private:
       llvm::MutexGuard* _mg;
     };
-
-    std::string sanitizeType(llvm::Type *Type);
-
-    extern const std::regex globalSymRegex;
-    extern const std::regex defineSymRegex;
-
-    void insertMatchingSymbols(
-      const std::string &code, const std::regex &regex,
-      std::unordered_set<std::string> &containingSet);
 
     std::unordered_set<std::string> globalSyms(const std::string& code);
 
