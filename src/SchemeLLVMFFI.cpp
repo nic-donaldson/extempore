@@ -1,10 +1,9 @@
 namespace llvm {
     class Module;
+    class Function;
+    class GLobalVariable;
 }
 
-#include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/SourceMgr.h"
 
 #include <EXTLLVM2.h>
 #include <Scheme.h>
@@ -115,7 +114,8 @@ pointer get_function(scheme* Scheme, pointer Args)
     if (!func) {
         return Scheme->F;
     }
-    return mk_cptr(Scheme, const_cast<llvm::Function*>(func));
+    void* fptr = (void *)const_cast<llvm::Function*>(func);
+    return mk_cptr(Scheme, fptr);
 }
 
 pointer get_globalvar(scheme* Scheme, pointer Args)
@@ -176,8 +176,8 @@ pointer get_function_args(scheme* Scheme, pointer Args)
 
 pointer get_function_varargs(scheme* Scheme, pointer Args)
 {
-    auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
-    return (func && func->isVarArg()) ? Scheme->T : Scheme->F;
+    const std::string fname(string_value(pair_car(Args)));
+    return EXTLLVM2::getFunctionVarargsByName(fname) ? Scheme->T : Scheme->F;
 }
 
 

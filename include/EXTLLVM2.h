@@ -161,6 +161,7 @@ namespace extemp {
     void* updateMapping(const std::string& sym, void* ptr);
     const std::string getNamedType(const std::string& name);
     bool exportLLVMModuleBitcode(void* module, const std::string& filename);
+    bool getFunctionVarargsByName(const std::string& fname);
 
   } // EXTLLVM2
 } // extemp

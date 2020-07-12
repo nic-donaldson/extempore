@@ -1060,6 +1060,11 @@ namespace EXTLLVM2 {
         return true;
     }
 
+    bool getFunctionVarargsByName(const std::string& fname) {
+        auto func(GlobalMap::getFunction(fname.c_str()));
+        return (func && func->isVarArg());
+    }
+
 
 } // namespace EXTLLVM2
 } // namespace extemp
