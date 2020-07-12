@@ -916,7 +916,7 @@ namespace EXTLLVM2 {
             res.ptr = gv.PointerVal;
             break;
         case llvm::Type::VoidTyID:
-            res.tag = ArgType::VOID;
+            res.tag = ArgType::NOTHING;
             break;
         default:
             return {ResultType::BAD, {}};

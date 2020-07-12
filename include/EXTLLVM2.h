@@ -123,14 +123,14 @@ namespace extemp {
     bool removeFunctionByName(const std::string& name);
     bool removeGlobalVarByName(const std::string& name);
     bool eraseFunctionByName(const std::string& name);
-    void * findVoidFunctionByName(const std::string& name);
+    void* findVoidFunctionByName(const std::string& name);
 
     enum class ArgType {
       INT = 0,
       DOUBLE = 1,
       STRING = 2,
       PTR = 3,
-      VOID = 4
+      NOTHING = 4
     };
     struct EARG {
       ArgType tag;

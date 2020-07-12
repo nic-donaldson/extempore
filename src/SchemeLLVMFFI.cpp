@@ -322,7 +322,7 @@ pointer call_compiled(scheme* Scheme, pointer Args)
             return mk_integer(Scheme, res.val.int_val);
         case EXTLLVM2::ArgType::PTR:
             return mk_cptr(Scheme, res.val.ptr);
-        case EXTLLVM2::ArgType::VOID:
+        case EXTLLVM2::ArgType::NOTHING:
             return Scheme->T;
         default:
             return Scheme->F;
