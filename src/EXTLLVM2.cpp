@@ -36,6 +36,7 @@
 #include <regex>
 #include <unordered_set>
 #include <sstream>
+#include <fstream>
 
 #ifndef _WIN32
 #include <dlfcn.h>
