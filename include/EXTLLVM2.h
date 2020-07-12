@@ -150,6 +150,7 @@ namespace extemp {
     void printLLVMFunction(const std::string& fname);
     void printAllClosures(const std::string& rgx);
     void printClosure(const std::string& fname);
+    const char* closureLastName(const std::string& rgx);
 
   } // EXTLLVM2
 } // extemp

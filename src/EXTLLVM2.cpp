@@ -917,6 +917,18 @@ namespace EXTLLVM2 {
         }
     }
 
+    const char* closureLastName(const std::string& rgx) {
+        const char* last_name(nullptr);
+        for (auto module : getModules()) {
+            for (const auto& func : module->getFunctionList()) {
+                if (func.hasName() && rmatch(rgx.c_str(), func.getName().data())) {
+                    last_name = func.getName().data();
+                }
+            }
+        }
+        return last_name;
+    }
+
 
 } // namespace EXTLLVM2
 } // namespace extemp

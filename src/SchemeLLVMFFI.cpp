@@ -451,14 +451,9 @@ pointer llvm_closure_last_name(scheme* Scheme, pointer Args)
     char rgx[1024];
     strcpy(rgx, x);
     strcat(rgx, "__[0-9]*");
-    const char* last_name(nullptr);
-    for (auto module : EXTLLVM2::getModules()) {
-        for (const auto& func : module->getFunctionList()) {
-            if (func.hasName() && rmatch(rgx, func.getName().data())) {
-                last_name = func.getName().data();
-            }
-        }
-    }
+
+    const char* last_name(EXTLLVM2::closureLastName(std::string(rgx)));
+
     if (last_name) {
         return mk_string(Scheme, last_name);
     }
