@@ -17,8 +17,6 @@ namespace llvm {
 namespace extemp {
 namespace EXTLLVM2 {
   namespace GlobalMap {
-    bool haveGlobalValue(const char* Name);
-    const llvm::GlobalValue* getGlobalValue(const char* Name);
     const llvm::GlobalVariable* getGlobalVariable(const char* Name);
     const llvm::Function* getFunction(const char* Name);
   }
