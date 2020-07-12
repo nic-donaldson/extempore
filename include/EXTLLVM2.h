@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <memory>
-#include <regex>
 #include <unordered_set>
 
 namespace llvm {
@@ -12,10 +11,7 @@ namespace llvm {
   class Function;
   class GlobalVariable;
   class GlobalValue;
-  class GenericValue;
-  class SMDiagnostic;
   class MutexGuard;
-  class Type;
 }
 
 namespace extemp {

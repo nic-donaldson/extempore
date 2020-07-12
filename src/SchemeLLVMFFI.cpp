@@ -1,10 +1,3 @@
-namespace llvm {
-    class Module;
-    class Function;
-    class GLobalVariable;
-}
-
-
 #include <EXTLLVM2.h>
 #include <Scheme.h>
 #include <SchemeLLVMFFI.h>
@@ -13,6 +6,7 @@ namespace llvm {
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 #define pair_cadr(p) pair_car(pair_cdr(p))
 
