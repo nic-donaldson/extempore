@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <iterator>
 
 #define pair_cadr(p) pair_car(pair_cdr(p))
 
