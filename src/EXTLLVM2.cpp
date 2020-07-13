@@ -42,73 +42,75 @@
 #include <dlfcn.h>
 #endif
 
-static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
-
 namespace extemp {
 namespace EXTLLVM2 {
 namespace GlobalMap {
-bool haveGlobalValue(const char *Name) { return sGlobalMap.count(Name) > 0; }
 
-static void addFunction(const llvm::Function &function) {
-    std::string str;
-    llvm::raw_string_ostream stream(str);
-    function.printAsOperand(stream, false);
-    auto result(
-                sGlobalMap.insert(std::make_pair(stream.str().substr(1), &function)));
-    if (!result.second) {
-        result.first->second = &function;
-    }
-}
+    static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
 
-static void addGlobal(const llvm::GlobalVariable &global) {
-    std::string str;
-    llvm::raw_string_ostream stream(str);
-    global.printAsOperand(stream, false);
-    auto result(
-                sGlobalMap.insert(std::make_pair(stream.str().substr(1), &global)));
-    if (!result.second) {
-        result.first->second = &global;
+    bool haveGlobalValue(const char *Name) {
+        return sGlobalMap.count(Name) > 0;
     }
-}
 
-const llvm::GlobalValue *getGlobalValue(const char *Name) {
-    auto iter(sGlobalMap.find(Name));
-    if (iter != sGlobalMap.end()) {
-        return iter->second;
+    static void addFunction(const llvm::Function &function) {
+        std::string str;
+        llvm::raw_string_ostream stream(str);
+        function.printAsOperand(stream, false);
+        auto result(
+                    sGlobalMap.insert(std::make_pair(stream.str().substr(1), &function)));
+        if (!result.second) {
+            result.first->second = &function;
+        }
     }
-    return nullptr;
-}
 
-const llvm::GlobalVariable *getGlobalVariable(const char *Name) {
-    auto val(getGlobalValue(Name));
-    if (likely(val)) {
-        return llvm::dyn_cast<llvm::GlobalVariable>(val);
+    static void addGlobal(const llvm::GlobalVariable &global) {
+        std::string str;
+        llvm::raw_string_ostream stream(str);
+        global.printAsOperand(stream, false);
+        auto result(
+                    sGlobalMap.insert(std::make_pair(stream.str().substr(1), &global)));
+        if (!result.second) {
+            result.first->second = &global;
+        }
     }
-    return nullptr;
-}
 
-const llvm::Function *getFunction(const char *Name) {
-    auto val(getGlobalValue(Name));
-    if (likely(val)) {
-        return llvm::dyn_cast<llvm::Function>(val);
+    const llvm::GlobalValue *getGlobalValue(const std::string& name) {
+        auto iter(sGlobalMap.find(name));
+        if (iter != sGlobalMap.end()) {
+            return iter->second;
+        }
+        return nullptr;
     }
-    return nullptr;
-}
+
+    const llvm::GlobalVariable *getGlobalVariable(const std::string& name) {
+        auto val(getGlobalValue(name));
+        if (likely(val)) {
+            return llvm::dyn_cast<llvm::GlobalVariable>(val);
+        }
+        return nullptr;
+    }
+
+    const llvm::Function *getFunction(const std::string& name) {
+        auto val(getGlobalValue(name));
+        if (likely(val)) {
+            return llvm::dyn_cast<llvm::Function>(val);
+        }
+        return nullptr;
+    }
+
 } // namespace GlobalMap
 } // namespace EXTLLVM2
 } // namespace extemp
 
 namespace extemp {
 namespace EXTLLVM2 {
-    bool OPTIMIZE_COMPILES = true;
-    llvm::ExecutionEngine* ExecEngine = nullptr;
-    llvm::legacy::PassManager* PM = nullptr;
-    llvm::legacy::PassManager* PM_NO = nullptr;
-    llvm::Module* FirstModule = nullptr;
-    std::vector<llvm::Module*> Modules;
-
-    // TODO: make this static once it's fully moved over
-    llvm::SectionMemoryManager* MM = nullptr;
+    static bool OPTIMIZE_COMPILES = true;
+    static llvm::ExecutionEngine* ExecEngine = nullptr;
+    static llvm::legacy::PassManager* PM = nullptr;
+    static llvm::legacy::PassManager* PM_NO = nullptr;
+    static llvm::Module* FirstModule = nullptr;
+    static std::vector<llvm::Module*> Modules;
+    static llvm::SectionMemoryManager* MM = nullptr;
 
     void setOptimize(const bool b) {
         OPTIMIZE_COMPILES = b;
@@ -714,7 +716,7 @@ namespace EXTLLVM2 {
     const std::vector<std::string> getFunctionArgs(const std::string& fname) {
         std::vector<std::string> res;
 
-        auto func(GlobalMap::getFunction(fname.c_str()));
+        auto func(GlobalMap::getFunction(fname));
         if (!func) {
             return res;
         }
@@ -750,7 +752,7 @@ namespace EXTLLVM2 {
 
     // no std::optional :( we'll use empty string as falsey
     const std::string getFunctionType(const std::string& name) {
-        auto func(GlobalMap::getFunction(name.c_str()));
+        auto func(GlobalMap::getFunction(name));
         if (!func) {
             return "";
         }
@@ -763,7 +765,7 @@ namespace EXTLLVM2 {
 
     // just assuming that -1 is not a valid calling convention :|
     long long getFunctionCallingConv(const std::string& name) {
-        auto func(GlobalMap::getFunction(name.c_str()));
+        auto func(GlobalMap::getFunction(name));
         if (!func) {
             return -1;
         }
@@ -772,7 +774,7 @@ namespace EXTLLVM2 {
 
     const std::string getGlobalVariableType(const std::string& name) {
         std::string res;
-        auto var(GlobalMap::getGlobalVariable(name.c_str()));
+        auto var(GlobalMap::getGlobalVariable(name));
         if (!var) {
             return res;
         }

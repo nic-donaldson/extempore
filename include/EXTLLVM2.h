@@ -16,10 +16,10 @@ namespace llvm {
 
 namespace extemp {
 namespace EXTLLVM2 {
-  namespace GlobalMap {
-    const llvm::GlobalVariable* getGlobalVariable(const char* Name);
-    const llvm::Function* getFunction(const char* Name);
-  }
+namespace GlobalMap {
+  const llvm::GlobalVariable* getGlobalVariable(const std::string& name);
+  const llvm::Function* getFunction(const std::string& name);
+}
 }
 }
 
