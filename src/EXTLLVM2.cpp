@@ -38,8 +38,15 @@
 #include <sstream>
 #include <fstream>
 
+
 #ifndef _WIN32
 #include <dlfcn.h>
+// TODO: remove this once done with tracing
+#include <sys/sdt.h>
+#else
+#define DTRACE_PROBE(a, b) do {} while(0)
+#define DTRACE_PROBE1(a, b, c) do {} while(0)
+#define DTRACE_PROBE2(a, b, c, d) do {} while(0)
 #endif
 
 namespace extemp {
@@ -83,6 +90,7 @@ namespace GlobalMap {
     }
 
     const llvm::GlobalVariable *getGlobalVariable(const std::string& name) {
+        DTRACE_PROBE1(extempore, getGlobalVariable, name.c_str());
         auto val(getGlobalValue(name));
         if (likely(val)) {
             return llvm::dyn_cast<llvm::GlobalVariable>(val);
@@ -91,6 +99,7 @@ namespace GlobalMap {
     }
 
     const llvm::Function *getFunction(const std::string& name) {
+        DTRACE_PROBE1(extempore, getFunction, name.c_str());
         auto val(getGlobalValue(name));
         if (likely(val)) {
             return llvm::dyn_cast<llvm::Function>(val);
@@ -113,6 +122,7 @@ namespace EXTLLVM2 {
     static llvm::SectionMemoryManager* MM = nullptr;
 
     void setOptimize(const bool b) {
+        DTRACE_PROBE(extempore, setOptimize);
         OPTIMIZE_COMPILES = b;
     }
 
@@ -144,6 +154,7 @@ namespace EXTLLVM2 {
     }
 
     bool initLLVM() {
+        DTRACE_PROBE(extempore, initLLVM);
         if (ExecEngine) {
             return false;
         }
@@ -274,6 +285,7 @@ namespace EXTLLVM2 {
     }
 
     void addGlobalMapping(const char* name, uintptr_t address) {
+        DTRACE_PROBE(extempore, addGlobalMapping);
         ExecEngine->updateGlobalMapping(name, address);
     }
 
@@ -284,6 +296,7 @@ namespace EXTLLVM2 {
     }
 
     void finalize() {
+        DTRACE_PROBE(extempore, finalize);
         ExecEngine->finalizeObject();
     }
 
@@ -316,14 +329,20 @@ namespace EXTLLVM2 {
     }
 
     uintptr_t getSymbolAddress(const std::string& name) {
-        return MM->getSymbolAddress(name);
+        auto addr(MM->getSymbolAddress(name));
+        DTRACE_PROBE2(extempore, getSymbolAddress, name.c_str(), addr);
+        return addr;
     }
 
     uintptr_t getFunctionAddress(const std::string& name) {
-        return ExecEngine->getFunctionAddress(name);
+        auto addr(ExecEngine->getFunctionAddress(name));
+        DTRACE_PROBE2(extempore, getFunctionAddress, name, addr);
+        return addr;
     }
 
     void* getPointerToGlobalIfAvailable(const std::string& name) {
+        auto ptr(ExecEngine->getPointerToGlobalIfAvailable(name));
+        DTRACE_PROBE2(extempore, getPointerToGlobalIfAvailable, name.c_str(), ptr);
         return ExecEngine->getPointerToGlobalIfAvailable(name);
     }
 
@@ -349,6 +368,7 @@ namespace EXTLLVM2 {
     }
 
     long getNamedStructSize(llvm::StructType* type) {
+        DTRACE_PROBE(extempore, getNamedStructSize);
         auto layout(new llvm::DataLayout(FirstModule));
         long size = layout->getStructLayout(type)->getSizeInBytes();
         delete layout;
@@ -372,6 +392,7 @@ namespace EXTLLVM2 {
     }
 
     const char* llvm_disassemble(const unsigned char* Code, int syntax) {
+        DTRACE_PROBE(extempore, llvm_disassemble);
         size_t code_size = 1024 * 100;
         std::string Error;
         llvm::TargetMachine *TM = getTargetMachine();
@@ -424,11 +445,14 @@ namespace EXTLLVM2 {
 
     // shims
     const std::string float_utohexstr(const std::string& floatin) {
+        DTRACE_PROBE(extempore, float_utohexstr);
         llvm::APFloat apf(llvm::APFloat::IEEEsingle, llvm::StringRef(floatin));
         auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
         return std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true);
     }
+
     const std::string double_utohexstr(const std::string& floatin) {
+        DTRACE_PROBE(extempore, double_utohexstr);
         llvm::APFloat apf(llvm::APFloat::IEEEdouble, llvm::StringRef(floatin));
         // TODO: if necessary, checks for inf/nan can be done here
         auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
@@ -460,6 +484,7 @@ namespace EXTLLVM2 {
     }
 
     std::string IRToBitcode(const std::string& ir) {
+        DTRACE_PROBE(extempore, IRToBitcode);
         std::string bitcode;
         auto mod(parseAssemblyString(ir));
         writeBitcodeToFile(mod.get(), bitcode);
@@ -467,6 +492,7 @@ namespace EXTLLVM2 {
     }
 
     long getStructSize(const std::string& struct_type_str) {
+        DTRACE_PROBE(extempore, getStructSize);
         unsigned long long hash = string_hash(struct_type_str.c_str());
         char name[128];
         sprintf(name, "_xtmT%lld", hash);
@@ -547,6 +573,8 @@ namespace EXTLLVM2 {
         }
 
         llvm::Module *modulePtr = addModule(std::move(newModule));
+
+        DTRACE_PROBE1(extempore, doTheThing, modulePtr);
         return modulePtr;
     }
 
@@ -604,6 +632,7 @@ namespace EXTLLVM2 {
 
     std::unordered_set<std::string> globalSyms(const std::string& code)
     {
+        DTRACE_PROBE(extempore, globalSyms);
         std::unordered_set<std::string> syms;
         insertMatchingSymbols(code, globalSymRegex, syms);
         return syms;
@@ -653,6 +682,7 @@ namespace EXTLLVM2 {
         const std::unordered_set<std::string>& syms,
         const std::unordered_set<std::string>& ignoreSyms)
     {
+        DTRACE_PROBE(extempore, globalDecls1);
         std::stringstream dstream;
         for (const auto& sym : syms) {
             if (ignoreSyms.count(sym) == 1) {
@@ -665,8 +695,9 @@ namespace EXTLLVM2 {
 
     std::string globalDecls(
         const std::string &asmcode,
-        const std::unordered_set<std::string> &sInlineSyms) {
-
+        const std::unordered_set<std::string> &sInlineSyms)
+    {
+        DTRACE_PROBE(extempore, globalDecls2);
         // find all symbols
         std::unordered_set<std::string> symbols;
         insertMatchingSymbols(asmcode, globalSymRegex, symbols);
@@ -686,7 +717,9 @@ namespace EXTLLVM2 {
         return globalDecls(symbols, ignoreSymbols);
     }
 
-    llvm::Module* jitCompile(const std::string& asmcode) {
+    llvm::Module* jitCompile(const std::string& asmcode)
+    {
+        DTRACE_PROBE(extempore, jitCompile);
         llvm::SMDiagnostic pa;
         std::unique_ptr<llvm::Module> newModule(llvm::parseAssemblyString(asmcode, pa, llvm::getGlobalContext()));
 
@@ -714,6 +747,7 @@ namespace EXTLLVM2 {
     static char tmp_str_a[1024];
     static char tmp_str_b[4096];
     const std::vector<std::string> getFunctionArgs(const std::string& fname) {
+        DTRACE_PROBE1(extempore, getFunctionArgs, fname.c_str());
         std::vector<std::string> res;
 
         auto func(GlobalMap::getFunction(fname));
@@ -752,6 +786,7 @@ namespace EXTLLVM2 {
 
     // no std::optional :( we'll use empty string as falsey
     const std::string getFunctionType(const std::string& name) {
+        DTRACE_PROBE1(extempore, getFunctionType, name.c_str());
         auto func(GlobalMap::getFunction(name));
         if (!func) {
             return "";
@@ -765,6 +800,7 @@ namespace EXTLLVM2 {
 
     // just assuming that -1 is not a valid calling convention :|
     long long getFunctionCallingConv(const std::string& name) {
+        DTRACE_PROBE1(extempore, getFunctionCallingConv, name.c_str());
         auto func(GlobalMap::getFunction(name));
         if (!func) {
             return -1;
@@ -773,6 +809,7 @@ namespace EXTLLVM2 {
     }
 
     const std::string getGlobalVariableType(const std::string& name) {
+        DTRACE_PROBE1(extempore, getGlobalVariableType, name.c_str());
         std::string res;
         auto var(GlobalMap::getGlobalVariable(name));
         if (!var) {
@@ -785,6 +822,7 @@ namespace EXTLLVM2 {
     }
 
     bool removeFunctionByName(const std::string& name) {
+        DTRACE_PROBE1(extempore, getFunctionByName, name.c_str());
         auto func(FindFunctionNamed(name));
         if (!func) {
             return false;
@@ -799,6 +837,7 @@ namespace EXTLLVM2 {
     }
 
     bool removeGlobalVarByName(const std::string& name) {
+        DTRACE_PROBE1(extempore, removeGlobalVarByName, name.c_str());
         auto var(EXTLLVM2::FindGlobalVariableNamed(name));
         if (!var) {
             return false;
@@ -809,10 +848,12 @@ namespace EXTLLVM2 {
     }
 
     bool eraseFunctionByName(const std::string& name) {
+        DTRACE_PROBE1(extempore, eraseFunctionByName, name.c_str());
         auto func(FindFunctionNamed(name));
         if (!func) {
             return false;
         }
+        DTRACE_PROBE2(extempore, eraseFunctionByName, name.c_str(), func);
         func->dropAllReferences();
         func->removeFromParent();
         //func->deleteBody();
@@ -823,6 +864,7 @@ namespace EXTLLVM2 {
     // TODO fix up return type, callers can just cast
     //      for the moment
     void* findVoidFunctionByName(const std::string& name) {
+        DTRACE_PROBE1(extempore, findVoidFunctionByName, name.c_str());
         auto func(FindFunctionNamed(name));
         if (!func) {
             return 0;
@@ -830,11 +872,8 @@ namespace EXTLLVM2 {
         return getPointerToFunction(func);
     }
 
-
-    // TODO: reverse args when calling this!!
-    //       but I'm pretty sure it will never have more than one arg
-    // TODO: check no closures at call site!
     Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args) {
+        DTRACE_PROBE2(extempore, callCompiled, func_ptr, lgth);
         auto func(reinterpret_cast<llvm::Function *>(func_ptr));
         if (unlikely(!func)) {
             printf("No such function\n");
@@ -922,6 +961,7 @@ namespace EXTLLVM2 {
     }
 
     void printAllModules() {
+        DTRACE_PROBE(extempore, printAllModules);
         for (auto module : getModules()) {
             std::string str;
             llvm::raw_string_ostream ss(str);
@@ -931,6 +971,7 @@ namespace EXTLLVM2 {
     }
 
     void printLLVMFunction(const std::string& fname) {
+        DTRACE_PROBE1(extempore, printLLVMFunction, fname.c_str());
         auto func(GlobalMap::getFunction(fname.c_str()));
         if (!func) {
             return;
@@ -942,6 +983,7 @@ namespace EXTLLVM2 {
     }
 
     void printAllClosures(const std::string& rgx) {
+        DTRACE_PROBE(extempore, printAllClosures);
         for (auto module : getModules()) {
             for (const auto& func : module->getFunctionList()) {
                 if (func.hasName() && rmatch(rgx.c_str(), func.getName().data())) {
@@ -955,6 +997,7 @@ namespace EXTLLVM2 {
     }
 
     void printClosure(const std::string& fname) {
+        DTRACE_PROBE1(extempore, printClosure, fname.c_str());
         for (auto module : getModules()) {
             for (const auto& func : module->getFunctionList()) {
                 if (func.hasName() && !strcmp(func.getName().data(), fname.c_str())) {
@@ -970,6 +1013,7 @@ namespace EXTLLVM2 {
     }
 
     const char* closureLastName(const std::string& rgx) {
+        DTRACE_PROBE(extempore, closureLastName);
         const char* last_name(nullptr);
         for (auto module : getModules()) {
             for (const auto& func : module->getFunctionList()) {
@@ -982,6 +1026,7 @@ namespace EXTLLVM2 {
     }
 
     bool bindSymbol(const std::string& sym, void* library) {
+        DTRACE_PROBE(extempore, bindSymbol);
         #ifdef _WIN32
         auto ptr(reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(library), sym.c_str())));
         #else
@@ -995,11 +1040,13 @@ namespace EXTLLVM2 {
     }
 
     void* updateMapping(const std::string& sym, void* ptr) {
+        DTRACE_PROBE(extempore, updateMapping);
         auto oldval(addGlobalMappingUnderEELock(sym.c_str(), reinterpret_cast<uintptr_t>(ptr)));
         return reinterpret_cast<void*>(oldval);
     }
 
     const std::string getNamedType(const std::string& name) {
+        DTRACE_PROBE1(extempore, getNamedType, name.c_str());
         int ptrDepth = 0;
         int len(name.length() - 1);
         while (len >= 0 && name[len--] == '*') {
@@ -1021,6 +1068,7 @@ namespace EXTLLVM2 {
     }
 
     bool exportLLVMModuleBitcode(void* module, const std::string& filename) {
+        DTRACE_PROBE(extempore, exportLLVMModuleBitcode);
         auto m(reinterpret_cast<llvm::Module*>(module));
         if (!m) {
             return false;
@@ -1058,6 +1106,7 @@ namespace EXTLLVM2 {
     }
 
     bool getFunctionVarargsByName(const std::string& fname) {
+        DTRACE_PROBE1(extempore, getFunctionVaragsByName, fname.c_str());
         auto func(GlobalMap::getFunction(fname.c_str()));
         return (func && func->isVarArg());
     }
