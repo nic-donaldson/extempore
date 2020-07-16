@@ -49,7 +49,6 @@
 #else
 #undef min
 #undef max
-#include "llvm/Support/Host.h"
 #endif
 
 #ifdef __APPLE__
@@ -357,7 +356,7 @@ EXPORT int extempore_init(int argc, char** argv)
     // on Windows with MCJIT we need to add "-elf" to the target triple, see
     // http://lists.cs.uiuc.edu/pipermail/llvmdev/2013-December/068407.html
     if (extemp::UNIV::ARCH.empty()) {
-        extemp::UNIV::ARCH = llvm::sys::getProcessTriple() + "-elf";
+        extemp::UNIV::ARCH = extemp::EXTLLVM2::getProcessTriple() + "-elf";
     }
 #endif
 

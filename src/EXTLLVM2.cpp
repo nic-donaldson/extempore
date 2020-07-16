@@ -1111,6 +1111,9 @@ namespace EXTLLVM2 {
         return (func && func->isVarArg());
     }
 
+    std::string getProcessTriple() {
+        return llvm::sys::getProcessTriple();
+    }
 
 } // namespace EXTLLVM2
 } // namespace extemp

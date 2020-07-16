@@ -121,5 +121,7 @@ namespace extemp {
     bool exportLLVMModuleBitcode(void* module, const std::string& filename);
     bool getFunctionVarargsByName(const std::string& fname);
 
+    std::string getProcessTriple();
+
   } // EXTLLVM2
 } // extemp
