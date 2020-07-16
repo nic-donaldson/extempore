@@ -1,3 +1,19 @@
+#include "llvm/Support/Error.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/Value.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Support/TargetSelect.h"
+
+#include "llvm/ExecutionEngine/Orc/LLJIT.h"
+
 #include <EXTLLVM2.h>
 #include <EXTMutex.h>
 #include <UNIV.h>
@@ -65,6 +81,11 @@ namespace GlobalMap {
 
 namespace extemp {
 namespace EXTLLVM2 {
+    static std::unique_ptr<llvm::orc::LLJIT> TheJIT;
+    static std::unique_ptr<llvm::LLVMContext> TheContext;
+    static std::unique_ptr<llvm::Module> TheModule;
+    static std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
+
     void setOptimize(const bool b) {
         DTRACE_PROBE(extempore, setOptimize);
         std::abort();
@@ -76,7 +97,21 @@ namespace EXTLLVM2 {
 
     bool initLLVM() {
         DTRACE_PROBE(extempore, initLLVM);
-        std::abort();
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
+        llvm::InitializeNativeTargetAsmParser();
+
+        TheJIT = std::move(cantFail(llvm::orc::LLJITBuilder().create(), "Create LLJIT"));
+        TheContext = std::make_unique<llvm::LLVMContext>();
+        TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
+        TheModule->setDataLayout(TheJIT->getDataLayout());
+        TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
+
+        TheFPM->add(llvm::createInstructionCombiningPass());
+        TheFPM->add(llvm::createReassociatePass());
+        TheFPM->add(llvm::createGVNPass());
+        TheFPM->add(llvm::createCFGSimplificationPass());
+        TheFPM->doInitialization();
     }
 
     void addGlobalMapping(const char* name, uintptr_t address) {

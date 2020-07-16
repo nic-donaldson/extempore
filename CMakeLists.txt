@@ -307,9 +307,12 @@ endif()
 # cmake .. -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_ENABLE_ZLIB=OFF -DCMAKE_INSTALL_PREFIX=c:/Users/ben/Code/extempore/llvm-3.8.0-release
 
 if(NOT BUILD_LLVM)
-  # add_custom_target(LLVM)
+  set(LLVM_DIR "../../llvm-10.0.0.build/lib/cmake/llvm")
+  find_package(LLVM REQUIRED CONFIG)
+  include_directories(${LLVM_INCLUDE_DIRS})
+  add_definitions(${LLVM_DEFINITIONS})
 else()
-  include(ExternalProject)
+  # include(ExternalProject)
 
   if(PACKAGE)
     # ExternalProject_Add(LLVM
@@ -359,7 +362,7 @@ endif()
 
 # the ordering of these libs matters, especially with the gcc linker.
 # Check the output of "llvm-config --libnames" to be sure
-set(EXT_LLVM_LIBRARIES "LLVMLTO;LLVMObjCARCOpts;LLVMSymbolize;LLVMDebugInfoPDB;LLVMDebugInfoDWARF;LLVMMIRParser;LLVMLibDriver;LLVMOption;LLVMTableGen;LLVMOrcJIT;LLVMPasses;LLVMipo;LLVMVectorize;LLVMLinker;LLVMIRReader;LLVMAsmParser;LLVMX86Disassembler;LLVMX86AsmParser;LLVMX86CodeGen;LLVMSelectionDAG;LLVMAsmPrinter;LLVMX86Desc;LLVMMCDisassembler;LLVMX86Info;LLVMX86AsmPrinter;LLVMX86Utils;LLVMMCJIT;LLVMLineEditor;LLVMDebugInfoCodeView;LLVMInterpreter;LLVMExecutionEngine;LLVMRuntimeDyld;LLVMCodeGen;LLVMTarget;LLVMScalarOpts;LLVMInstCombine;LLVMInstrumentation;LLVMProfileData;LLVMObject;LLVMMCParser;LLVMTransformUtils;LLVMMC;LLVMBitWriter;LLVMBitReader;LLVMAnalysis;LLVMCore;LLVMSupport")
+# set(EXT_LLVM_LIBRARIES "LLVMLTO;LLVMObjCARCOpts;LLVMSymbolize;LLVMDebugInfoPDB;LLVMDebugInfoDWARF;LLVMMIRParser;LLVMLibDriver;LLVMOption;LLVMTableGen;LLVMOrcJIT;LLVMPasses;LLVMipo;LLVMVectorize;LLVMLinker;LLVMIRReader;LLVMAsmParser;LLVMX86Disassembler;LLVMX86AsmParser;LLVMX86CodeGen;LLVMSelectionDAG;LLVMAsmPrinter;LLVMX86Desc;LLVMMCDisassembler;LLVMX86Info;LLVMX86AsmPrinter;LLVMX86Utils;LLVMMCJIT;LLVMLineEditor;LLVMDebugInfoCodeView;LLVMInterpreter;LLVMExecutionEngine;LLVMRuntimeDyld;LLVMCodeGen;LLVMTarget;LLVMScalarOpts;LLVMInstCombine;LLVMInstrumentation;LLVMProfileData;LLVMObject;LLVMMCParser;LLVMTransformUtils;LLVMMC;LLVMBitWriter;LLVMBitReader;LLVMAnalysis;LLVMCore;LLVMSupport")
 # foreach(llvm_lib ${EXT_LLVM_LIBRARIES})
 #   get_filename_component(LLVM_LIB_FULLPATH "${EXT_LLVM_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${llvm_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}" ABSOLUTE)
 #   list(APPEND LLVM_LIBRARIES ${LLVM_LIB_FULLPATH})
@@ -447,6 +450,8 @@ target_link_libraries(extempore
 
 # target_include_directories(extempore PRIVATE ${EXT_LLVM_DIR}/include)
 # target_link_libraries(extempore PRIVATE ${LLVM_LIBRARIES})
+llvm_map_components_to_libnames(llvm_libs analysis core executionengine instcombine object orcjit runtimedyld scalaropts support native)
+target_link_libraries(extempore PRIVATE ${llvm_libs})
 
 # compiler options
 
@@ -472,7 +477,7 @@ if(UNIX)
     PRIVATE -D__STDC_FORMAT_MACROS
     PRIVATE -D__STDC_LIMIT_MACROS)
   target_compile_options(extempore
-    PRIVATE -std=c++11
+    PRIVATE -std=c++17
     PRIVATE -fvisibility-inlines-hidden
     PRIVATE -Wall # TODO put this wherever it belongs, I think just above here ^^^
     PRIVATE -Wextra
@@ -482,7 +487,10 @@ if(UNIX)
     PRIVATE -fno-common
     PRIVATE -Woverloaded-virtual
     # PRIVATE -Wcast-qual
-    PRIVATE -Wno-unused-result)
+    PRIVATE -Wno-unused-result
+    PRIVATE -Wno-unused-function
+    PRIVATE -Wno-unused-parameter
+    )
   target_link_libraries(extempore PRIVATE pthread)
 endif()
 
