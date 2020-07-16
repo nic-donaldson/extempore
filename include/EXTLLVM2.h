@@ -63,7 +63,7 @@ namespace extemp {
       ~MutexGuard();
 
     private:
-      llvm::MutexGuard* _mg;
+        bool _mg;
     };
 
     std::unordered_set<std::string> globalSyms(const std::string& code);
