@@ -81,8 +81,11 @@ static const std::unordered_set<std::string> inlineSyms()
 }
 
 static llvm::Module *jitCompile(std::string asmcode) {
+    std::cout << "asmcode:" << std::endl << asmcode << std::endl;
     const std::string declarations =
         extemp::EXTLLVM2::globalDecls(asmcode, inlineSyms());
+
+    std::cout << "declarations:" << std::endl << declarations << std::endl;
     return EXTLLVM2::doTheThing(declarations, bitcode(), asmcode, inlineDotLLString());
 }
 

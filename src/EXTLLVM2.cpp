@@ -1,6 +1,7 @@
 #include "llvm/Support/Error.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/AsmParser/Parser.h"
+#include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Constants.h"
@@ -175,6 +176,82 @@ namespace EXTLLVM2 {
         return bitcode;
     }
 
+    static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode)
+    {
+        // TODO: don't use cantFail
+        auto maybe(cantFail(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), *TheTSContext->getContext()), "parseBitcodeFile"));
+
+        return maybe;
+    }
+
+    // TODO: idk what to do with this function
+    //       I'll think about it. it's like this just so
+    //       we can have the LLVM code here and not in
+    //       SchemeLLVMFFI
+    llvm::Module* doTheThing(
+        const std::string& declarations,
+        const std::string& bitcode,
+        const std::string& in_asmcode,
+        const std::string& inlineDotLL)
+    {
+        DTRACE_PROBE(extempore, doTheThing);
+
+        std::string asmcode(in_asmcode);
+        std::unique_ptr<llvm::Module> newModule(parseBitcodeFile(bitcode));
+        std::unique_ptr<llvm::ModuleSummaryIndex> msi(cantFail(llvm::getModuleSummaryIndex(llvm::MemoryBufferRef(bitcode, "<string>")), "ModuleSummaryIndex"));
+        llvm::SMDiagnostic pa;
+
+        if (likely(newModule)) {
+            asmcode = inlineDotLL + declarations + asmcode;
+            if (llvm::parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), newModule.get(), msi.get(), pa)) {
+                std::cout << "inlineDotLL:"
+                          << std::endl
+                          << inlineDotLL
+                          << std::endl
+                          << "**** DECL ****"
+                          << std::endl
+                          << declarations
+                          << "**** ENDDECL ****"
+                          << std::endl;
+                newModule.reset();
+            }
+        }
+
+        if (unlikely(!newModule)) {
+            pa.print("LLVM IR", llvm::outs());
+            return nullptr;
+        }
+
+        if (llvm::verifyModule(*newModule)) {
+            std::cout << "Invalid LLVM IR" << std::endl;
+            return nullptr;
+        }
+
+        if (unlikely(!extemp::UNIV::ARCH.empty())) {
+            newModule->setTargetTriple(extemp::UNIV::ARCH);
+        }
+
+        // :(
+        llvm::Module *modulePtr = addModule(std::move(newModule));
+
+        return modulePtr;
+    }
+
+    bool eraseFunctionByName(const std::string& name) {
+        DTRACE_PROBE1(extempore, eraseFunctionByName, name.c_str());
+        
+        // use that jitdylib hack :|
+        // TODO: revisit this with new ORC stuff in LLVM11/12
+        auto& main = TheJIT->getMainJITDylib();
+        auto sym = TheJIT->lookup(name);
+        if (sym) {
+            auto& ES = TheJIT->getExecutionSession();
+            cantFail(main.remove({ES.intern(name)}), "removing something");
+            return true;
+        }
+        return false;
+    }
+
     void setOptimize(const bool b) {
         DTRACE_PROBE(extempore, setOptimize);
         std::abort();
@@ -293,28 +370,9 @@ namespace EXTLLVM2 {
 
 
 
-    static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string& sInlineBitcode) {
-        std::abort();
-    }
-
-    /*static bool parseAssemblyInto(const std::string& asmcode, llvm::Module& M, llvm::SMDiagnostic& pa) {
-        std::abort();
-        }*/
 
 
-    // TODO: idk what to do with this function
-    //       I'll think about it. it's like this just so
-    //       we can have the LLVM code here and not in
-    //       SchemeLLVMFFI
-    llvm::Module* doTheThing(
-        const std::string& declarations,
-        const std::string& bitcode,
-        const std::string& in_asmcode,
-        const std::string& inlineDotLL)
-    {
-        DTRACE_PROBE(extempore, doTheThing);
-        std::abort();
-    }
+
 
     static bool writeBitcodeToFile2(llvm::Module* M, const std::string& filename) {
         std::abort();
@@ -431,8 +489,8 @@ namespace EXTLLVM2 {
     }
 
     bool removeFunctionByName(const std::string& name) {
-        DTRACE_PROBE1(extempore, getFunctionByName, name.c_str());
-        std::abort();
+        DTRACE_PROBE1(extempore, removeFunctionByName, name.c_str());
+        return eraseFunctionByName(name);
     }
 
     bool removeGlobalVarByName(const std::string& name) {
@@ -440,10 +498,7 @@ namespace EXTLLVM2 {
         std::abort();
     }
 
-    bool eraseFunctionByName(const std::string& name) {
-        DTRACE_PROBE1(extempore, eraseFunctionByName, name.c_str());
-        std::abort();
-    }
+
 
     // TODO fix up return type, callers can just cast
     //      for the moment
