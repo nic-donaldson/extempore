@@ -1,6 +1,7 @@
 #include "llvm/Support/Error.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/AsmParser/Parser.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -162,7 +163,16 @@ namespace EXTLLVM2 {
 
     std::string IRToBitcode(const std::string& ir) {
         DTRACE_PROBE(extempore, IRToBitcode);
-        std::abort();
+        std::string bitcode;
+        llvm::SMDiagnostic pa;
+        auto mod(llvm::parseAssemblyString(ir, pa, *TheTSContext->getContext()));
+        if (!mod) {
+            pa.print("IRToBitcode", llvm::outs());
+            std::abort();
+        }
+        llvm::raw_string_ostream bitstream(bitcode);
+        llvm::WriteBitcodeToFile(*mod, bitstream);
+        return bitcode;
     }
 
     void setOptimize(const bool b) {
