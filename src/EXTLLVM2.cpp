@@ -1,5 +1,6 @@
 #include "llvm/Support/Error.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/AsmParser/Parser.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -82,9 +83,87 @@ namespace GlobalMap {
 namespace extemp {
 namespace EXTLLVM2 {
     static std::unique_ptr<llvm::orc::LLJIT> TheJIT;
-    static std::unique_ptr<llvm::LLVMContext> TheContext;
+    static std::unique_ptr<llvm::orc::ThreadSafeContext> TheTSContext;
     static std::unique_ptr<llvm::Module> TheModule;
-    static std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
+    static std::unique_ptr<llvm::legacy::PassManager> ThePM;
+    static bool OPTIMIZE_COMPILES(true);
+
+    bool initLLVM() {
+        DTRACE_PROBE(extempore, initLLVM);
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmPrinter();
+        llvm::InitializeNativeTargetAsmParser();
+
+        TheJIT = std::move(cantFail(llvm::orc::LLJITBuilder().create(), "Create LLJIT"));
+        auto context = std::make_unique<llvm::LLVMContext>();
+        TheTSContext = std::make_unique<llvm::orc::ThreadSafeContext>(std::move(context));
+        TheModule = std::make_unique<llvm::Module>("my cool jit", *TheTSContext->getContext());
+        TheModule->setDataLayout(TheJIT->getDataLayout());
+
+        // TODO: bring back all the passes
+        ThePM = std::make_unique<llvm::legacy::PassManager>();
+        ThePM->add(llvm::createInstructionCombiningPass());
+        ThePM->add(llvm::createReassociatePass());
+        ThePM->add(llvm::createGVNPass());
+        ThePM->add(llvm::createCFGSimplificationPass());
+
+    }
+
+    void addGlobalMapping(const char* name, uintptr_t address) {
+        DTRACE_PROBE(extempore, addGlobalMapping);
+        const llvm::DataLayout& DL = TheJIT->getDataLayout();
+        llvm::orc::MangleAndInterner Mangle(TheJIT->getExecutionSession(), DL);
+
+        // TODO: do we care about any of the JITEvaluatedSymbol flags?
+        auto syms = llvm::orc::absoluteSymbols({{Mangle(name), llvm::JITEvaluatedSymbol(llvm::pointerToJITTargetAddress((void *)address), {})}});
+        llvm::cantFail(TheJIT->getMainJITDylib().define(syms));
+    }
+
+    static void runPassManager(llvm::Module *m) {
+        DTRACE_PROBE(extempore, runPassManager);
+        if (OPTIMIZE_COMPILES) {
+            ThePM->run(*m);
+        }
+        // TODO: do we still need an equivalent of PM_NO ?
+    }
+
+    static llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
+        DTRACE_PROBE(extempore, addModule);
+        llvm::Module *modulePtr = Module.get();
+        runPassManager(modulePtr);
+        // TODO: can we avoid breaking unique_ptr semantics?
+        //       here is where we would add functions and globals
+        //       to a map but maybe we can avoid that
+        cantFail(TheJIT->addIRModule(llvm::orc::ThreadSafeModule(std::move(Module), *TheTSContext)), "addModule definitely cannot fail");
+        return modulePtr;
+    }
+
+    llvm::Module* jitCompile(const std::string& asmcode)
+    {
+        DTRACE_PROBE(extempore, jitCompile);
+
+        llvm::SMDiagnostic pa;
+        std::unique_ptr<llvm::Module> newModule(llvm::parseAssemblyString(asmcode, pa, *TheTSContext->getContext()));
+        if (unlikely(!newModule)) {
+            // std::cout << "**** CODE ****\n" << asmcode << " **** ENCODE ****" <<
+            // std::endl; std::cout << pa.getMessage().str() << std::endl <<
+            // pa.getLineNo() << std::endly;
+            pa.print("LLVM IR", llvm::outs());
+            return nullptr;
+        }
+
+        if (unlikely(!extemp::UNIV::ARCH.empty())) {
+            newModule->setTargetTriple(extemp::UNIV::ARCH);
+        }
+
+        llvm::Module* modulePtr = addModule(std::move(newModule));
+        return modulePtr;
+    }
+
+    std::string IRToBitcode(const std::string& ir) {
+        DTRACE_PROBE(extempore, IRToBitcode);
+        std::abort();
+    }
 
     void setOptimize(const bool b) {
         DTRACE_PROBE(extempore, setOptimize);
@@ -95,46 +174,17 @@ namespace EXTLLVM2 {
         std::abort();
     }
 
-    bool initLLVM() {
-        DTRACE_PROBE(extempore, initLLVM);
-        llvm::InitializeNativeTarget();
-        llvm::InitializeNativeTargetAsmPrinter();
-        llvm::InitializeNativeTargetAsmParser();
-
-        TheJIT = std::move(cantFail(llvm::orc::LLJITBuilder().create(), "Create LLJIT"));
-        TheContext = std::make_unique<llvm::LLVMContext>();
-        TheModule = std::make_unique<llvm::Module>("my cool jit", *TheContext);
-        TheModule->setDataLayout(TheJIT->getDataLayout());
-        TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
-
-        TheFPM->add(llvm::createInstructionCombiningPass());
-        TheFPM->add(llvm::createReassociatePass());
-        TheFPM->add(llvm::createGVNPass());
-        TheFPM->add(llvm::createCFGSimplificationPass());
-        TheFPM->doInitialization();
-    }
-
-    void addGlobalMapping(const char* name, uintptr_t address) {
-        DTRACE_PROBE(extempore, addGlobalMapping);
-        std::abort();
-    }
-
     static uint64_t addGlobalMappingUnderEELock(const char* name, uintptr_t address) {
         std::abort();
     }
 
     void finalize() {
         DTRACE_PROBE(extempore, finalize);
-        std::abort();
     }
 
-    static void runPassManager(llvm::Module *m) {
-        std::abort();
-    }
 
-    static llvm::Module* addModule(std::unique_ptr<llvm::Module> Module) {
-        std::abort();
-    }
+
+
 
     uintptr_t getSymbolAddress(const std::string& name) {
         DTRACE_PROBE1(extempore, getSymbolAddress, name.c_str());
@@ -197,7 +247,9 @@ namespace EXTLLVM2 {
     // shims
     const std::string float_utohexstr(const std::string& floatin) {
         DTRACE_PROBE(extempore, float_utohexstr);
-        std::abort();
+        llvm::APFloat apf(llvm::APFloat::IEEEsingle(), llvm::StringRef(floatin));
+        auto ival(llvm::APInt::doubleToBits(apf.convertToFloat()));
+        return std::string("0x") + llvm::utohexstr(ival.getLimitedValue(), true);
     }
 
     const std::string double_utohexstr(const std::string& floatin) {
@@ -222,10 +274,7 @@ namespace EXTLLVM2 {
         std::abort();
     }
 
-    std::string IRToBitcode(const std::string& ir) {
-        DTRACE_PROBE(extempore, IRToBitcode);
-        std::abort();
-    }
+
 
     long getStructSize(const std::string& struct_type_str) {
         DTRACE_PROBE(extempore, getStructSize);
@@ -345,11 +394,7 @@ namespace EXTLLVM2 {
         return globalDecls(symbols, ignoreSymbols);
     }
 
-    llvm::Module* jitCompile(const std::string& asmcode)
-    {
-        DTRACE_PROBE(extempore, jitCompile);
-        std::abort();
-    }
+
 
     static char tmp_str_a[1024];
     static char tmp_str_b[4096];
