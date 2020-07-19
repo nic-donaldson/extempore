@@ -16,9 +16,10 @@ namespace llvm {
 
 namespace extemp {
 namespace EXTLLVM2 {
+  struct Fn;
 namespace GlobalMap {
   const llvm::GlobalVariable* getGlobalVariable(const std::string& name);
-  const llvm::Function* getFunction(const std::string& name);
+  const Fn* getFunction(const std::string& name);
 }
 }
 }
@@ -109,7 +110,13 @@ namespace extemp {
       EARG val;
     };
 
-    Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args);
+    struct Fn {
+        std::string sym;
+        std::vector<ArgType> args;
+        ArgType ret;
+    };
+
+    Result callCompiled(Fn *func_ptr, unsigned lgth, std::vector<EARG>& args);
     void printAllModules();
     void printLLVMFunction(const std::string& fname);
     void printAllClosures(const std::string& rgx);

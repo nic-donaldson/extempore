@@ -15,6 +15,7 @@
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Support/TargetSelect.h"
 
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #include "llvm/ExecutionEngine/Orc/LLJIT.h"
 
 #include <EXTLLVM2.h>
@@ -51,31 +52,114 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
 
     static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
+    static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
 
     bool haveGlobalValue(const char *Name) {
         return sGlobalMap.count(Name) > 0;
     }
 
+    static ArgType argTypeFromLLVMType(const llvm::Type::TypeID& llvm_type) {
+        switch (llvm_type) {
+        case llvm::Type::IntegerTyID:
+            return ArgType::INT;
+        case llvm::Type::FloatTyID:
+        case llvm::Type::DoubleTyID:
+            return ArgType::DOUBLE;
+        case llvm::Type::PointerTyID:
+            return ArgType::PTR;
+        case llvm::Type::VoidTyID:
+            return ArgType::NOTHING;
+        default:
+            std::cout << "Don't know how to handle arg type" << std::endl;
+            // TODO: not this
+            return ArgType::PTR;
+        }
+    }
+
+    // TODO: can we at least try not to leak memory?
+    static std::unique_ptr<Fn> newFunction(const llvm::Function &function) {
+        auto f = std::make_unique<Fn>();
+
+        std::string str;
+        llvm::raw_string_ostream stream(str);
+        function.printAsOperand(stream, false);
+        f->sym = stream.str().substr(1);
+
+        f->args.reserve(function.arg_size());
+        for (const auto &arg : function.args()) {
+            //arg.getType()->print(llvm::outs());
+            //llvm::outs().write('\n');
+            f->args.push_back(argTypeFromLLVMType(arg.getType()->getTypeID()));
+        }
+        //function.getReturnType()->print(llvm::outs());
+        //llvm::outs().write('\n');
+        f->ret = argTypeFromLLVMType(function.getReturnType()->getTypeID());
+        return f;
+    }
+
+
     static void addFunction(const llvm::Function &function) {
-        std::abort();
+        std::string str;
+        llvm::raw_string_ostream stream(str);
+        function.printAsOperand(stream, false);
+        auto result(sGlobalMap.insert(std::make_pair(stream.str().substr(1), &function)));
+        if (!result.second) {
+            result.first->second = &function;
+        }
+    }
+    
+    static void addFunction2(const llvm::Function &function) {
+        auto f = newFunction(function);
+        sFunctionMap.insert_or_assign(f->sym, std::move(f));
+        addFunction(function);
     }
 
     static void addGlobal(const llvm::GlobalVariable &global) {
-        std::abort();
+        std::string str;
+        llvm::raw_string_ostream stream(str);
+        global.printAsOperand(stream, false);
+        auto result(sGlobalMap.insert(std::make_pair(stream.str().substr(1), &global)));
+        if (!result.second) {
+            result.first->second = &global;
+        }
     }
 
-    const llvm::GlobalValue *getGlobalValue(const std::string& name) {
-        std::abort();
-    }
+
 
     const llvm::GlobalVariable *getGlobalVariable(const std::string& name) {
         DTRACE_PROBE1(extempore, getGlobalVariable, name.c_str());
         std::abort();
     }
 
-    const llvm::Function *getFunction(const std::string& name) {
+    const llvm::GlobalValue *getGlobalValue(const std::string& name) {
+        DTRACE_PROBE1(extempore, getGlobalValue, name.c_str());
+        auto iter(sGlobalMap.find(name));
+        if (iter != sGlobalMap.end()) {
+            return iter->second;
+        }
+        DTRACE_PROBE(extempore, getGlobalValueNull);
+        return nullptr;
+    }
+
+    const llvm::Function *getFunctionOld(const std::string& name) {
         DTRACE_PROBE1(extempore, getFunction, name.c_str());
-        std::abort();
+        auto val(getGlobalValue(name));
+        if (likely(val)) {
+            return llvm::dyn_cast<llvm::Function>(val);
+        }
+        DTRACE_PROBE(extempore, getFunctionNull);
+        return nullptr;
+    }
+
+    // TODO: use a shared_ptr?
+    const Fn* getFunction(const std::string& name) {
+        DTRACE_PROBE1(extempore, getFunction, name.c_str());
+        auto iter(sFunctionMap.find(name));
+        if (iter != sFunctionMap.end()) {
+            // TODO: this is bad
+            return iter->second.get();
+        }
+        return nullptr;
     }
 
 } // namespace GlobalMap
@@ -96,7 +180,13 @@ namespace EXTLLVM2 {
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
 
-        TheJIT = std::move(cantFail(llvm::orc::LLJITBuilder().create(), "Create LLJIT"));
+        TheJIT = cantFail(llvm::orc::LLJITBuilder().create(), "Create LLJIT");
+
+        // add process symbols (sorta)
+        // TODO: why does this not work? :(
+        auto dlsrg = llvm::cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(TheJIT->getDataLayout().getGlobalPrefix()), "DynamicLibrarySearchGenerator");
+        TheJIT->getMainJITDylib().addGenerator(std::move(dlsrg));
+
         auto context = std::make_unique<llvm::LLVMContext>();
         TheTSContext = std::make_unique<llvm::orc::ThreadSafeContext>(std::move(context));
         TheModule = std::make_unique<llvm::Module>("my cool jit", *TheTSContext->getContext());
@@ -109,6 +199,8 @@ namespace EXTLLVM2 {
         ThePM->add(llvm::createGVNPass());
         ThePM->add(llvm::createCFGSimplificationPass());
 
+        // TODO: this
+        return true;
     }
 
     void addGlobalMapping(const char* name, uintptr_t address) {
@@ -133,10 +225,27 @@ namespace EXTLLVM2 {
         DTRACE_PROBE(extempore, addModule);
         llvm::Module *modulePtr = Module.get();
         runPassManager(modulePtr);
-        // TODO: can we avoid breaking unique_ptr semantics?
-        //       here is where we would add functions and globals
-        //       to a map but maybe we can avoid that
+
+        if (modulePtr) {
+            for (const auto& function : modulePtr->getFunctionList()) {
+                GlobalMap::addFunction2(function);
+            }
+            // for (const auto& global : modulePtr->getGlobalList()) {
+            //     GlobalMap::addGlobal(global);
+            // }
+        }
+
+
         cantFail(TheJIT->addIRModule(llvm::orc::ThreadSafeModule(std::move(Module), *TheTSContext)), "addModule definitely cannot fail");
+        if (modulePtr) {
+            // for (const auto& function : modulePtr->getFunctionList()) {
+            //     GlobalMap::addFunction(function);
+            // }
+            for (const auto& global : modulePtr->getGlobalList()) {
+                GlobalMap::addGlobal(global);
+            }
+        }
+        // todo: bring back `Modules`?
         return modulePtr;
     }
 
@@ -219,6 +328,7 @@ namespace EXTLLVM2 {
 
         if (unlikely(!newModule)) {
             pa.print("LLVM IR", llvm::outs());
+            std::abort();
             return nullptr;
         }
 
@@ -280,12 +390,25 @@ namespace EXTLLVM2 {
 
     uintptr_t getFunctionAddress(const std::string& name) {
         DTRACE_PROBE1(extempore, getFunctionAddress, name);
-        std::abort();
+        auto sym = TheJIT->lookup(name);
+        if (sym) {
+            return static_cast<uintptr_t>(sym.get().getAddress());
+        } else {
+            TheJIT->getMainJITDylib().dump(llvm::outs());
+            std::cout << ">:(" << std::endl;
+            std::abort();
+        }
     }
 
     void* getPointerToGlobalIfAvailable(const std::string& name) {
+        //TODO: is this what this function is meant to do??
         DTRACE_PROBE1(extempore, getPointerToGlobalIfAvailable, name.c_str());
-        std::abort();
+        auto sym = TheJIT->lookup(name);
+        if (sym) {
+            return reinterpret_cast<void *>(sym.get().getAddress());
+        } else {
+            return nullptr;
+        }
     }
 
     static llvm::Function* FindFunctionNamed(const std::string& name) {
@@ -389,7 +512,16 @@ namespace EXTLLVM2 {
     }
 
     static std::string sanitizeType(llvm::Type *Type) {
-        std::abort();
+        DTRACE_PROBE(extempore, sanitizeType);
+        std::string type;
+        llvm::raw_string_ostream typeStream(type);
+        Type->print(typeStream);
+        auto str(typeStream.str());
+        std::string::size_type pos(str.find('='));
+        if (pos != std::string::npos) {
+            str.erase(pos - 1);
+        }
+        return str;
     }
 
     // match @symbols @like @this_123
@@ -419,8 +551,46 @@ namespace EXTLLVM2 {
     }
 
     std::string globalDeclaration(const std::string& sym) {
-        DTRACE_PROBE(extempore, globalDeclaration);
-        std::abort();
+        // TODO: this will need to handle syms in the process too
+        //       or alternatively, throw them on some list when
+        //       bind-ext-val gets called?
+        DTRACE_PROBE1(extempore, globalDeclaration, sym.c_str());
+        const llvm::Value* gv = GlobalMap::getGlobalValue(sym.c_str());
+
+        if (!gv) {
+            return "";
+        }
+
+        std::stringstream ss;
+        const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
+        if (func) {
+            ss << "declare "
+               << sanitizeType(func->getReturnType())
+               << " @" << sym << " (";
+
+            bool first(true);
+            for (const auto& arg : func->args()) {
+                if (!first) {
+                    ss << ", ";
+                } else {
+                    first = false;
+                }
+                ss << sanitizeType(arg.getType());
+            }
+
+            if (func->isVarArg()) {
+                ss << ", ...";
+            }
+            ss << ")\n";
+        } else {
+            auto str(sanitizeType(gv->getType()));
+            ss << '@'
+               << sym
+               << " = external global "
+               << str.substr(0, str.length() - 1)
+               << "\n";
+        }
+        return ss.str();
     }
     
     std::string globalDecls(
@@ -507,9 +677,21 @@ namespace EXTLLVM2 {
         std::abort();
     }
 
-    Result callCompiled(void *func_ptr, unsigned lgth, std::vector<EARG>& args) {
+    Result callCompiled(Fn *func_ptr, unsigned lgth, std::vector<EARG>& args) {
         DTRACE_PROBE2(extempore, callCompiled, func_ptr, lgth);
-        std::abort();
+        std::cout << "someone is looking for " << func_ptr->sym << std::endl;
+
+        if (func_ptr->args.size() == 0 && func_ptr->ret == ArgType::NOTHING) {
+            void (*f)() = (void (*)())getFunctionAddress(func_ptr->sym);
+            f();
+        } else {
+            std::cout << "nope not supported" << std::endl;
+            std::abort();
+        }
+        std::cout << "we lived!" << std::endl;
+        EARG res;
+        res.tag = ArgType::NOTHING;
+        return {ResultType::GOOD, res};
     }
 
     void printAllModules() {

@@ -110,9 +110,11 @@ pointer get_function(scheme* Scheme, pointer Args)
 {
     auto func(extemp::EXTLLVM2::GlobalMap::getFunction(string_value(pair_car(Args))));
     if (!func) {
+        std::cout << "it seems like this is happening???" << std::endl;
+        printf("%p\n", (void *)func);
         return Scheme->F;
     }
-    void* fptr = (void *)const_cast<llvm::Function*>(func);
+    void* fptr = (void *)const_cast<extemp::EXTLLVM2::Fn*>(func);
     return mk_cptr(Scheme, fptr);
 }
 
@@ -274,7 +276,7 @@ pointer call_compiled(scheme* Scheme, pointer Args)
 #ifdef LLVM_EE_LOCK
     extemp::EXTLLVM2::MutexGuard locked;
 #endif
-    void* func_ptr = cptr_value(pair_car(Args));
+    auto func_ptr = (extemp::EXTLLVM2::Fn *)cptr_value(pair_car(Args));
     Args = pair_cdr(Args);
     unsigned lgth = list_length(Scheme, Args);
 
