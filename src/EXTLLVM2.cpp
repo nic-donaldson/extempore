@@ -52,7 +52,33 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
 
     static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
+    static std::unordered_map<std::string, llvm::Type *> sHMM;
+    static std::unordered_map<std::string, llvm::FunctionType *> sHMM2;
     static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
+
+    static void addHMM(const llvm::GlobalVariable& gv) {
+        sHMM.insert_or_assign(gv.getName(), gv.getType());
+    }
+
+    static void addHMM2(const llvm::Function& f) {
+        sHMM2.insert_or_assign(f.getName(), f.getFunctionType());
+    }
+
+    static llvm::Type* getHMM(const std::string& name) {
+        auto iter(sHMM.find(name));
+        if (iter != sHMM.end()) {
+            return iter->second;
+        }
+        return nullptr;
+    }
+
+    static llvm::FunctionType* getHMM2(const std::string& name) {
+        auto iter(sHMM2.find(name));
+        if (iter != sHMM2.end()) {
+            return iter->second;
+        }
+        return nullptr;
+    }
 
     bool haveGlobalValue(const char *Name) {
         return sGlobalMap.count(Name) > 0;
@@ -123,8 +149,6 @@ namespace GlobalMap {
             result.first->second = &global;
         }
     }
-
-
 
     const llvm::GlobalVariable *getGlobalVariable(const std::string& name) {
         DTRACE_PROBE1(extempore, getGlobalVariable, name.c_str());
@@ -229,10 +253,12 @@ namespace EXTLLVM2 {
         if (modulePtr) {
             for (const auto& function : modulePtr->getFunctionList()) {
                 GlobalMap::addFunction2(function);
+                GlobalMap::addHMM2(function);
             }
-            // for (const auto& global : modulePtr->getGlobalList()) {
-            //     GlobalMap::addGlobal(global);
-            // }
+            for (const auto& global : modulePtr->getGlobalList()) {
+                GlobalMap::addGlobal(global);
+                GlobalMap::addHMM(global);
+            }
         }
 
 
@@ -241,9 +267,9 @@ namespace EXTLLVM2 {
             // for (const auto& function : modulePtr->getFunctionList()) {
             //     GlobalMap::addFunction(function);
             // }
-            for (const auto& global : modulePtr->getGlobalList()) {
-                GlobalMap::addGlobal(global);
-            }
+            // for (const auto& global : modulePtr->getGlobalList()) {
+            //     GlobalMap::addGlobal(global);
+            // }
         }
         // todo: bring back `Modules`?
         return modulePtr;
@@ -317,10 +343,12 @@ namespace EXTLLVM2 {
                           << std::endl
                           << inlineDotLL
                           << std::endl
-                          << "**** DECL ****"
+                          << "declarations:"
                           << std::endl
                           << declarations
-                          << "**** ENDDECL ****"
+                          << "asmcode:"
+                          << std::endl
+                          << asmcode
                           << std::endl;
                 newModule.reset();
             }
@@ -521,6 +549,22 @@ namespace EXTLLVM2 {
         if (pos != std::string::npos) {
             str.erase(pos - 1);
         }
+
+        if (str == "%mzone.18*") {
+            asm("nop");
+        }
+
+        if (str.substr(0, 6) == "%mzone") {
+            asm("nop");
+        }
+
+        // if type ends in .XX* where X is a number we
+        // should strip the numbers, let's try this:
+        std::string::size_type start(str.find('.'));
+        std::string::size_type end(str.find('*'));
+        if (start != std::string::npos && end == str.length() - 1) {
+            str.erase(start, (end - start));
+        }
         return str;
     }
 
@@ -551,10 +595,50 @@ namespace EXTLLVM2 {
     }
 
     std::string globalDeclaration(const std::string& sym) {
+        if (sym == "llvm_zone_destroy") {
+            asm("nop");
+        }
         // TODO: this will need to handle syms in the process too
         //       or alternatively, throw them on some list when
         //       bind-ext-val gets called?
         DTRACE_PROBE1(extempore, globalDeclaration, sym.c_str());
+
+        llvm::Type* t = GlobalMap::getHMM(sym);
+        if (t) {
+            auto str(sanitizeType(t));
+            std::stringstream ss;
+            ss << '@'
+               << sym
+               << " = external global "
+               << str.substr(0, str.length() - 1)
+               << "\n";
+            return ss.str();
+        }
+
+        llvm::FunctionType* ft = GlobalMap::getHMM2(sym);
+        if (ft) {
+            std::stringstream ss;
+            ss << "declare "
+               << sanitizeType(ft->getReturnType())
+               << " @" << sym << " (";
+
+            bool first(true);
+            for (const auto& arg : ft->params()) {
+                if (!first) {
+                    ss << ", ";
+                } else {
+                    first = false;
+                }
+                ss << sanitizeType(arg);
+            }
+
+            if (ft->isVarArg()) {
+                ss << ", ...";
+            }
+            ss << ")\n";
+            return ss.str();
+        }
+
         const llvm::Value* gv = GlobalMap::getGlobalValue(sym.c_str());
 
         if (!gv) {
