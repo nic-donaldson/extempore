@@ -4102,7 +4102,7 @@
 (define impc:ir:function-fixup-args
   (lambda (name)
     (cond
-      ((string=? name "memcpy") ", i32 1, i1 0")
+      ((string=? name "memcpy") ", i1 0")
       (else ""))))
 
 (define impc:ir:compiler:native-call

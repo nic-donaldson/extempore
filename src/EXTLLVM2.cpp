@@ -9,6 +9,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/TypeFinder.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
@@ -55,6 +56,7 @@ namespace GlobalMap {
     static std::unordered_map<std::string, llvm::Type *> sHMM;
     static std::unordered_map<std::string, llvm::FunctionType *> sHMM2;
     static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
+    static std::unordered_map<std::string, std::string> sTypeMap;
 
     static void addHMM(const llvm::GlobalVariable& gv) {
         sHMM.insert_or_assign(gv.getName(), gv.getType());
@@ -319,6 +321,24 @@ namespace EXTLLVM2 {
         return maybe;
     }
 
+        // match @symbols @like @this_123
+    static const std::regex globalSymRegex(
+      "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+      std::regex::optimize);
+
+    // match "define @sym"
+    static const std::regex defineSymRegex(
+      "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+      std::regex::optimize | std::regex::ECMAScript);
+
+    static void insertMatchingSymbols(
+        const std::string &code, const std::regex &regex,
+        std::unordered_set<std::string> &containingSet) {
+      std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
+                std::sregex_token_iterator(),
+                std::inserter(containingSet, containingSet.begin()));
+    }
+
     // TODO: idk what to do with this function
     //       I'll think about it. it's like this just so
     //       we can have the LLVM code here and not in
@@ -331,17 +351,54 @@ namespace EXTLLVM2 {
     {
         DTRACE_PROBE(extempore, doTheThing);
 
+        if (in_asmcode.find("%String") != std::string::npos) {
+            asm("nop");
+        }
+
+        // TODO: not this
+        //       anything but this
+        std::unordered_set<std::string> defines;
+        insertMatchingSymbols(in_asmcode, defineSymRegex, defines);
+        for (const auto& sym : defines) {
+            eraseFunctionByName(sym);
+        }
+        //
+
+        // TODO: :(
+        std::stringstream typess;
+        for (const auto& pair : GlobalMap::sTypeMap) {
+            typess << pair.second;
+            typess << std::endl;
+        }
+        const std::string types = typess.str();
+        //
+
+        // TODO: another gross hack
+        // also TODO: learn how to use std::regex and not this capture group thing
+        static std::regex literallyJustATypeDefinition("(%.*? = type.*$)");
+        std::unordered_set<std::string> typeDefines;
+        insertMatchingSymbols(in_asmcode, literallyJustATypeDefinition, typeDefines);
+        for (const auto& sym : typeDefines) {
+            auto eq_index = sym.find("=");
+            GlobalMap::sTypeMap.insert_or_assign(sym.substr(0, eq_index - 1), sym);
+        }
+        //
+
         std::string asmcode(in_asmcode);
         std::unique_ptr<llvm::Module> newModule(parseBitcodeFile(bitcode));
         std::unique_ptr<llvm::ModuleSummaryIndex> msi(cantFail(llvm::getModuleSummaryIndex(llvm::MemoryBufferRef(bitcode, "<string>")), "ModuleSummaryIndex"));
         llvm::SMDiagnostic pa;
 
         if (likely(newModule)) {
-            asmcode = inlineDotLL + declarations + asmcode;
+            asmcode = inlineDotLL + types + declarations + asmcode;
             if (llvm::parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), newModule.get(), msi.get(), pa)) {
                 std::cout << "inlineDotLL:"
                           << std::endl
                           << inlineDotLL
+                          << std::endl
+                          << "types:"
+                          << std::endl
+                          << types
                           << std::endl
                           << "declarations:"
                           << std::endl
@@ -377,6 +434,9 @@ namespace EXTLLVM2 {
 
     bool eraseFunctionByName(const std::string& name) {
         DTRACE_PROBE1(extempore, eraseFunctionByName, name.c_str());
+        if (name == "xtlang_expression_adhoc_W2k4Kl0_setter") {
+            asm("nop");
+        }
         
         // use that jitdylib hack :|
         // TODO: revisit this with new ORC stuff in LLVM11/12
@@ -423,9 +483,13 @@ namespace EXTLLVM2 {
             return static_cast<uintptr_t>(sym.get().getAddress());
         } else {
             TheJIT->getMainJITDylib().dump(llvm::outs());
-            std::cout << ">:(" << std::endl;
-            std::abort();
+            for (int i = 0; i < 20; i++) {
+                std::cout << ">:(" << std::endl;
+            }
+            // not calling abort in case this is desired behaviour
+            // std::abort();
         }
+        return 0;
     }
 
     void* getPointerToGlobalIfAvailable(const std::string& name) {
@@ -562,29 +626,17 @@ namespace EXTLLVM2 {
         // should strip the numbers, let's try this:
         std::string::size_type start(str.find('.'));
         std::string::size_type end(str.find('*'));
-        if (start != std::string::npos && end == str.length() - 1) {
-            str.erase(start, (end - start));
+        if (start != std::string::npos) {
+            if (end == str.length() - 1) {
+                str.erase(start, (end - start));
+            } else {
+                str.erase(start, str.length() - start);
+            }
         }
         return str;
     }
 
-    // match @symbols @like @this_123
-    static const std::regex globalSymRegex(
-      "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
-      std::regex::optimize);
 
-    // match "define @sym"
-    static const std::regex defineSymRegex(
-      "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
-      std::regex::optimize | std::regex::ECMAScript);
-
-    static void insertMatchingSymbols(
-        const std::string &code, const std::regex &regex,
-        std::unordered_set<std::string> &containingSet) {
-      std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
-                std::sregex_token_iterator(),
-                std::inserter(containingSet, containingSet.begin()));
-    }
 
     std::unordered_set<std::string> globalSyms(const std::string& code)
     {
@@ -595,7 +647,7 @@ namespace EXTLLVM2 {
     }
 
     std::string globalDeclaration(const std::string& sym) {
-        if (sym == "llvm_zone_destroy") {
+        if (sym == "String_val_adhoc_W1N0cmluZyxpNjQsaTgqXQ__992") {
             asm("nop");
         }
         // TODO: this will need to handle syms in the process too
@@ -744,6 +796,9 @@ namespace EXTLLVM2 {
 
     bool removeFunctionByName(const std::string& name) {
         DTRACE_PROBE1(extempore, removeFunctionByName, name.c_str());
+        if (name == "xtlang_expression_adhoc_W2k4Kl0_setter") {
+            asm("nop");
+        }
         return eraseFunctionByName(name);
     }
 
