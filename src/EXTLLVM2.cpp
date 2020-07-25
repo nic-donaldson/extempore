@@ -34,7 +34,9 @@
 
 #ifndef _WIN32
 #include <dlfcn.h>
-// TODO: remove this once done with tracing
+#endif
+
+#ifdef TRACING
 #include <sys/sdt.h>
 #else
 #define DTRACE_PROBE(a, b) do {} while(0)
