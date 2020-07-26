@@ -52,3 +52,19 @@ jobs:
         run: |
           cd llvm-10.0.0.build
           cmake --install .
+
+      - uses: actions/checkout@v2
+        with:
+          path: extempore
+
+      - name: configure extempore
+        run: |
+          cd extempore
+          mkdir build
+          cd build
+          cmake -DASSETS=ON -DLLVM_DIR=~/llvm-10.0.0.install/lib/cmake/llvm/ ..
+
+      - name: build extempore
+        run: |
+          cd extempore/build
+          cmake --build . -j2 --config Release
