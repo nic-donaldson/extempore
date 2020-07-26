@@ -35,3 +35,8 @@ jobs:
         run: |
           cd llvm-10.0.0.build
           make -j$(nproc)
+
+      - name: install
+        run: |
+          cd llvm-10.0.0.build
+          make -j$(nproc) install
