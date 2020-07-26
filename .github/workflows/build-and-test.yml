@@ -12,6 +12,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - windows-latest
+          - macos-latest
 
     steps:
       - if: contains(matrix.os, 'ubuntu')
@@ -20,30 +22,35 @@ jobs:
           sudo apt update
           sudo apt-get install libasound2-dev xorg-dev libglu1-mesa-dev
 
-      - name: download and unpack
-        run: |
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
-          tar xJf llvm-10.0.0.src.tar.xz
-
-      - name: configure
-        run: |
-          mkdir llvm-10.0.0.{build,install}
-          cd llvm-10.0.0.build
-          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
-
-      - name: build
-        run: |
-          cd llvm-10.0.0.build
-          make -j$(nproc)
-
-      - name: install
-        run: |
-          cd llvm-10.0.0.build
-          make -j$(nproc) install
-
-      - name: cache
+      - name: cache llvm
+        id: llvm-cache
         uses: actions/cache@v2
         with:
           path: |
             ./llvm-10.0.0.install
-          key: ${{ runner.os }}-${{ hashFiles('./llvm-10.0.0.install') }}
+          key: ${{ matrix.os }}-llvm10.0.0
+
+      - name: download and unpack llvm
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
+          tar xJf llvm-10.0.0.src.tar.xz
+
+      - name: configure llvm
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir llvm-10.0.0.{build,install}
+          cd llvm-10.0.0.build
+          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
+
+      - name: build llvm
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          cd llvm-10.0.0.build
+          cmake --build . -j$(nproc)
+
+      - name: install llvm
+        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          cd llvm-10.0.0.build
+          cmake --install .
