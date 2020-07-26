@@ -44,15 +44,8 @@ if(PACKAGE)
 endif()
 
 # LLVM
-
-if(DEFINED ENV{EXT_LLVM_DIR})
-  # if there's an EXT_LLVM_DIR environment variable, use that
-  set(EXT_LLVM_DIR $ENV{EXT_LLVM_DIR})
-  set(BUILD_LLVM OFF)
-else()
-  set(EXT_LLVM_DIR ${CMAKE_SOURCE_DIR}/llvm)
-  set(BUILD_LLVM ON)
-endif()
+# LLVM_DIR directory is <some_path>/lib/cmake/llvm
+# as per LLVM docs
 
 # building external shared library dependencies
 
@@ -299,74 +292,13 @@ if(PACKAGE)
     PRIVATE -mtune=generic)
 endif()
 
-##############
-# LLVM 3.8.0 #
-##############
+###############
+# LLVM 10.0.0 #
+###############
+find_package(LLVM REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS}) # should we do this only for the main extempore target?
+add_definitions(${LLVM_DEFINITIONS})
 
-# if you need to build LLVM by hand, the command will be something like
-# cmake .. -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_ENABLE_ZLIB=OFF -DCMAKE_INSTALL_PREFIX=c:/Users/ben/Code/extempore/llvm-3.8.0-release
-
-if(NOT BUILD_LLVM)
-  set(LLVM_DIR "../../llvm-10.0.0.build/lib/cmake/llvm")
-  find_package(LLVM REQUIRED CONFIG)
-  include_directories(${LLVM_INCLUDE_DIRS})
-  add_definitions(${LLVM_DEFINITIONS})
-else()
-  # include(ExternalProject)
-
-  if(PACKAGE)
-    # ExternalProject_Add(LLVM
-    #   PREFIX llvm
-    # 	  URL http://extempore.moso.com.au/extras/llvm-3.8.0.src-patched-for-extempore.tar.xz
-    #   URL_MD5 600ee9a94d2e104f53be739568f3508e
-    #   CMAKE_ARGS
-    #   -DLLVM_TARGETS_TO_BUILD=X86
-    #   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    #   -DLLVM_ENABLE_TERMINFO=OFF
-    #   -DLLVM_ENABLE_ZLIB=OFF
-    #   -DLLVM_INCLUDE_TOOLS=ON
-    #   -DLLVM_BUILD_TOOLS=ON
-    #   -DLLVM_INCLUDE_UTILS=OFF
-    #   -DLLVM_BUILD_RUNTIME=OFF
-    #   -DLLVM_INCLUDE_EXAMPLES=OFF
-    #   -DLLVM_INCLUDE_TESTS=OFF
-    #   -DLLVM_INCLUDE_GO_TESTS=OFF
-    #   -DLLVM_INCLUDE_GO_TESTS=OFF
-    #   -DLLVM_INCLUDE_DOCS=OFF
-    #   -DCMAKE_C_FLAGS=${EXT_DEPS_C_FLAGS}
-    #   -DCMAKE_CXX_FLAGS=${EXT_DEPS_CXX_FLAGS}
-    #   -DCMAKE_INSTALL_PREFIX=${EXT_LLVM_DIR})
-  else()
-    # ExternalProject_Add(LLVM
-    #   PREFIX llvm
-    # 	  URL http://extempore.moso.com.au/extras/llvm-3.8.0.src-patched-for-extempore.tar.xz
-    #   URL_MD5 600ee9a94d2e104f53be739568f3508e
-    #   CMAKE_ARGS
-    #   -DLLVM_TARGETS_TO_BUILD=X86
-    #   -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    #   -DLLVM_ENABLE_TERMINFO=OFF
-    #   -DLLVM_ENABLE_ZLIB=OFF
-    #   -DLLVM_INCLUDE_TOOLS=ON
-    #   -DLLVM_BUILD_TOOLS=ON
-    #   -DLLVM_INCLUDE_UTILS=OFF
-    #   -DLLVM_BUILD_RUNTIME=OFF
-    #   -DLLVM_INCLUDE_EXAMPLES=OFF
-    #   -DLLVM_INCLUDE_TESTS=OFF
-    #   -DLLVM_INCLUDE_GO_TESTS=OFF
-    #   -DLLVM_INCLUDE_GO_TESTS=OFF
-    #   -DLLVM_INCLUDE_DOCS=OFF
-    #   -DCMAKE_INSTALL_PREFIX=${EXT_LLVM_DIR})
-  endif()
-  # ExternalProject_Add_StepTargets(LLVM install)
-endif()
-
-# the ordering of these libs matters, especially with the gcc linker.
-# Check the output of "llvm-config --libnames" to be sure
-# set(EXT_LLVM_LIBRARIES "LLVMLTO;LLVMObjCARCOpts;LLVMSymbolize;LLVMDebugInfoPDB;LLVMDebugInfoDWARF;LLVMMIRParser;LLVMLibDriver;LLVMOption;LLVMTableGen;LLVMOrcJIT;LLVMPasses;LLVMipo;LLVMVectorize;LLVMLinker;LLVMIRReader;LLVMAsmParser;LLVMX86Disassembler;LLVMX86AsmParser;LLVMX86CodeGen;LLVMSelectionDAG;LLVMAsmPrinter;LLVMX86Desc;LLVMMCDisassembler;LLVMX86Info;LLVMX86AsmPrinter;LLVMX86Utils;LLVMMCJIT;LLVMLineEditor;LLVMDebugInfoCodeView;LLVMInterpreter;LLVMExecutionEngine;LLVMRuntimeDyld;LLVMCodeGen;LLVMTarget;LLVMScalarOpts;LLVMInstCombine;LLVMInstrumentation;LLVMProfileData;LLVMObject;LLVMMCParser;LLVMTransformUtils;LLVMMC;LLVMBitWriter;LLVMBitReader;LLVMAnalysis;LLVMCore;LLVMSupport")
-# foreach(llvm_lib ${EXT_LLVM_LIBRARIES})
-#   get_filename_component(LLVM_LIB_FULLPATH "${EXT_LLVM_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${llvm_lib}${CMAKE_STATIC_LIBRARY_SUFFIX}" ABSOLUTE)
-#   list(APPEND LLVM_LIBRARIES ${LLVM_LIB_FULLPATH})
-# endforeach()
 
 #############
 # extempore #
@@ -427,14 +359,6 @@ endif()
 
 add_dependencies(extempore pcre portaudio)
 
-if(BUILD_LLVM)
-  if(WIN32)
-    add_dependencies(extempore LLVM-install)
-  else()
-    # add_dependencies(extempore LLVM)
-  endif()
-endif()
-
 if(WIN32)
   target_include_directories(extempore PRIVATE src/networking-ts-impl/include)
 endif()
@@ -448,8 +372,6 @@ target_link_libraries(extempore
   PRIVATE pcre
   PRIVATE portaudio)
 
-# target_include_directories(extempore PRIVATE ${EXT_LLVM_DIR}/include)
-# target_link_libraries(extempore PRIVATE ${LLVM_LIBRARIES})
 llvm_map_components_to_libnames(llvm_libs analysis core executionengine instcombine object orcjit runtimedyld scalaropts support native)
 target_link_libraries(extempore PRIVATE ${llvm_libs})
 
@@ -1130,16 +1052,6 @@ if(BUILD_TESTS)
   extempore_add_example_as_test(examples/external/xtmrender2.xtm 10 examples-graphics)
   extempore_add_example_as_test(examples/external/xtmrender3.xtm 10 examples-graphics)
   extempore_add_example_as_test(examples/external/xtmrender4.xtm 10 examples-graphics)
-
-  # REPL tests (i.e. stuff in src/)
-  # add_executable ( test_repl_jit tests/repl/jit.cpp src/EXTLLVMGlobalMap.cpp src/LLVMIRCompilation.cpp )
-  # target_include_directories ( test_repl_jit PRIVATE include PRIVATE ${EXT_LLVM_DIR}/include )
-  # target_link_libraries( test_repl_jit PRIVATE ${LLVM_LIBRARIES} )
-  # target_link_libraries( test_repl_jit PRIVATE pthread )
-  # target_link_libraries( test_repl_jit PRIVATE dl )
-  # add_test ( NAME repl_jit
-  #   COMMAND test_repl_jit
-  #   LABEL repl )
 
 endif(BUILD_TESTS)
 
