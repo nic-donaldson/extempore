@@ -62,7 +62,7 @@ jobs:
           cd extempore
           mkdir build
           cd build
-          cmake -DASSETS=ON -DLLVM_DIR=../../llvm-10.0.0.install/lib/cmake/llvm/ ..
+          cmake -DASSETS=ON -DLLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.0.install/lib/cmake/llvm/ ..
 
       - name: build extempore
         run: |
