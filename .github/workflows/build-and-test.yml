@@ -67,4 +67,4 @@ jobs:
       - name: build extempore
         run: |
           cd extempore/build
-          cmake --build . -j2 --config Release
+          cmake --build . -j2 --config Release --target extempore
