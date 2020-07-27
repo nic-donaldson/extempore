@@ -26,7 +26,7 @@ jobs:
         with:
           path: |
             ./llvm-10.0.0.install
-          key: ${{ matrix.os }}-llvm10.0.0
+          key: ${{ matrix.os }}-llvm10.0.0-1
 
       - name: download and unpack llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
@@ -39,19 +39,22 @@ jobs:
         run: |
           mkdir llvm-10.0.0.{build,install}
           cd llvm-10.0.0.build
-          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
+          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=ON -DLLVM_BUILD_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
 
       - name: build llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-10.0.0.build
           cmake --build . -j$(nproc)
+          make llvm-as
 
       - name: install llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-10.0.0.build
           cmake --install .
+          mkdir ../llvm-10.0.0.install/bin
+          cp bin/llvm-as ../llvm-10.0.0.install/bin/
 
       - uses: actions/checkout@v2
         with:
