@@ -295,7 +295,7 @@ endif()
 ###############
 # LLVM 10.0.0 #
 ###############
-find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH)
 include_directories(${LLVM_INCLUDE_DIRS}) # should we do this only for the main extempore target?
 add_definitions(${LLVM_DEFINITIONS})
 
@@ -655,7 +655,7 @@ if(UNIX)
 
     add_custom_target(external_shlibs_audio
       COMMENT "moving shared libs into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM sndfile kiss_fft portmidi rtmidi
+      DEPENDS sndfile kiss_fft portmidi rtmidi
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy libkiss_fft${CMAKE_SHARED_LIBRARY_SUFFIX} ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy libportmidi${CMAKE_SHARED_LIBRARY_SUFFIX} ${EXT_PLATFORM_SHLIBS_DIR}
@@ -741,7 +741,7 @@ if(UNIX)
 
     add_custom_target(external_shlibs_graphics
       COMMENT "moving shared libs into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM assimp glfw3 stb_image nanovg
+      DEPENDS assimp glfw3 stb_image nanovg
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy libassimp${CMAKE_SHARED_LIBRARY_SUFFIX} ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy libglfw${CMAKE_SHARED_LIBRARY_SUFFIX} ${EXT_PLATFORM_SHLIBS_DIR}
@@ -879,7 +879,7 @@ if(WIN32)
 
     add_custom_target(external_shlibs_audio
       COMMENT "moving .dll and .lib files into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM sndfile kiss_fft portmidi rtmidi
+      DEPENDS sndfile kiss_fft portmidi rtmidi
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy bin/sndfile.dll ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy lib/kiss_fft.dll ${EXT_PLATFORM_SHLIBS_DIR}
@@ -894,7 +894,7 @@ if(WIN32)
 
     add_custom_target(external_shlibs_graphics
       COMMENT "moving .dll and .lib files into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM assimp glfw3 stb_image nanovg
+      DEPENDS assimp glfw3 stb_image nanovg
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy bin/assimp-vc130-mt.dll ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy lib/assimp-vc130-mt.lib ${EXT_PLATFORM_SHLIBS_DIR}
@@ -919,7 +919,7 @@ if(WIN32)
 
     add_custom_target(external_shlibs_audio
       COMMENT "moving .dll and .lib files into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM sndfile kiss_fft portmidi rtmidi
+      DEPENDS sndfile kiss_fft portmidi rtmidi
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy lib/kiss_fft.dll ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy lib/kiss_fft.lib ${EXT_PLATFORM_SHLIBS_DIR}
@@ -942,7 +942,7 @@ if(WIN32)
 
     add_custom_target(external_shlibs_graphics
       COMMENT "moving .dll and .lib files into ${EXT_PLATFORM_SHLIBS_DIR}"
-      DEPENDS LLVM assimp glfw3 stb_image nanovg
+      DEPENDS assimp glfw3 stb_image nanovg
       COMMAND ${CMAKE_COMMAND} -E make_directory ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy bin/assimp-vc130-mt.dll ${EXT_PLATFORM_SHLIBS_DIR}
       COMMAND ${CMAKE_COMMAND} -E copy lib/assimp-vc130-mt.lib ${EXT_PLATFORM_SHLIBS_DIR}
