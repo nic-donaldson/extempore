@@ -454,7 +454,8 @@ namespace EXTLLVM2 {
 
     void setOptimize(const bool b) {
         DTRACE_PROBE(extempore, setOptimize);
-        std::abort();
+        std::cout << "setOptimize does nothing" << std::endl;
+        //std::abort();
     }
 
     void initPassManagers() {
