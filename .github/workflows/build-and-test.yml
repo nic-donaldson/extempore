@@ -31,6 +31,7 @@ jobs:
       - name: download and unpack llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
+          set -x
           wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
           tar xJf llvm-10.0.0.src.tar.xz
 
@@ -51,9 +52,9 @@ jobs:
       - name: install llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
+          set -x
           cd llvm-10.0.0.build
           cmake --install .
-          mkdir ../llvm-10.0.0.install/bin
           cp bin/llvm-as ../llvm-10.0.0.install/bin/
 
       - uses: actions/checkout@v2
