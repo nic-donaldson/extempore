@@ -634,18 +634,8 @@ namespace EXTLLVM2 {
             asm("nop");
         }
 
-        // if type ends in .XX* where X is a number we
-        // should strip the numbers, let's try this:
-        std::string::size_type start(str.find('.'));
-        std::string::size_type end(str.find('*'));
-        if (start != std::string::npos) {
-            if (end == str.length() - 1) {
-                str.erase(start, (end - start));
-            } else {
-                str.erase(start, str.length() - start);
-            }
-        }
-        return str;
+        std::regex regex(R"((%.*?)\.\d+)");
+        return std::regex_replace(str, regex, "$1");
     }
 
 
@@ -662,6 +652,11 @@ namespace EXTLLVM2 {
         if (sym == "String_val_adhoc_W1N0cmluZyxpNjQsaTgqXQ__992") {
             asm("nop");
         }
+        if (sym == "map_poly_W0xpc3R7U3RyaW5nKn0qLFtTdHJpbmcqLGk2NF0qLExpc3R7aTY0fSpdKg__2132")
+        {
+            asm("nop");
+        }
+
         // TODO: this will need to handle syms in the process too
         //       or alternatively, throw them on some list when
         //       bind-ext-val gets called?

@@ -72,3 +72,8 @@ jobs:
         run: |
           cd extempore/build
           env EXT_LLVM_DIR=../../llvm-10.0.0.install cmake --build . -j2 --config Release
+
+      - name: test
+        run: |
+          cd extempore/build
+          ctest --build-config Release --label-regex libs-core
