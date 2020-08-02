@@ -233,6 +233,15 @@ namespace EXTLLVM2 {
 
     void addGlobalMapping(const char* name, uintptr_t address) {
         DTRACE_PROBE(extempore, addGlobalMapping);
+
+        // first check that we haven't already defined the symbol
+        // I think the semantics are meant to be that if we do this again
+        // it should overwrite the old definition but let's not do that for now
+        auto sym = TheJIT->lookup(name);
+        if (sym) {
+            return;
+        }
+
         const llvm::DataLayout& DL = TheJIT->getDataLayout();
         llvm::orc::MangleAndInterner Mangle(TheJIT->getExecutionSession(), DL);
 
@@ -377,7 +386,7 @@ namespace EXTLLVM2 {
 
         // TODO: another gross hack
         // also TODO: learn how to use std::regex and not this capture group thing
-        static std::regex literallyJustATypeDefinition("(%.*? = type.*$)");
+        static std::regex literallyJustATypeDefinition("(%.*? = type.*)");
         std::unordered_set<std::string> typeDefines;
         insertMatchingSymbols(in_asmcode, literallyJustATypeDefinition, typeDefines);
         for (const auto& sym : typeDefines) {
@@ -821,7 +830,6 @@ namespace EXTLLVM2 {
 
     Result callCompiled(Fn *func_ptr, unsigned lgth, std::vector<EARG>& args) {
         DTRACE_PROBE2(extempore, callCompiled, func_ptr, lgth);
-        std::cout << "someone is looking for " << func_ptr->sym << std::endl;
 
         if (func_ptr->args.size() == 0 && func_ptr->ret == ArgType::NOTHING) {
             void (*f)() = (void (*)())getFunctionAddress(func_ptr->sym);
@@ -830,7 +838,6 @@ namespace EXTLLVM2 {
             std::cout << "nope not supported" << std::endl;
             std::abort();
         }
-        std::cout << "we lived!" << std::endl;
         EARG res;
         res.tag = ArgType::NOTHING;
         return {ResultType::GOOD, res};
@@ -863,7 +870,16 @@ namespace EXTLLVM2 {
 
     bool bindSymbol(const std::string& sym, void* library) {
         DTRACE_PROBE(extempore, bindSymbol);
+        #ifdef _WIN32
         std::abort();
+        #else
+        auto ptr(dlsym(library, sym.c_str()));
+        #endif
+        if (likely(ptr)) {
+            addGlobalMapping(sym.c_str(), reinterpret_cast<uintptr_t>(ptr));
+            return true;
+        }
+        return false;
     }
 
     void* updateMapping(const std::string& sym, void* ptr) {
