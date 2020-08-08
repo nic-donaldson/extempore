@@ -47,7 +47,7 @@ jobs:
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-10.0.0.build
-          cmake --build . -j$(nproc)
+          cmake --build . -j2
           make llvm-as
 
       - name: install llvm
