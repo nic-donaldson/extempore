@@ -72,7 +72,7 @@ jobs:
       - name: build extempore
         run: |
           cd extempore/build
-          env EXT_LLVM_DIR=../../llvm-10.0.0.install cmake --build . -j2 --config Release
+          env EXT_LLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.0.install cmake --build . -j2 --config Release
 
       - name: test
         run: |
