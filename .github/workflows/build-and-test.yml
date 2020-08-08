@@ -12,6 +12,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - macos-latest
 
     steps:
       - if: contains(matrix.os, 'ubuntu')
