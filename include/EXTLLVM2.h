@@ -20,6 +20,7 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
   const llvm::GlobalVariable* getGlobalVariable(const std::string& name);
   const Fn* getFunction(const std::string& name);
+  void dumpGlobals();
 }
 }
 }
@@ -36,6 +37,7 @@ namespace extemp {
     uintptr_t getFunctionAddress(const std::string&);
     void* getPointerToGlobalIfAvailable(const std::string&);
 
+    void setPrintIR(bool v);
     void setOptimize(const bool);
 
     // pass through some functions to the first module

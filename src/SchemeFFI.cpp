@@ -199,7 +199,9 @@ static pointer get_llvm_alias(scheme* Scheme, pointer Args)
         { "llvm:ffi-set-name", &ff_set_name }, \
         { "llvm:ffi-get-name", &ff_get_name }, \
         { "llvm:add-llvm-alias", &add_llvm_alias }, \
-        { "llvm:get-llvm-alias", &get_llvm_alias }
+        { "llvm:get-llvm-alias", &get_llvm_alias }, \
+        { "llvm:dump-globals", &extemp::SchemeFFI::LLVM::llvm_dump_globals }, \
+        { "llvm:set-print-ir", &extemp::SchemeFFI::LLVM::set_print_ir }
     
 #include "ffi/clock.inc"
 

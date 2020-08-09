@@ -14,6 +14,17 @@
 namespace extemp {
 namespace SchemeFFI {
 namespace LLVM {
+
+pointer llvm_dump_globals(scheme *Scheme, pointer Args) {
+  EXTLLVM2::GlobalMap::dumpGlobals();
+  return Scheme->T;
+}
+
+pointer set_print_ir(scheme *Scheme, pointer Args) {
+  EXTLLVM2::setPrintIR((pair_car(Args) == Scheme->T));
+  return Scheme->T;
+}
+
 pointer optimizeCompiles(scheme *Scheme, pointer Args) {
   EXTLLVM2::setOptimize((pair_car(Args) == Scheme->T));
   return Scheme->T;

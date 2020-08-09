@@ -60,6 +60,29 @@ namespace GlobalMap {
     static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
     static std::unordered_map<std::string, std::string> sTypeMap;
 
+    void dumpGlobals() {
+        std::cout << "sGlobalMap" << std::endl;
+        for (const auto& p : sGlobalMap) {
+            std::cout << "\t" << p.first << std::endl;
+        }
+        std::cout << "sHMM" << std::endl;
+        for (const auto& p : sHMM) {
+            std::cout << "\t" << p.first << std::endl;
+        }
+        std::cout << "sHMM2" << std::endl;
+        for (const auto& p : sHMM2) {
+            std::cout << "\t" << p.first << std::endl;
+        }
+        std::cout << "sFunctionMap" << std::endl;
+        for (const auto& p : sFunctionMap) {
+            std::cout << "\t" << p.first << std::endl;
+        }
+        std::cout << "sTypeMap" << std::endl;
+        for (const auto& p : sTypeMap) {
+            std::cout << "\t" << p.first << " " << p.second << std::endl;
+        }
+    }
+
     static void addHMM(const llvm::GlobalVariable& gv) {
         sHMM.insert_or_assign(gv.getName(), gv.getType());
     }
@@ -100,7 +123,7 @@ namespace GlobalMap {
         case llvm::Type::VoidTyID:
             return ArgType::NOTHING;
         default:
-            std::cout << "Don't know how to handle arg type" << std::endl;
+            // std::cout << "Don't know how to handle arg type" << std::endl;
             // TODO: not this
             return ArgType::PTR;
         }
@@ -201,6 +224,11 @@ namespace EXTLLVM2 {
     static std::unique_ptr<llvm::Module> TheModule;
     static std::unique_ptr<llvm::legacy::PassManager> ThePM;
     static bool OPTIMIZE_COMPILES(true);
+    static bool PRINT_IR(false);
+
+    void setPrintIR(bool v) {
+        PRINT_IR = v;
+    }
 
     bool initLLVM() {
         DTRACE_PROBE(extempore, initLLVM);
@@ -366,6 +394,10 @@ namespace EXTLLVM2 {
             asm("nop");
         }
 
+        if (PRINT_IR) {
+            std::cout << in_asmcode << std::endl;
+        }
+
         // TODO: not this
         //       anything but this
         std::unordered_set<std::string> defines;
@@ -455,7 +487,9 @@ namespace EXTLLVM2 {
         auto sym = TheJIT->lookup(name);
         if (sym) {
             auto& ES = TheJIT->getExecutionSession();
-            cantFail(main.remove({ES.intern(name)}), "removing something");
+            auto& DL = TheJIT->getDataLayout();
+            llvm::orc::MangleAndInterner Mangle(ES, DL);
+            cantFail(main.remove({Mangle(name)}), "removing something");
             return true;
         }
         return false;
@@ -479,10 +513,6 @@ namespace EXTLLVM2 {
         DTRACE_PROBE(extempore, finalize);
     }
 
-
-
-
-
     uintptr_t getSymbolAddress(const std::string& name) {
         DTRACE_PROBE1(extempore, getSymbolAddress, name.c_str());
         std::abort();
@@ -494,10 +524,7 @@ namespace EXTLLVM2 {
         if (sym) {
             return static_cast<uintptr_t>(sym.get().getAddress());
         } else {
-            TheJIT->getMainJITDylib().dump(llvm::outs());
-            for (int i = 0; i < 20; i++) {
-                std::cout << ">:(" << std::endl;
-            }
+            // TheJIT->getMainJITDylib().dump(llvm::outs());
             // not calling abort in case this is desired behaviour
             // std::abort();
         }
