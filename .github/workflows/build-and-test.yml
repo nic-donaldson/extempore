@@ -58,11 +58,8 @@ jobs:
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-10.0.1.build
-          tree /F
-          cmake --build . -j2
-          tree /F
-          cmake --build . -j2 --target llvm-as
-          tree /F
+          cmake --build . --config Release -j2
+          cmake --build . --config Release -j2 --target llvm-as
 
       - name: install llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
