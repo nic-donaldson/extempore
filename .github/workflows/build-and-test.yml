@@ -35,7 +35,7 @@ jobs:
 
 
       - name: download and unpack llvm, nix
-        if: contains(matrix.os, 'windows') != false && steps.llvm-cache.outputs.cache-hit != 'true'
+        if: steps.llvm-cache.outputs.cache-hit != 'true' && !contains(matrix.os, 'windows')
         run: |
           wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-10.0.1.src.tar.xz"
           cmake -E tar xJf llvm-10.0.1.src.tar.xz
