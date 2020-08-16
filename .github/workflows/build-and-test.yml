@@ -37,7 +37,7 @@ jobs:
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           # set -x
-          ruby -e 'require \'net/http\' -e 'uri = URI("https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz")' -e 'res = Net::HTTP.get_response(uri)' -e 'while res.code.to_s.start_with?("3") { res = Net::HTTP.get_response(URI(res["location"])) }' -e 'File.open("llvm-10.0.0.src.tar.xz", "w") { |file| file.write(res.body) }'
+          ruby -e "require 'net/http'" -e 'uri = URI("https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz")' -e 'res = Net::HTTP.get_response(uri)' -e 'while res.code.to_s.start_with?("3") { res = Net::HTTP.get_response(URI(res["location"])) }' -e 'File.open("llvm-10.0.0.src.tar.xz", "w") { |file| file.write(res.body) }'
           # wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
           cmake -E tar xJf llvm-10.0.0.src.tar.xz
 
