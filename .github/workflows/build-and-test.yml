@@ -33,19 +33,22 @@ jobs:
             ./llvm-10.0.0.install
           key: ${{ matrix.os }}-llvm10.0.0-1
 
-      - name: download and unpack llvm
-        if: steps.llvm-cache.outputs.cache-hit != 'true'
+      - name: download and unpack llvm, nix
+        if: !contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          # set -x
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
+          cmake -E tar xJf llvm-10.0.0.src.tar.xz
+      - name: download and unpack llvm, windows
+        if: contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
           Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz" -outfile llvm-10.0.0.src.tar.xz
-
-          # wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
           cmake -E tar xJf llvm-10.0.0.src.tar.xz
 
       - name: configure llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir llvm-10.0.0.{build,install}
+          mkdir llvm-10.0.0.build
+          mkdir llvm-10.0.0.install
           cd llvm-10.0.0.build
           cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=ON -DLLVM_BUILD_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
 
