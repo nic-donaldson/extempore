@@ -37,7 +37,8 @@ jobs:
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           # set -x
-          wget.exe "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz"
+          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz" -outfile llvm-10.0.0.src.tar.xz
+
           # wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz
           cmake -E tar xJf llvm-10.0.0.src.tar.xz
 
