@@ -66,7 +66,7 @@ jobs:
         run: |
           cd llvm-10.0.1.build
           cmake --install .
-          cp bin/llvm-as ../llvm-10.0.1.install/bin/
+          cp bin/llvm-as* ../llvm-10.0.1.install/bin/
 
       - uses: actions/checkout@v2
         with:
