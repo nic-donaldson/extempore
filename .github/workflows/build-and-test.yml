@@ -64,7 +64,6 @@ jobs:
       - name: install llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          set -x
           cd llvm-10.0.1.build
           cmake --install .
           cp bin/llvm-as ../llvm-10.0.1.install/bin/
