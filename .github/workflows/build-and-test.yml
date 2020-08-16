@@ -30,44 +30,44 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ./llvm-10.0.0.install
-          key: ${{ matrix.os }}-llvm10.0.0-1
+            ./llvm-10.0.1.install
+          key: ${{ matrix.os }}-llvm10.0.1-0
 
 
       - name: download and unpack llvm, nix
         if: contains(matrix.os, 'windows') == 'false' && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz"
-          cmake -E tar xJf llvm-10.0.0.src.tar.xz
+          wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-10.0.1.src.tar.xz"
+          cmake -E tar xJf llvm-10.0.1.src.tar.xz
 
       - name: download and unpack llvm, windows
         if: contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/llvm-10.0.0.src.tar.xz" -outfile llvm-10.0.0.src.tar.xz
-          cmake -E tar xJf llvm-10.0.0.src.tar.xz
+          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-10.0.1.src.tar.xz" -outfile llvm-10.0.1.src.tar.xz
+          cmake -E tar xJf llvm-10.0.1.src.tar.xz
 
       - name: configure llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir llvm-10.0.0.build
-          mkdir llvm-10.0.0.install
-          cd llvm-10.0.0.build
-          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=ON -DLLVM_BUILD_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=../llvm-10.0.0.install ../llvm-10.0.0.src/
+          mkdir llvm-10.0.1.build
+          mkdir llvm-10.0.1.install
+          cd llvm-10.0.1.build
+          cmake -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ZLIB=OFF -DLLVM_INCLUDE_TOOLS=ON -DLLVM_BUILD_TOOLS=OFF -DLLVM_INCLUDE_UTILS=OFF -DLLVM_BUILD_RUNTIME=OFF  -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_GO_TESTS=OFF -DLLVM_INCLUDE_DOCS=OFF -DCMAKE_INSTALL_PREFIX=..\llvm-10.0.1.install ..\llvm-10.0.1.src\
 
       - name: build llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          cd llvm-10.0.0.build
+          cd llvm-10.0.1.build
           cmake --build . -j2
-          make llvm-as
+          cmake --build . -j2 --target llvm-as
 
       - name: install llvm
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           set -x
-          cd llvm-10.0.0.build
+          cd llvm-10.0.1.build
           cmake --install .
-          cp bin/llvm-as ../llvm-10.0.0.install/bin/
+          cp bin/llvm-as ../llvm-10.0.1.install/bin/
 
       - uses: actions/checkout@v2
         with:
@@ -78,12 +78,12 @@ jobs:
           cd extempore
           mkdir build
           cd build
-          cmake -DASSETS=ON -DLLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.0.install/lib/cmake/llvm/ ${{ matrix.cmake-generator }} ..
+          cmake -DASSETS=ON -DLLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.1.install/lib/cmake/llvm/ ${{ matrix.cmake-generator }} ..
 
       - name: build extempore
         run: |
           cd extempore/build
-          env EXT_LLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.0.install cmake --build . -j2 --config Release
+          env EXT_LLVM_DIR=$GITHUB_WORKSPACE/llvm-10.0.1.install cmake --build . -j2 --config Release
 
       - name: test
         run: |
