@@ -1,4 +1,4 @@
-name: Build LLVM
+name: Build and test Extempore
 
 on:
   - push
@@ -17,6 +17,7 @@ jobs:
         include:
           - os: windows-latest
             cmake-generator: -G "Visual Studio 16 2019" -A x64
+            bin-path: Release/
 
     steps:
       - if: contains(matrix.os, 'ubuntu')
@@ -31,7 +32,7 @@ jobs:
         with:
           path: |
             ./llvm-10.0.1.install
-          key: ${{ matrix.os }}-llvm10.0.1-0
+          key: ${{ matrix.os }}-llvm10.0.1-0 # bump this number if you want to trigger an LLVM build 
 
 
       - name: download and unpack llvm, nix
@@ -66,7 +67,7 @@ jobs:
         run: |
           cd llvm-10.0.1.build
           cmake --install .
-          cp bin/llvm-as* ../llvm-10.0.1.install/bin/
+          cp ${{ matrix.bin-path }}bin/llvm-as* ../llvm-10.0.1.install/bin/
 
       - uses: actions/checkout@v2
         with:
