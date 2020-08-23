@@ -67,7 +67,8 @@ jobs:
         run: |
           cd llvm-10.0.1.build
           cmake --install .
-          tree $GITHUB_WORKSPACE/llvm-10.0.1.install
+          tree /F ../llvm-10.0.1.install
+          tree /F $GITHUB_WORKSPACE/llvm-10.0.1.install
           cp ${{ matrix.bin-path }}bin/llvm-as* $GITHUB_WORKSPACE/llvm-10.0.1.install/bin/
 
       - uses: actions/checkout@v2
