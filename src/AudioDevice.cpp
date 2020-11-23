@@ -37,7 +37,6 @@
 #include <iostream>
 #include <string.h>
 #include <inttypes.h>
-#include <xmmintrin.h>
 #include <regex>
 
 #include "AudioDevice.h"
