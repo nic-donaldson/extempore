@@ -55,7 +55,7 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
 
     static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
-    static std::unordered_map<std::string, llvm::Type *> sHMM;
+    static std::unordered_map<std::string, llvm::PointerType *> sHMM;
     static std::unordered_map<std::string, llvm::FunctionType *> sHMM2;
     static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
     static std::unordered_map<std::string, std::string> sTypeMap;
@@ -84,11 +84,11 @@ namespace GlobalMap {
     }
 
     static void addHMM(const llvm::GlobalVariable& gv) {
-        sHMM.insert_or_assign(gv.getName(), gv.getType());
+        sHMM.insert_or_assign(gv.getName().str(), gv.getType());
     }
 
     static void addHMM2(const llvm::Function& f) {
-        sHMM2.insert_or_assign(f.getName(), f.getFunctionType());
+        sHMM2.insert_or_assign(f.getName().str(), f.getFunctionType());
     }
 
     static llvm::Type* getHMM(const std::string& name) {
