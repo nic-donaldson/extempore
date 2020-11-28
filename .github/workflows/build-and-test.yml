@@ -54,6 +54,7 @@ jobs:
         if: steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-11.0.0.build
+          # if you're doing this by hand you might need `-- -j2` instead of `-j2`
           cmake --build . --config Release -j2
           cmake --build . --config Release -j2 --target llvm-as
 

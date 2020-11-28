@@ -55,8 +55,8 @@ namespace EXTLLVM2 {
 namespace GlobalMap {
 
     static std::unordered_map<std::string, const llvm::GlobalValue *> sGlobalMap;
-    static std::unordered_map<std::string, llvm::PointerType *> sHMM;
-    static std::unordered_map<std::string, llvm::FunctionType *> sHMM2;
+    static std::unordered_map<std::string, llvm::PointerType *> sTypes;
+    static std::unordered_map<std::string, llvm::FunctionType *> sFunctionTypes;
     static std::unordered_map<std::string, std::unique_ptr<Fn>> sFunctionMap;
     static std::unordered_map<std::string, std::string> sTypeMap;
 
@@ -65,12 +65,12 @@ namespace GlobalMap {
         for (const auto& p : sGlobalMap) {
             std::cout << "\t" << p.first << std::endl;
         }
-        std::cout << "sHMM" << std::endl;
-        for (const auto& p : sHMM) {
+        std::cout << "sTypes" << std::endl;
+        for (const auto& p : sTypes) {
             std::cout << "\t" << p.first << std::endl;
         }
-        std::cout << "sHMM2" << std::endl;
-        for (const auto& p : sHMM2) {
+        std::cout << "sFunctionTypes" << std::endl;
+        for (const auto& p : sFunctionTypes) {
             std::cout << "\t" << p.first << std::endl;
         }
         std::cout << "sFunctionMap" << std::endl;
@@ -83,25 +83,25 @@ namespace GlobalMap {
         }
     }
 
-    static void addHMM(const llvm::GlobalVariable& gv) {
-        sHMM.insert_or_assign(gv.getName().str(), gv.getType());
+    static void addType(const llvm::GlobalVariable& gv) {
+        sTypes.insert_or_assign(gv.getName().str(), gv.getType());
     }
 
-    static void addHMM2(const llvm::Function& f) {
-        sHMM2.insert_or_assign(f.getName().str(), f.getFunctionType());
+    static void addFunctionType(const llvm::Function& f) {
+        sFunctionTypes.insert_or_assign(f.getName().str(), f.getFunctionType());
     }
 
-    static llvm::Type* getHMM(const std::string& name) {
-        auto iter(sHMM.find(name));
-        if (iter != sHMM.end()) {
+    static llvm::Type* getGlobalType(const std::string& name) {
+        auto iter(sTypes.find(name));
+        if (iter != sTypes.end()) {
             return iter->second;
         }
         return nullptr;
     }
 
-    static llvm::FunctionType* getHMM2(const std::string& name) {
-        auto iter(sHMM2.find(name));
-        if (iter != sHMM2.end()) {
+    static llvm::FunctionType* getFunctionType(const std::string& name) {
+        auto iter(sFunctionTypes.find(name));
+        if (iter != sFunctionTypes.end()) {
             return iter->second;
         }
         return nullptr;
@@ -294,11 +294,11 @@ namespace EXTLLVM2 {
         if (modulePtr) {
             for (const auto& function : modulePtr->getFunctionList()) {
                 GlobalMap::addFunction2(function);
-                GlobalMap::addHMM2(function);
+                GlobalMap::addFunctionType(function);
             }
             for (const auto& global : modulePtr->getGlobalList()) {
                 GlobalMap::addGlobal(global);
-                GlobalMap::addHMM(global);
+                GlobalMap::addType(global);
             }
         }
 
@@ -676,20 +676,9 @@ namespace EXTLLVM2 {
     }
 
     std::string globalDeclaration(const std::string& sym) {
-        if (sym == "String_val_adhoc_W1N0cmluZyxpNjQsaTgqXQ__992") {
-            asm("nop");
-        }
-        if (sym == "map_poly_W0xpc3R7U3RyaW5nKn0qLFtTdHJpbmcqLGk2NF0qLExpc3R7aTY0fSpdKg__2132")
-        {
-            asm("nop");
-        }
-
-        // TODO: this will need to handle syms in the process too
-        //       or alternatively, throw them on some list when
-        //       bind-ext-val gets called?
         DTRACE_PROBE1(extempore, globalDeclaration, sym.c_str());
 
-        llvm::Type* t = GlobalMap::getHMM(sym);
+        llvm::Type* t = GlobalMap::getGlobalType(sym);
         if (t) {
             auto str(sanitizeType(t));
             std::stringstream ss;
@@ -701,7 +690,7 @@ namespace EXTLLVM2 {
             return ss.str();
         }
 
-        llvm::FunctionType* ft = GlobalMap::getHMM2(sym);
+        llvm::FunctionType* ft = GlobalMap::getFunctionType(sym);
         if (ft) {
             std::stringstream ss;
             ss << "declare "
