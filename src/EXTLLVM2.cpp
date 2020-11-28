@@ -123,8 +123,6 @@ namespace GlobalMap {
         case llvm::Type::VoidTyID:
             return ArgType::NOTHING;
         default:
-            // std::cout << "Don't know how to handle arg type" << std::endl;
-            // TODO: not this
             return ArgType::PTR;
         }
     }
@@ -208,6 +206,8 @@ namespace GlobalMap {
         auto iter(sFunctionMap.find(name));
         if (iter != sFunctionMap.end()) {
             // TODO: this is bad
+            // I think I meant ^ because unique_ptr but I don't
+            // know if it actually is bad
             return iter->second.get();
         }
         return nullptr;
