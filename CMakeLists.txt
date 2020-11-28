@@ -44,7 +44,7 @@ if(PACKAGE)
 endif()
 
 # LLVM
-# LLVM_DIR directory is <some_path>/lib/cmake/llvm
+# LLVM_DIR directory is <path_to_llvm_install>/lib/cmake/llvm
 # as per LLVM docs
 
 # building external shared library dependencies
@@ -293,7 +293,7 @@ if(PACKAGE)
 endif()
 
 ###############
-# LLVM 10.0.0 #
+# LLVM 11.0.0 #
 ###############
 find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH)
 include_directories(${LLVM_INCLUDE_DIRS}) # should we do this only for the main extempore target?

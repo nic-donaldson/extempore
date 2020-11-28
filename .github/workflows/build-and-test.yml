@@ -13,6 +13,10 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+          - windows-latest
+        include:
+          - os: windows-latest
+            cmake-generator: -G "Visual Studio 16 2019" -A x64
 
     steps:
       - if: contains(matrix.os, 'ubuntu')
@@ -39,7 +43,7 @@ jobs:
       - name: download and unpack llvm, windows
         if: contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-11.0.0.src.tar.xz" -outfile llvm-11.0.0.src.tar.xz
+          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.1/llvm-11.0.0.src.tar.xz" -outfile llvm-11.0.0.src.tar.xz
           cmake -E tar xJf llvm-11.0.0.src.tar.xz
 
       - name: configure llvm
@@ -58,14 +62,19 @@ jobs:
           cmake --build . --config Release -j2
           cmake --build . --config Release -j2 --target llvm-as
 
-      - name: install llvm
-        if: steps.llvm-cache.outputs.cache-hit != 'true'
+      - name: install llvm nix
+        if: !contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-11.0.0.build
           cmake --install .
-          # tree /F ../llvm-11.0.0.install
-          # tree /F $GITHUB_WORKSPACE/llvm-11.0.0.install
-          cp ${{ matrix.bin-path }}bin/llvm-as* $GITHUB_WORKSPACE/llvm-11.0.0.install/bin/
+          cp bin/llvm-as $GITHUB_WORKSPACE/llvm-11.0.0.install/bin/
+
+      - name: install llvm windows
+        if: contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
+        run: |
+          cd llvm-11.0.0.build
+          cmake --install . --prefix ../llvm-11.0.0.install
+          cp .\Release\bin\llvm-as.exe ../llvm-11.0.0.install/bin/
 
       - uses: actions/checkout@v2
         with:
