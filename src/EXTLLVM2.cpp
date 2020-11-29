@@ -390,10 +390,6 @@ namespace EXTLLVM2 {
     {
         DTRACE_PROBE(extempore, doTheThing);
 
-        if (in_asmcode.find("%String") != std::string::npos) {
-            asm("nop");
-        }
-
         if (PRINT_IR) {
             std::cout << in_asmcode << std::endl;
         }
@@ -477,9 +473,6 @@ namespace EXTLLVM2 {
 
     bool eraseFunctionByName(const std::string& name) {
         DTRACE_PROBE1(extempore, eraseFunctionByName, name.c_str());
-        if (name == "xtlang_expression_adhoc_W2k4Kl0_setter") {
-            asm("nop");
-        }
         
         // use that jitdylib hack :|
         // TODO: revisit this with new ORC stuff in LLVM11/12
@@ -653,14 +646,6 @@ namespace EXTLLVM2 {
             str.erase(pos - 1);
         }
 
-        if (str == "%mzone.18*") {
-            asm("nop");
-        }
-
-        if (str.substr(0, 6) == "%mzone") {
-            asm("nop");
-        }
-
         std::regex regex(R"((%.*?)\.\d+)");
         return std::regex_replace(str, regex, "$1");
     }
@@ -819,9 +804,6 @@ namespace EXTLLVM2 {
 
     bool removeFunctionByName(const std::string& name) {
         DTRACE_PROBE1(extempore, removeFunctionByName, name.c_str());
-        if (name == "xtlang_expression_adhoc_W2k4Kl0_setter") {
-            asm("nop");
-        }
         return eraseFunctionByName(name);
     }
 
