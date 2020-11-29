@@ -362,11 +362,8 @@ EXPORT int extempore_init(int argc, char** argv)
     // }
 #endif
 
-    std::cout << "here" << std::endl;
     extemp::TaskScheduler::I()->start();
-    std::cout << "here2" << std::endl;
     extemp::EXTLLVM::initLLVM();
-    std::cout << "here3" << std::endl;
     extemp::SchemeProcess* primary = 0;
 #ifdef __APPLE__
     // we need to instantiate NSApp before potentially

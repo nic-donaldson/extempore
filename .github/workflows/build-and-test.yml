@@ -63,7 +63,7 @@ jobs:
           cmake --build . --config Release -j2 --target llvm-as
 
       - name: install llvm nix
-        if: contains(matrix.os, 'windows') != 'true' && steps.llvm-cache.outputs.cache-hit != 'true'
+        if: steps.llvm-cache.outputs.cache-hit != 'true' && !contains(matrix.os, 'windows')
         run: |
           cd llvm-11.0.0.build
           cmake --install .
