@@ -355,9 +355,11 @@ EXPORT int extempore_init(int argc, char** argv)
 #ifdef _WIN32
     // on Windows with MCJIT we need to add "-elf" to the target triple, see
     // http://lists.cs.uiuc.edu/pipermail/llvmdev/2013-December/068407.html
-    if (extemp::UNIV::ARCH.empty()) {
-        extemp::UNIV::ARCH = extemp::EXTLLVM2::getProcessTriple() + "-elf";
-    }
+    // TODO: find out if this is still necessary?
+
+    // if (extemp::UNIV::ARCH.empty()) {
+    //     extemp::UNIV::ARCH = extemp::EXTLLVM2::getProcessTriple() + "-elf";
+    // }
 #endif
 
     extemp::TaskScheduler::I()->start();
