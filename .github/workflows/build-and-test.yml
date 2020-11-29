@@ -81,7 +81,7 @@ jobs:
           path: extempore
 
       - name: configure extempore, nix
-        if: contains(matrix.os, 'windows') != 'true'
+        if: ${{ !contains(matrix.os, 'windows') }}
         run: |
           cd extempore
           mkdir build
