@@ -63,7 +63,7 @@ jobs:
           cmake --build . --config Release -j2 --target llvm-as
 
       - name: install llvm nix
-        if: !contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
+        if: contains(matrix.os, 'windows') != 'true' && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
           cd llvm-11.0.0.build
           cmake --install .
@@ -81,7 +81,7 @@ jobs:
           path: extempore
 
       - name: configure extempore, nix
-        if: !contains(matrix.os, 'windows')
+        if: contains(matrix.os, 'windows') != 'true'
         run: |
           cd extempore
           mkdir build
@@ -98,7 +98,7 @@ jobs:
           cmake -DASSETS=ON -DLLVM_DIR=$GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} ..
 
       - name: build extempore, nix
-        if: !contains(matrix.os, 'windows')
+        if: contains(matrix.os, 'windows') != 'true'
         run: |
           cd extempore/build
           env EXT_LLVM_DIR=$GITHUB_WORKSPACE/llvm-11.0.0.install cmake --build . -j2 --config Release
