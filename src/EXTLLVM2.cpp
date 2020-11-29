@@ -867,12 +867,12 @@ namespace EXTLLVM2 {
         std::abort();
         #else
         auto ptr(dlsym(library, sym.c_str()));
-        #endif
         if (likely(ptr)) {
             addGlobalMapping(sym.c_str(), reinterpret_cast<uintptr_t>(ptr));
             return true;
         }
         return false;
+        #endif
     }
 
     void* updateMapping(const std::string& sym, void* ptr) {
