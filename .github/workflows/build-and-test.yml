@@ -43,7 +43,7 @@ jobs:
       - name: download and unpack llvm, windows
         if: contains(matrix.os, 'windows') && steps.llvm-cache.outputs.cache-hit != 'true'
         run: |
-          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.1/llvm-11.0.0.src.tar.xz" -outfile llvm-11.0.0.src.tar.xz
+          Invoke-webrequest "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz" -outfile llvm-11.0.0.src.tar.xz
           cmake -E tar xJf llvm-11.0.0.src.tar.xz
 
       - name: configure llvm
