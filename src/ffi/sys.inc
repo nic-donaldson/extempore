@@ -37,8 +37,8 @@ static pointer openDynamicLib(scheme* Scheme, pointer Args)
 {
 #ifdef _WIN32
     // set up the DLL load path
-    SetDllDirectory(""); // Plug "binary planting" security hole.
-    if (!SetDllDirectory((extemp::UNIV::SHARE_DIR + "/libs/aot-cache").c_str())) {
+    SetDllDirectoryA(""); // Plug "binary planting" security hole.
+    if (!SetDllDirectoryA((extemp::UNIV::SHARE_DIR + "/libs/aot-cache").c_str())) {
         std::cout << "Warning: couldn't add libs/aot-cache/ to DLL search path" << std::endl;
     }
     void* lib_handle = LoadLibraryA(string_value(pair_car(Args)));
