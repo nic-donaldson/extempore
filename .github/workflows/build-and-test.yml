@@ -101,7 +101,7 @@ jobs:
           cd extempore
           mkdir build
           cd build
-          cmake -DASSETS=ON -DLLVM_DIR=$GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} ..
+          cmake -DASSETS=ON -DLLVM_DIR=${Env:GITHUB_WORKSPACE}\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} ..
 
       - name: build extempore, nix
         if: contains(matrix.os, 'windows') != 'true'
