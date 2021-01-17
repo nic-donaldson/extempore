@@ -3,6 +3,11 @@
 #include <SchemeLLVMFFI.h>
 #include <SchemePrivate.h>
 
+#ifdef DYLIB
+#include <cmrc/cmrc.hpp>
+CMRC_DECLARE(xtm);
+#endif
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -38,15 +43,27 @@ static std::string fileToString(const std::string &fileName) {
 }
 
 static const std::string inlineDotLLString() {
+#ifdef DYLIB
+  auto fs = cmrc::xtm::get_filesystem();
+  auto data = fs.open("runtime/inline.ll");
+  static const std::string sInlineDotLLString(data.begin(), data.end());
+#else
   static const std::string sInlineDotLLString(
     fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll"));
+  #endif
 
   return sInlineDotLLString;
 }
 
-static const std::string bitcodeDotLLString(){
+static const std::string bitcodeDotLLString() {
+#ifdef DYLIB
+  auto fs = cmrc::xtm::get_filesystem();
+  auto data = fs.open("runtime/bitcode.ll");
+  static const std::string sBitcodeDotLLString(data.begin(), data.end());
+#else
   static const std::string sBitcodeDotLLString(
     fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll"));
+#endif
 
   return sBitcodeDotLLString;
 }

@@ -11,11 +11,18 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+          - ubuntu-18.04
+          - ubuntu-20.04
+          - macos-10.15 # catalina
+          # - macos-11.0  # big sur (removed for now due to "missing libGL" issue)
+          - windows-2016
+          - windows-2019
+        config:
+          - Release
         include:
-          - os: windows-latest
+          - os: windows-2016
+            cmake-generator: -G "Visual Studio 15 2017" -A x64
+          - os: windows-2019
             cmake-generator: -G "Visual Studio 16 2019" -A x64
 
     steps:
