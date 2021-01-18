@@ -108,7 +108,7 @@ jobs:
           cmake -DASSETS=ON -DLLVM_DIR="$Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\" ${{ matrix.cmake-generator }} "$Env:GITHUB_WORKSPACE\extempore"
 
       - name: build extempore, nix
-        if: contains(matrix.os, 'windows') != 'true'
+        if: ${{ contains(matrix.os, 'windows') == 'false' }}
         run: |
           cd extempore/build
           env EXT_LLVM_DIR=$GITHUB_WORKSPACE/llvm-11.0.0.install cmake --build . -j2 --config Release
