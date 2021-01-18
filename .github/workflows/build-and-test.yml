@@ -105,7 +105,7 @@ jobs:
           ls $Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib
           ls $Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake
           ls $Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm
-          cmake -DASSETS=ON -DLLVM_DIR=$Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} $Env:GITHUB_WORKSPACE\extempore
+          cmake -DASSETS=ON -DLLVM_DIR="$Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\" ${{ matrix.cmake-generator }} "$Env:GITHUB_WORKSPACE\extempore"
 
       - name: build extempore, nix
         if: contains(matrix.os, 'windows') != 'true'
