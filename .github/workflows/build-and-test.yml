@@ -98,10 +98,10 @@ jobs:
       - name: configure extempore, windows
         if: contains(matrix.os, 'windows')
         run: |
-          cd extempore
           mkdir build
           cd build
-          cmake -DASSETS=ON -DLLVM_DIR=${Env:GITHUB_WORKSPACE}\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} ..
+          echo 'GITHUB_WORKSPACE = ' $Env:GITHUB_WORKSPACE
+          cmake -DASSETS=ON -DLLVM_DIR=$Env:GITHUB_WORKSPACE\llvm-11.0.0.install\lib\cmake\llvm\ ${{ matrix.cmake-generator }} $Env:GITHUB_WORKSPACE\extempore
 
       - name: build extempore, nix
         if: contains(matrix.os, 'windows') != 'true'
