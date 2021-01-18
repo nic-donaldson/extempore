@@ -63,7 +63,7 @@ struct llvm_zone_t {
 };
 
 struct _llvm_callback_struct_ {
-    void(*fptr)(void*,llvm_zone_t*);
+    void (*fptr)(void*, llvm_zone_t*);
     void* dat;
     llvm_zone_t* zone;
 };
