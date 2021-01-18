@@ -116,7 +116,7 @@ jobs:
           $Env:EXT_LLVM_DIR="$Env:GITHUB_WORKSPACE/llvm-11.0.0.install/Release"
           cmake --build . -j2 --config Release
 
-      # - name: test
-      #   run: |
-      #     cd extempore/build
-      #     ctest --build-config Release --label-regex libs-core
+      - name: test
+        run: |
+          cd extempore/build
+          ctest --build-config Release --label-regex libs-core
