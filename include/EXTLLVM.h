@@ -32,9 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#ifndef _EXTLLVM_H
-#define _EXTLLVM_H
+#pragma once
 
 #include "Scheme.h"
 #include <vector>
@@ -260,5 +258,3 @@ EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 }
 
 }
-
-#endif
