@@ -113,7 +113,7 @@ jobs:
         if: contains(matrix.os, 'windows')
         run: |
           cd extempore/build
-          $Env:EXT_LLVM_DIR="../llvm-11.0.0.install/Release"
+          $Env:EXT_LLVM_DIR="$Env:GITHUB_WORKSPACE/llvm-11.0.0.install/Release"
           cmake --build . -j2 --config Release
 
       # - name: test
