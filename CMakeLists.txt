@@ -389,6 +389,7 @@ if (DYLIB)
 
   add_library(extempore SHARED src/Extempore.cpp
     src/AudioDevice.cpp
+    src/EXTZones.cpp
     src/EXTClosureAddressTable.cpp
     src/EXTLLVM.cpp
     src/EXTThread.cpp
@@ -405,6 +406,7 @@ if (DYLIB)
 else()
   add_executable(extempore src/Extempore.cpp
     src/AudioDevice.cpp
+    src/EXTZones.cpp
     src/EXTClosureAddressTable.cpp
     src/EXTLLVM.cpp
     src/EXTThread.cpp

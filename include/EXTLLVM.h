@@ -34,50 +34,21 @@
  */
 #pragma once
 
-#include "Scheme.h"
+#include <Scheme.h>
+#include <EXTMutex.h>
+#include <BranchPrediction.h>
+#include <UNIV.h>
+#include <EXTZones.h>
+
 #include <vector>
 #include <string>
 #include <memory>
-
-#include "EXTMutex.h"
-#include "BranchPrediction.h"
-#include "UNIV.h"
-
-struct zone_hooks_t {
-  uint64_t space; // here just so we don't get <i8*,i8*>
-  void* hook; // xtlang closure of type [void]*
-  zone_hooks_t* hooks;
-};
-
-// WARNING WARNING WARNING - HERE BE DRAGONS
-// THIS STRUCTURE IS REFERENCED FROM GENERATED CODE
-// DO NOT ALTER IT!!!
-
-struct llvm_zone_t {
-  void* memory;
-  uint64_t offset;
-  uint64_t mark;
-  uint64_t size;
-  zone_hooks_t* cleanup_hooks;
-  llvm_zone_t* memories;
-};
 
 struct _llvm_callback_struct_ {
     void (*fptr)(void*, llvm_zone_t*);
     void* dat;
     llvm_zone_t* zone;
 };
-
-struct llvm_zone_stack
-{
-    llvm_zone_t* head;
-    llvm_zone_stack* tail;
-};
-
-struct closure_address_table;
-
-extern THREAD_LOCAL llvm_zone_stack* tls_llvm_zone_stack;
-extern THREAD_LOCAL uint64_t tls_llvm_zone_stacksize;
 
 extern "C"
 {
@@ -138,104 +109,6 @@ namespace extemp
 namespace EXTLLVM
 {
 
-const unsigned LLVM_ZONE_ALIGN = 32; // MUST BE POWER OF 2!
-const unsigned LLVM_ZONE_ALIGNPAD = LLVM_ZONE_ALIGN - 1;
-
-inline llvm_zone_t* llvm_zone_create(uint64_t size)
-{
-    auto zone(reinterpret_cast<llvm_zone_t*>(malloc(sizeof(llvm_zone_t))));
-    if (unlikely(!zone)) {
-        abort(); // in case a leak can be analyzed post-mortem
-    }
-#ifdef _WIN32
-	if (size == 0) {
-		zone->memory = NULL;
-	}
-	else {
-		// this crashes extempore but I have no idea why????
-		// zone->memory = _aligned_malloc((size_t)size, (size_t)LLVM_ZONE_ALIGN);
-		zone->memory = malloc(size_t(size));
-	}
-#else
-    posix_memalign(&zone->memory, LLVM_ZONE_ALIGN, size_t(size));
-#endif
-    zone->mark = 0;
-    zone->offset = 0;
-    if (unlikely(!zone->memory)) {
-        size = 0;
-    }
-    zone->size = size;
-    zone->cleanup_hooks = nullptr;
-    zone->memories = nullptr;
-    return zone;
-}
-
-EXPORT void llvm_zone_destroy(llvm_zone_t* Zone);
-
-inline llvm_zone_t* llvm_zone_reset(llvm_zone_t* Zone)
-{
-    Zone->offset = 0;
-    return Zone;
-}
-
-EXPORT void* llvm_zone_malloc(llvm_zone_t* zone, uint64_t size);
-
-inline llvm_zone_stack* llvm_threads_get_zone_stack()
-{
-    return tls_llvm_zone_stack;
-}
-
-inline void llvm_threads_set_zone_stack(llvm_zone_stack* Stack)
-{
-    tls_llvm_zone_stack = Stack;
-}
-
-inline void llvm_push_zone_stack(llvm_zone_t* Zone)
-{
-    auto stack(reinterpret_cast<llvm_zone_stack*>(malloc(sizeof(llvm_zone_stack))));
-    stack->head = Zone;
-    stack->tail = llvm_threads_get_zone_stack();
-    llvm_threads_set_zone_stack(stack);
-    return;
-}
-
-inline llvm_zone_t* llvm_peek_zone_stack()
-{
-    llvm_zone_t* z = 0;
-    llvm_zone_stack* stack = llvm_threads_get_zone_stack();
-    if (unlikely(!stack)) {  // for the moment create a "DEFAULT" zone if stack is NULL
-#if DEBUG_ZONE_STACK
-        printf("TRYING TO PEEK AT A NULL ZONE STACK\n");
-#endif
-        llvm_zone_t* z = llvm_zone_create(1024 * 1024 * 1); // default root zone is 1M
-        llvm_push_zone_stack(z);
-        stack = llvm_threads_get_zone_stack();
-#if DEBUG_ZONE_STACK
-        printf("Creating new 1M default zone %p:%lld on ZStack:%p\n",z,z->size,stack);
-#endif
-        return z;
-    }
-    z = stack->head;
-#if DEBUG_ZONE_STACK
-    printf("%p: peeking at zone %p:%lld\n",stack,z,z->size);
-#endif
-    return z;
-}
-
-EXPORT llvm_zone_t* llvm_pop_zone_stack();
-
-inline void llvm_threads_inc_zone_stacksize() {
-    ++tls_llvm_zone_stacksize;
-}
-
-inline void llvm_threads_dec_zone_stacksize() {
-    --tls_llvm_zone_stacksize;
-}
-
-inline uint64_t llvm_threads_get_zone_stacksize() {
-    return tls_llvm_zone_stacksize;
-}
-
 uint64_t getSymbolAddress(const std::string&);
 void addModule(llvm::Module* m);
 
@@ -255,6 +128,5 @@ const llvm::GlobalValue* getGlobalValue(const char* name);
 inline std::vector<llvm::Module*>& getModules() { return Ms; } // not going to protect these!!!
 EXPORT const char* llvm_disassemble(const unsigned char*  Code, int Syntax);
 
-}
-
-}
+} // namespace EXTLLVM
+} // namespace extemp
