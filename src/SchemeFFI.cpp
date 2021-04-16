@@ -927,15 +927,11 @@ static llvm::Module* jitCompile(const std::string& String)
     static std::string sInlineBitcode;
     static std::unordered_set<std::string> sInlineSyms;
 
-#ifdef DYLIB
-    auto fs = cmrc::xtm::get_filesystem();
-#endif
-
     if (sInlineString.empty()) {
-        sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+        sInlineString = bitcodeDotLLString();
         insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
 
-        std::string tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+        std::string tString = inlineDotLLString();
         insertMatchingSymbols(tString, sGlobalSymRegex, sInlineSyms);
     }
 
@@ -945,20 +941,12 @@ static llvm::Module* jitCompile(const std::string& String)
         if (!first) {
             auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
             if (newModule) {
-                std::string bitcode;
                 llvm::raw_string_ostream bitstream(sInlineBitcode);
                 llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-#ifdef DYLIB
-                auto data = fs.open("runtime/inline.ll");
-                sInlineString = std::string(data.begin(), data.end());
-#else
-                std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
-                std::stringstream inString;
-                inString << inStream.rdbuf();
-                sInlineString = inString.str();
-#endif
+
+                sInlineString = inlineDotLLString();
             } else {
-std::cout << pa.getMessage().str() << std::endl;
+                std::cout << pa.getMessage().str() << std::endl;
                 abort();
             }
         } else {
