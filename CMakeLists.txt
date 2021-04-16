@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1) # we use target_sources()
+cmake_minimum_required(VERSION 3.19) # we use target_sources(), CMP0114
 project(Extempore VERSION 0.8.8)
 
 cmake_policy(SET CMP0114 NEW)
@@ -275,11 +275,13 @@ if (DYLIB)
     src/AudioDevice.cpp
     src/EXTZones.cpp
     src/EXTClosureAddressTable.cpp
+    src/EXTLLVM2.cpp
     src/EXTLLVM.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
     src/OSC.cpp
     src/Scheme.cpp
+    src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
@@ -292,11 +294,13 @@ else()
     src/AudioDevice.cpp
     src/EXTZones.cpp
     src/EXTClosureAddressTable.cpp
+    src/EXTLLVM2.cpp
     src/EXTLLVM.cpp
     src/EXTThread.cpp
     src/Extempore.cpp
     src/OSC.cpp
     src/Scheme.cpp
+    src/SchemeLLVMFFI.cpp
     src/SchemeFFI.cpp
     src/SchemeProcess.cpp
     src/SchemeREPL.cpp
