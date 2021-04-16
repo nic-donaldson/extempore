@@ -64,6 +64,7 @@
 #include "llvm/IR/Verifier.h"
 
 #include "SchemeFFI.h"
+#include <SchemeLLVMFFI.h>
 #include "AudioDevice.h"
 #include "UNIV.h"
 #include "TaskScheduler.h"
@@ -148,11 +149,7 @@ namespace SchemeFFI {
 #include "ffi/regex.inc"
 
     // llvm.inc
-static pointer optimizeCompiles(scheme* Scheme, pointer Args)
-{
-    EXTLLVM::OPTIMIZE_COMPILES = (pair_car(Args) == Scheme->T);
-    return Scheme->T;
-}
+
 
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
@@ -751,7 +748,7 @@ static pointer export_llvmmodule_bitcode(scheme* Scheme, pointer Args)
 }
 
 #define LLVM_DEFS \
-        { "llvm:optimize", &optimizeCompiles }, \
+        { "llvm:optimize", &extemp::SchemeFFI::LLVM::optimizeCompiles },    \
         { "llvm:jit-compile-ir-string", &jitCompileIRString}, \
         { "llvm:ffi-set-name", &ff_set_name }, \
         { "llvm:ffi-get-name", &ff_get_name }, \
