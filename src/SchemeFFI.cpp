@@ -882,12 +882,12 @@ static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string &sInline
 }
 
 // match @symbols @like @this_123
-static const std::regex globalSymRegex(
+static const std::regex sGlobalSymRegex(
   "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
   std::regex::optimize);
 
 // match "define @sym"
-static const std::regex defineSymRegex(
+static const std::regex sDefineSymRegex(
   "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
   std::regex::optimize | std::regex::ECMAScript);
 
@@ -899,8 +899,6 @@ static void insertMatchingSymbols(
               std::sregex_token_iterator(),
               std::inserter(containingSet, containingSet.begin()));
 }
-
-static long long llvm_emitcounter = 0;
 
 static std::string SanitizeType(llvm::Type* Type)
 {
@@ -921,9 +919,6 @@ static llvm::Module* jitCompile(const std::string& String)
     using namespace llvm;
     legacy::PassManager* PM = extemp::EXTLLVM::PM;
     legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
-
-    char modname[256];
-    sprintf(modname, "xtmmodule_%lld", ++llvm_emitcounter);
 
     std::string asmcode(String);
     SMDiagnostic pa;
