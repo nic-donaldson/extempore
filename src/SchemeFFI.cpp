@@ -150,8 +150,6 @@ namespace SchemeFFI {
 #include "ffi/regex.inc"
 
     // llvm.inc
-
-
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
     auto modulePtr(jitCompile(string_value(pair_car(Args))));
@@ -827,6 +825,81 @@ void initSchemeFFI(scheme* sc)
     }
 }
 
+static std::string fileToString(const std::string &fileName) {
+    std::ifstream inStream(fileName);
+    std::stringstream inString;
+    inString << inStream.rdbuf();
+    return inString.str();
+}
+
+static const std::string inlineDotLLString() {
+#ifdef DYLIB
+    auto fs = cmrc::xtm::get_filesystem();
+    auto data = fs.open("runtime/inline.ll");
+    static const std::string sInlineDotLLString(data.begin(), data.end());
+#else
+    static const std::string sInlineDotLLString(
+      fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll"));
+#endif
+
+    return sInlineDotLLString;
+}
+
+static const std::string bitcodeDotLLString() {
+#ifdef DYLIB
+    auto fs = cmrc::xtm::get_filesystem();
+    auto data = fs.open("runtime/bitcode.ll");
+    static const std::string sBitcodeDotLLString(data.begin(), data.end());
+#else
+    static const std::string sBitcodeDotLLString(
+      fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll"));
+#endif
+
+    return sBitcodeDotLLString;
+}
+
+static std::string IRToBitcode(const std::string &ir) {
+    std::string bitcode;
+    llvm::SMDiagnostic pa;
+    auto mod(llvm::parseAssemblyString(ir, pa, llvm::getGlobalContext()));
+    if (!mod) {
+        pa.print("IRToBitcode", llvm::outs());
+        std::abort();
+    }
+    llvm::raw_string_ostream bitstream(bitcode);
+    llvm::WriteBitcodeToFile(mod.get(), bitstream);
+    return bitcode;
+}
+
+static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string &sInlineBitcode) {
+    llvm::ErrorOr<std::unique_ptr<llvm::Module>> maybe(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), llvm::getGlobalContext()));
+
+    if (maybe) {
+        return std::move(maybe.get());
+    } else {
+        return nullptr;
+    }
+}
+
+// match @symbols @like @this_123
+static const std::regex globalSymRegex(
+  "[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+  std::regex::optimize);
+
+// match "define @sym"
+static const std::regex defineSymRegex(
+  "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
+  std::regex::optimize | std::regex::ECMAScript);
+
+static void insertMatchingSymbols(
+  const std::string &code, const std::regex &regex,
+  std::unordered_set<std::string> &containingSet)
+{
+    std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
+              std::sregex_token_iterator(),
+              std::inserter(containingSet, containingSet.begin()));
+}
+
 static long long llvm_emitcounter = 0;
 
 static std::string SanitizeType(llvm::Type* Type)
@@ -841,9 +914,6 @@ static std::string SanitizeType(llvm::Type* Type)
     }
     return str;
 }
-
-static std::regex sGlobalSymRegex("[ \t]@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize);
-static std::regex sDefineSymRegex("define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)", std::regex::optimize | std::regex::ECMAScript);
 
 static llvm::Module* jitCompile(const std::string& String)
 {
