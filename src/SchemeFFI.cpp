@@ -932,33 +932,13 @@ static llvm::Module* jitCompile(const std::string& String)
 #endif
 
     if (sInlineString.empty()) {
-        {
-#ifdef DYLIB
-            auto data = fs.open("runtime/bitcode.ll");
-            sInlineString = std::string(data.begin(), data.end());
-#else
-            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
-            std::stringstream inString;
-            inString << inStream.rdbuf();
-            sInlineString = inString.str();
-#endif
-        }
-        std::copy(std::sregex_token_iterator(sInlineString.begin(), sInlineString.end(), sGlobalSymRegex, 1),
-                std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
-        {
-#ifdef DYLIB
-            auto data = fs.open("runtime/inline.ll");
-            std::string tString = std::string(data.begin(), data.end());
-#else
-            std::ifstream inStream(UNIV::SHARE_DIR + "/runtime/inline.ll");
-            std::stringstream inString;
-            inString << inStream.rdbuf();
-            std::string tString = inString.str();
-#endif
-            std::copy(std::sregex_token_iterator(tString.begin(), tString.end(), sGlobalSymRegex, 1),
-                    std::sregex_token_iterator(), std::inserter(sInlineSyms, sInlineSyms.begin()));
-        }
+        sInlineString = fileToString(UNIV::SHARE_DIR + "/runtime/bitcode.ll");
+        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
+
+        std::string tString = fileToString(UNIV::SHARE_DIR + "/runtime/inline.ll");
+        insertMatchingSymbols(tString, sGlobalSymRegex, sInlineSyms);
     }
+
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
         static bool first(true);
