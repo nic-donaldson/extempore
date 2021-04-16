@@ -939,16 +939,8 @@ static llvm::Module* jitCompile(const std::string& String)
         // need to avoid parsing the types twice
         static bool first(true);
         if (!first) {
-            auto newModule(parseAssemblyString(sInlineString, pa, getGlobalContext()));
-            if (newModule) {
-                llvm::raw_string_ostream bitstream(sInlineBitcode);
-                llvm::WriteBitcodeToFile(newModule.get(), bitstream);
-
-                sInlineString = inlineDotLLString();
-            } else {
-                std::cout << pa.getMessage().str() << std::endl;
-                abort();
-            }
+            sInlineBitcode = IRToBitcode(sInlineString);
+            sInlineString = inlineDotLLString();
         } else {
             first = false;
         }
