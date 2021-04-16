@@ -129,6 +129,7 @@ CMRC_DECLARE(xtm);
 #include <queue>
 //#include <unistd.h>
 #include <EXTMutex.h>
+#include <EXTLLVM2.h>
 #include <EXTLLVM.h>
 namespace extemp { namespace SchemeFFI {
 static llvm::Module* jitCompile(const std::string& String);
@@ -978,7 +979,7 @@ std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
             newModule->setTargetTriple(extemp::UNIV::ARCH);
         }
-        if (EXTLLVM::OPTIMIZE_COMPILES) {
+        if (EXTLLVM2::OPTIMIZE_COMPILES) {
             PM->run(*newModule);
         } else {
             PM_NO->run(*newModule);

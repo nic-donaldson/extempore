@@ -119,7 +119,6 @@ void addModule(llvm::Module* m);
 extern llvm::ExecutionEngine* EE; // TODO: nobody should need this (?)
 extern llvm::Module* M;
 extern int64_t LLVM_COUNT;
-extern bool OPTIMIZE_COMPILES;
 extern bool VERIFY_COMPILES;
 extern llvm::legacy::PassManager* PM;
 extern llvm::legacy::PassManager* PM_NO;
