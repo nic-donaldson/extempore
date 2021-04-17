@@ -917,28 +917,6 @@ static std::string SanitizeType(llvm::Type* Type)
     return str;
 }
 
-static std::string globalDeclaration(const llvm::Function *func, const std::string& sym) {
-    std::stringstream ss;
-    ss << "declare "
-       << SanitizeType(func->getReturnType())
-       << " @" << sym << " (";
-
-    bool first(true);
-    for (const auto &arg : func->getArgumentList()) {
-        if (!first) {
-            ss << ", ";
-        } else {
-            first = false;
-        }
-        ss << SanitizeType(arg.getType());
-    }
-    if (func->isVarArg()) {
-        ss << ", ...";
-    }
-    ss << ")\n";
-    return ss.str();
-}
-
 static std::unordered_set<std::string> loadInlineSyms() {
     std::unordered_set<std::string> inlineSyms;
     insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, inlineSyms);
@@ -980,7 +958,24 @@ static std::string globalDeclarations(const std::string &asmcode) {
         }
         const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-            dstream << globalDeclaration(func, sym);
+            dstream << "declare "
+                    << SanitizeType(func->getReturnType())
+                    << " @" << sym << " (";
+
+            bool first(true);
+            for (const auto &arg : func->getArgumentList()) {
+                if (!first) {
+                    dstream << ", ";
+                } else {
+                    first = false;
+                }
+                dstream << SanitizeType(arg.getType());
+            }
+            if (func->isVarArg()) {
+                dstream << ", ...";
+            }
+            dstream << ")\n";
+
         } else {
             auto str(SanitizeType(gv->getType()));
             dstream << '@' << sym << " = external global "
