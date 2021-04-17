@@ -891,9 +891,12 @@ static const std::regex sDefineSymRegex(
   "define[^\\n]+@([-a-zA-Z$._][-a-zA-Z$._0-9]*)",
   std::regex::optimize | std::regex::ECMAScript);
 
+// template is temporary, we'll remove this once the refactoring is done
+template <class T>
 static void insertMatchingSymbols(
   const std::string &code, const std::regex &regex,
-  std::unordered_set<std::string> &containingSet)
+  // std::unordered_set<std::string> &containingSet
+  T &containingSet)
 {
     std::copy(std::sregex_token_iterator(code.begin(), code.end(), regex, 1),
               std::sregex_token_iterator(),
@@ -945,18 +948,26 @@ static llvm::Module* jitCompile(const std::string& String)
             first = false;
         }
     }
+
     std::unique_ptr<llvm::Module> newModule;
+
     std::vector<std::string> symbols;
-    std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sGlobalSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(symbols, symbols.begin()));
+
+    // Copy all @symbols @like @this into symbols
+    insertMatchingSymbols(asmcode, sGlobalSymRegex, symbols);
+
     std::sort(symbols.begin(), symbols.end());
     auto end(std::unique(symbols.begin(), symbols.end()));
+
     std::unordered_set<std::string> ignoreSyms;
-    std::copy(std::sregex_token_iterator(asmcode.begin(), asmcode.end(), sDefineSymRegex, 1),
-            std::sregex_token_iterator(), std::inserter(ignoreSyms, ignoreSyms.begin()));
+    insertMatchingSymbols(asmcode, sDefineSymRegex, ignoreSyms);
+
     std::string declarations;
     llvm::raw_string_ostream dstream(declarations);
+
+    // Iterating over all @symbols @in @asmcode matching sGlobalSymRegex
     for (auto iter = symbols.begin(); iter != end; ++iter) {
+
         const char* sym(iter->c_str());
         if (sInlineSyms.find(sym) != sInlineSyms.end() || ignoreSyms.find(sym) != ignoreSyms.end()) {
             continue;
@@ -965,7 +976,7 @@ static llvm::Module* jitCompile(const std::string& String)
         if (!gv) {
             continue;
         }
-        auto func(llvm::dyn_cast<llvm::Function>(gv));
+        const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
             dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
             bool first(true);
