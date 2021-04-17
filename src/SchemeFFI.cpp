@@ -951,7 +951,20 @@ static std::string globalDeclaration(const llvm::Function *func, const std::stri
     return ss.str();
 }
 
-static std::string globalDeclarations(const std::string &asmcode, const std::unordered_set<std::string>& sInlineSyms) {
+static std::unordered_set<std::string> loadInlineSyms() {
+    std::unordered_set<std::string> inlineSyms;
+    insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, inlineSyms);
+    insertMatchingSymbols(inlineDotLLString(), sGlobalSymRegex, inlineSyms);
+    return inlineSyms;
+}
+
+static std::unordered_set<std::string> inlineSyms() {
+    static std::unordered_set<std::string> syms(loadInlineSyms());
+    return syms;
+}
+
+static std::string globalDeclarations(const std::string &asmcode) {
+    static const std::unordered_set<std::string> sInlineSyms = inlineSyms();
     std::vector<std::string> symbols;
 
     // Copy all @symbols @like @this into symbols
@@ -989,13 +1002,6 @@ static std::string globalDeclarations(const std::string &asmcode, const std::uno
     return dstream.str();
 }
 
-static std::unordered_set<std::string> loadInlineSyms() {
-    std::unordered_set<std::string> inlineSyms;
-    insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, inlineSyms);
-    insertMatchingSymbols(inlineDotLLString(), sGlobalSymRegex, inlineSyms);
-    return inlineSyms;
-}
-
 static llvm::Module* jitCompile(const std::string& in_asmcode)
 {
     static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
@@ -1004,12 +1010,9 @@ static llvm::Module* jitCompile(const std::string& in_asmcode)
     // anything special with the IR.
     static bool isThisInitDotLL(true);
 
-    // Contains @all @symbols from bitcode.ll and inline.ll
-    static std::unordered_set<std::string> sInlineSyms(loadInlineSyms());
-
     std::unique_ptr<llvm::Module> newModule;
 
-    const std::string declarations = globalDeclarations(in_asmcode, sInlineSyms);
+    const std::string declarations = globalDeclarations(in_asmcode);
 
     llvm::SMDiagnostic pa;
     if (isThisInitDotLL) {
