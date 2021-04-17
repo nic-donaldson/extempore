@@ -149,17 +149,8 @@ namespace SchemeFFI {
 #include "ffi/misc.inc"
 #include "ffi/regex.inc"
 
-    // llvm.inc
-static pointer jitCompileIRString(scheme* Scheme, pointer Args)
-{
-    auto modulePtr(jitCompile(string_value(pair_car(Args))));
-    if (!modulePtr) {
-        return Scheme->F;
-    }
-    extemp::EXTLLVM::addModule(modulePtr);
-    return mk_cptr(Scheme, modulePtr);
-}
-
+// llvm.inc
+static pointer jitCompileIRString(scheme* Scheme, pointer Args);
 static pointer ff_set_name(scheme* Scheme, pointer Args)
 {
    pointer x = pair_car(Args);
@@ -871,6 +862,28 @@ static std::string IRToBitcode(const std::string &ir) {
     return bitcode;
 }
 
+static std::string loadBitcode()
+{
+  // will print and abort on failure
+  return IRToBitcode(bitcodeDotLLString());
+}
+
+static const std::string bitcode()
+{
+  static std::string sInlineBitcode(loadBitcode());
+  return sInlineBitcode;
+}
+
+static pointer jitCompileIRString(scheme* Scheme, pointer Args)
+{
+    auto modulePtr(jitCompile(string_value(pair_car(Args))));
+    if (!modulePtr) {
+        return Scheme->F;
+    }
+    extemp::EXTLLVM::addModule(modulePtr);
+    return mk_cptr(Scheme, modulePtr);
+}
+
 static std::unique_ptr<llvm::Module> parseBitcodeFile(const std::string &sInlineBitcode) {
     llvm::ErrorOr<std::unique_ptr<llvm::Module>> maybe(llvm::parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), llvm::getGlobalContext()));
 
@@ -986,24 +999,33 @@ static llvm::Module* jitCompile(const std::string& String)
     std::string asmcode(String);
     SMDiagnostic pa;
 
-    static std::string sInlineString; // This is a hack for now, but it *WORKS*
     static std::string sInlineBitcode;
+    // life of sInlineBitcode:
+    // - starts empty
+    // - first time the function is called, it is not set to any bitcode?
+    // - second time jitCompile is called, it is set to IRToBitcode(sInlineString), and sInlineString should contain bitcodeDotLLString() at that point in time.
+
+    // ok given this info we're going to split these variables into their different components.
+    // sInlineString: bitcodeDotLLString() storage and inlineDotLLString() storage.
+    //                we can do this just by replacing the first use of sInlineString with bitcodeDotLLString(),
+    //                we can also replace the sInlineString.empty() test with a static bool, which lets us remove
+    //                the second use of sInlineString and just use inlineDotLLString() there.
+    //                now it's unused and we can delete it!
+
     static std::unordered_set<std::string> sInlineSyms;
 
-    if (sInlineString.empty()) {
-        sInlineString = bitcodeDotLLString();
-        insertMatchingSymbols(sInlineString, sGlobalSymRegex, sInlineSyms);
-
-        std::string tString = inlineDotLLString();
-        insertMatchingSymbols(tString, sGlobalSymRegex, sInlineSyms);
+    bool sInlineSymsLoaded(false);
+    if (!sInlineSymsLoaded) {
+        insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, sInlineSyms);
+        insertMatchingSymbols(inlineDotLLString(), sGlobalSymRegex, sInlineSyms);
+        sInlineSymsLoaded = true;
     }
 
     if (sInlineBitcode.empty()) {
         // need to avoid parsing the types twice
         static bool first(true);
         if (!first) {
-            sInlineBitcode = IRToBitcode(sInlineString);
-            sInlineString = inlineDotLLString();
+            sInlineBitcode = IRToBitcode(bitcodeDotLLString());
         } else {
             first = false;
         }
@@ -1014,10 +1036,10 @@ static llvm::Module* jitCompile(const std::string& String)
     const std::string declarations = globalDeclarations(asmcode, sInlineSyms);
 
     if (!sInlineBitcode.empty()) {
-        auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
-        if (likely(modOrErr)) {
-            newModule = std::move(modOrErr.get());
-            asmcode = sInlineString + declarations + asmcode;
+        std::unique_ptr<llvm::Module> mod = parseBitcodeFile(sInlineBitcode);
+        if (likely(mod)) {
+            newModule = std::move(mod);
+            asmcode = inlineDotLLString() + declarations + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
                 std::cout << "**** DECL ****\n"
                           << declarations
@@ -1039,11 +1061,9 @@ static llvm::Module* jitCompile(const std::string& String)
             PM_NO->run(*newModule);
         }
     }
-    //std::stringstream ss;
+
     if (unlikely(!newModule))
     {
-// std::cout << "**** CODE ****\n" << asmcode << " **** ENDCODE ****" << std::endl;
-// std::cout << pa.getMessage().str() << std::endl << pa.getLineNo() << std::endl;
         std::string errstr;
         llvm::raw_string_ostream ss(errstr);
         pa.print("LLVM IR",ss);
