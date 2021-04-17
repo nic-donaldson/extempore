@@ -1009,7 +1009,6 @@ static std::unique_ptr<llvm::Module> constructModule(const std::string &asmcode)
     static bool isThisInitDotLL(true);
     if (isThisInitDotLL) {
         newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
-        isThisInitDotLL = false;
     }
 
     if (!isThisInitDotLL) {
@@ -1028,6 +1027,8 @@ static std::unique_ptr<llvm::Module> constructModule(const std::string &asmcode)
             }
         }
     }
+
+    isThisInitDotLL = false;
 
     if (unlikely(!newModule)) {
         pa.print("LLVM IR", llvm::outs());
