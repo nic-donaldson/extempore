@@ -996,14 +996,8 @@ static std::unordered_set<std::string> loadInlineSyms() {
     return inlineSyms;
 }
 
-static llvm::Module* jitCompile(const std::string& String)
+static llvm::Module* jitCompile(const std::string& in_asmcode)
 {
-    llvm::legacy::PassManager* PM = extemp::EXTLLVM::PM;
-    llvm::legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
-
-    std::string asmcode(String);
-    llvm::SMDiagnostic pa;
-
     static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
 
     // The first time we call this function, it's on init.ll, and we don't want to do
@@ -1015,10 +1009,11 @@ static llvm::Module* jitCompile(const std::string& String)
 
     std::unique_ptr<llvm::Module> newModule;
 
-    const std::string declarations = globalDeclarations(asmcode, sInlineSyms);
+    const std::string declarations = globalDeclarations(in_asmcode, sInlineSyms);
 
+    llvm::SMDiagnostic pa;
     if (isThisInitDotLL) {
-        newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
+        newModule = parseAssemblyString(in_asmcode, pa, llvm::getGlobalContext());
         isThisInitDotLL = false;
     }
 
@@ -1026,8 +1021,8 @@ static llvm::Module* jitCompile(const std::string& String)
         std::unique_ptr<llvm::Module> mod = parseBitcodeFile(sInlineBitcode);
         if (likely(mod)) {
             newModule = std::move(mod);
-            asmcode = inlineDotLLString() + declarations + asmcode;
-            if (parseAssemblyInto(llvm::MemoryBufferRef(asmcode, "<string>"), *newModule, pa)) {
+            const std::string code = inlineDotLLString() + declarations + in_asmcode;
+            if (parseAssemblyInto(llvm::MemoryBufferRef(code, "<string>"), *newModule, pa)) {
                 std::cout << "**** DECL ****\n"
                           << declarations
                           << "**** ENDDECL ****\n"
@@ -1038,13 +1033,12 @@ static llvm::Module* jitCompile(const std::string& String)
     }
 
     if (unlikely(!newModule)) {
-        std::string errstr;
-        llvm::raw_string_ostream ss(errstr);
-        pa.print("LLVM IR", ss);
-        printf("%s\n", ss.str().c_str());
+        pa.print("LLVM IR", llvm::outs());
         return nullptr;
     }
 
+    llvm::legacy::PassManager* PM = extemp::EXTLLVM::PM;
+    llvm::legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
     if (newModule) {
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
             newModule->setTargetTriple(extemp::UNIV::ARCH);
