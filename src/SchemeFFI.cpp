@@ -999,18 +999,17 @@ static llvm::Module* jitCompile(const std::string& String)
     std::string asmcode(String);
     SMDiagnostic pa;
 
-    static std::string sInlineBitcode;
+    static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
     // life of sInlineBitcode:
     // - starts empty
     // - first time the function is called, it is not set to any bitcode?
     // - second time jitCompile is called, it is set to IRToBitcode(sInlineString), and sInlineString should contain bitcodeDotLLString() at that point in time.
 
     // ok given this info we're going to split these variables into their different components.
-    // sInlineString: bitcodeDotLLString() storage and inlineDotLLString() storage.
-    //                we can do this just by replacing the first use of sInlineString with bitcodeDotLLString(),
-    //                we can also replace the sInlineString.empty() test with a static bool, which lets us remove
-    //                the second use of sInlineString and just use inlineDotLLString() there.
-    //                now it's unused and we can delete it!
+    // sInlineBitcode: used as a flag to prepend bitcode.ll, inline.ll, and declarations to asmcode and as storage for said bitcode.
+    //                 let's introduce `shouldPrepend` as that flag, and set it to true after the first module is created, then we can delete the janky sInlineBitcode.empty() thing
+
+    static bool shouldPrepend(false);
 
     static std::unordered_set<std::string> sInlineSyms;
 
@@ -1021,21 +1020,11 @@ static llvm::Module* jitCompile(const std::string& String)
         sInlineSymsLoaded = true;
     }
 
-    if (sInlineBitcode.empty()) {
-        // need to avoid parsing the types twice
-        static bool first(true);
-        if (!first) {
-            sInlineBitcode = IRToBitcode(bitcodeDotLLString());
-        } else {
-            first = false;
-        }
-    }
-
     std::unique_ptr<llvm::Module> newModule;
 
     const std::string declarations = globalDeclarations(asmcode, sInlineSyms);
 
-    if (!sInlineBitcode.empty()) {
+    if (shouldPrepend) {
         std::unique_ptr<llvm::Module> mod = parseBitcodeFile(sInlineBitcode);
         if (likely(mod)) {
             newModule = std::move(mod);
@@ -1050,6 +1039,7 @@ static llvm::Module* jitCompile(const std::string& String)
         }
     } else {
        newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
+       shouldPrepend = true;
     }
     if (newModule) {
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
