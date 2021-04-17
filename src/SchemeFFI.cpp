@@ -989,6 +989,13 @@ static std::string globalDeclarations(const std::string &asmcode, const std::uno
     return dstream.str();
 }
 
+static std::unordered_set<std::string> loadInlineSyms() {
+    std::unordered_set<std::string> inlineSyms;
+    insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, inlineSyms);
+    insertMatchingSymbols(inlineDotLLString(), sGlobalSymRegex, inlineSyms);
+    return inlineSyms;
+}
+
 static llvm::Module* jitCompile(const std::string& String)
 {
     // Create some module to put our function into it.
@@ -1000,25 +1007,9 @@ static llvm::Module* jitCompile(const std::string& String)
     SMDiagnostic pa;
 
     static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
-    // life of sInlineBitcode:
-    // - starts empty
-    // - first time the function is called, it is not set to any bitcode?
-    // - second time jitCompile is called, it is set to IRToBitcode(sInlineString), and sInlineString should contain bitcodeDotLLString() at that point in time.
+    static bool shouldPrepend(false); // if we should modify asmcode
 
-    // ok given this info we're going to split these variables into their different components.
-    // sInlineBitcode: used as a flag to prepend bitcode.ll, inline.ll, and declarations to asmcode and as storage for said bitcode.
-    //                 let's introduce `shouldPrepend` as that flag, and set it to true after the first module is created, then we can delete the janky sInlineBitcode.empty() thing
-
-    static bool shouldPrepend(false);
-
-    static std::unordered_set<std::string> sInlineSyms;
-
-    bool sInlineSymsLoaded(false);
-    if (!sInlineSymsLoaded) {
-        insertMatchingSymbols(bitcodeDotLLString(), sGlobalSymRegex, sInlineSyms);
-        insertMatchingSymbols(inlineDotLLString(), sGlobalSymRegex, sInlineSyms);
-        sInlineSymsLoaded = true;
-    }
+    static std::unordered_set<std::string> sInlineSyms(loadInlineSyms());
 
     std::unique_ptr<llvm::Module> newModule;
 
@@ -1041,6 +1032,7 @@ static llvm::Module* jitCompile(const std::string& String)
        newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
        shouldPrepend = true;
     }
+
     if (newModule) {
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
             newModule->setTargetTriple(extemp::UNIV::ARCH);
