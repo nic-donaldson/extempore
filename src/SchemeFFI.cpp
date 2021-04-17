@@ -998,24 +998,31 @@ static std::unordered_set<std::string> loadInlineSyms() {
 
 static llvm::Module* jitCompile(const std::string& String)
 {
-    // Create some module to put our function into it.
-    using namespace llvm;
-    legacy::PassManager* PM = extemp::EXTLLVM::PM;
-    legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
+    llvm::legacy::PassManager* PM = extemp::EXTLLVM::PM;
+    llvm::legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
 
     std::string asmcode(String);
-    SMDiagnostic pa;
+    llvm::SMDiagnostic pa;
 
     static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
-    static bool shouldPrepend(false); // if we should modify asmcode
 
+    // The first time we call this function, it's on init.ll, and we don't want to do
+    // anything special with the IR.
+    static bool isThisInitDotLL(true);
+
+    // Contains @all @symbols from bitcode.ll and inline.ll
     static std::unordered_set<std::string> sInlineSyms(loadInlineSyms());
 
     std::unique_ptr<llvm::Module> newModule;
 
     const std::string declarations = globalDeclarations(asmcode, sInlineSyms);
 
-    if (shouldPrepend) {
+    if (isThisInitDotLL) {
+        newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
+        isThisInitDotLL = false;
+    }
+
+    if (!isThisInitDotLL) {
         std::unique_ptr<llvm::Module> mod = parseBitcodeFile(sInlineBitcode);
         if (likely(mod)) {
             newModule = std::move(mod);
@@ -1028,9 +1035,14 @@ static llvm::Module* jitCompile(const std::string& String)
                 newModule.reset();
             }
         }
-    } else {
-       newModule = parseAssemblyString(asmcode, pa, getGlobalContext());
-       shouldPrepend = true;
+    }
+
+    if (unlikely(!newModule)) {
+        std::string errstr;
+        llvm::raw_string_ostream ss(errstr);
+        pa.print("LLVM IR", ss);
+        printf("%s\n", ss.str().c_str());
+        return nullptr;
     }
 
     if (newModule) {
@@ -1044,14 +1056,7 @@ static llvm::Module* jitCompile(const std::string& String)
         }
     }
 
-    if (unlikely(!newModule))
-    {
-        std::string errstr;
-        llvm::raw_string_ostream ss(errstr);
-        pa.print("LLVM IR",ss);
-        printf("%s\n",ss.str().c_str());
-        return nullptr;
-    } else if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) {
+    if (extemp::EXTLLVM::VERIFY_COMPILES && verifyModule(*newModule)) {
         std::cout << "\nInvalid LLVM IR\n";
         return nullptr;
     }
