@@ -1002,29 +1002,23 @@ static std::string globalDeclarations(const std::string &asmcode) {
     return dstream.str();
 }
 
-static llvm::Module* jitCompile(const std::string& in_asmcode)
-{
-    static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
-
-    // The first time we call this function, it's on init.ll, and we don't want to do
-    // anything special with the IR.
-    static bool isThisInitDotLL(true);
-
+static std::unique_ptr<llvm::Module> constructModule(const std::string &asmcode) {
     std::unique_ptr<llvm::Module> newModule;
-
-    const std::string declarations = globalDeclarations(in_asmcode);
-
     llvm::SMDiagnostic pa;
+
+    static bool isThisInitDotLL(true);
     if (isThisInitDotLL) {
-        newModule = parseAssemblyString(in_asmcode, pa, llvm::getGlobalContext());
+        newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
         isThisInitDotLL = false;
     }
 
     if (!isThisInitDotLL) {
+        static std::string sInlineBitcode = IRToBitcode(bitcodeDotLLString());
+        const std::string declarations = globalDeclarations(asmcode);
         std::unique_ptr<llvm::Module> mod = parseBitcodeFile(sInlineBitcode);
         if (likely(mod)) {
             newModule = std::move(mod);
-            const std::string code = inlineDotLLString() + declarations + in_asmcode;
+            const std::string code = inlineDotLLString() + declarations + asmcode;
             if (parseAssemblyInto(llvm::MemoryBufferRef(code, "<string>"), *newModule, pa)) {
                 std::cout << "**** DECL ****\n"
                           << declarations
@@ -1040,16 +1034,23 @@ static llvm::Module* jitCompile(const std::string& in_asmcode)
         return nullptr;
     }
 
-    llvm::legacy::PassManager* PM = extemp::EXTLLVM::PM;
-    llvm::legacy::PassManager* PM_NO = extemp::EXTLLVM::PM_NO;
+    return std::move(newModule);
+}
+
+static llvm::Module* jitCompile(const std::string& in_asmcode)
+{
+    std::unique_ptr<llvm::Module> newModule(constructModule(in_asmcode));
+
     if (newModule) {
         if (unlikely(!extemp::UNIV::ARCH.empty())) {
             newModule->setTargetTriple(extemp::UNIV::ARCH);
         }
+
+        // Run the corresponding PassManager
         if (EXTLLVM2::OPTIMIZE_COMPILES) {
-            PM->run(*newModule);
+            extemp::EXTLLVM::PM->run(*newModule);
         } else {
-            PM_NO->run(*newModule);
+            extemp::EXTLLVM::PM_NO->run(*newModule);
         }
     }
 
