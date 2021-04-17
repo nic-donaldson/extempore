@@ -862,18 +862,6 @@ static std::string IRToBitcode(const std::string &ir) {
     return bitcode;
 }
 
-static std::string loadBitcode()
-{
-  // will print and abort on failure
-  return IRToBitcode(bitcodeDotLLString());
-}
-
-static const std::string bitcode()
-{
-  static std::string sInlineBitcode(loadBitcode());
-  return sInlineBitcode;
-}
-
 static pointer jitCompileIRString(scheme* Scheme, pointer Args)
 {
     auto modulePtr(jitCompile(string_value(pair_car(Args))));
@@ -1006,6 +994,8 @@ static std::unique_ptr<llvm::Module> constructModule(const std::string &asmcode)
     std::unique_ptr<llvm::Module> newModule;
     llvm::SMDiagnostic pa;
 
+    // The first module we build is init.ll and we don't want to add anything to it.
+    // Successive modules will be prepended with bidcode.ll, inline.ll, and any necessary declarations.
     static bool isThisInitDotLL(true);
     if (isThisInitDotLL) {
         newModule = parseAssemblyString(asmcode, pa, llvm::getGlobalContext());
