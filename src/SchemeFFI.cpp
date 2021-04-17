@@ -916,6 +916,28 @@ static std::string SanitizeType(llvm::Type* Type)
     return str;
 }
 
+static std::string globalDeclaration(const llvm::Function *func) {
+    std::stringstream ss;
+    ss << "declare "
+       << SanitizeType(func->getReturnType())
+       << " @" << sym << " (";
+
+    bool first(true);
+    for (const auto &arg : func->getArgumentList()) {
+        if (!first) {
+            ss << ", ";
+        } else {
+            first = false;
+        }
+        ss << SanitizeType(arg.getType());
+    }
+    if (func->isVarArg()) {
+        ss << ", ...";
+    }
+    ss << ")\n";
+    return ss.str();
+}
+
 static llvm::Module* jitCompile(const std::string& String)
 {
     // Create some module to put our function into it.
@@ -978,26 +1000,14 @@ static llvm::Module* jitCompile(const std::string& String)
         }
         const llvm::Function* func(llvm::dyn_cast<llvm::Function>(gv));
         if (func) {
-            dstream << "declare " << SanitizeType(func->getReturnType()) << " @" << sym << " (";
-            bool first(true);
-            for (const auto& arg : func->getArgumentList()) {
-                if (!first) {
-                    dstream << ", ";
-                } else {
-                    first = false;
-                }
-                dstream << SanitizeType(arg.getType());
-            }
-            if (func->isVarArg()) {
-                dstream << ", ...";
-            }
-            dstream << ")\n";
+            dstream << globalDeclaration(func);
         } else {
             auto str(SanitizeType(gv->getType()));
-            dstream << '@' << sym << " = external global " << str.substr(0, str.length() - 1) << '\n';
+            dstream << '@' << sym << " = external global "
+                    << str.substr(0, str.length() - 1) << '\n';
         }
     }
-// std::cout << "**** DECL ****\n" << dstream.str() << "**** ENDDECL ****\n" << std::endl;
+
     if (!sInlineBitcode.empty()) {
         auto modOrErr(parseBitcodeFile(llvm::MemoryBufferRef(sInlineBitcode, "<string>"), getGlobalContext()));
         if (likely(modOrErr)) {
